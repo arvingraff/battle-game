@@ -70,6 +70,15 @@ def mode_lobby():
                     return selected
 mode = mode_lobby()
 
+def start_countdown():
+    for i in [3,2,1,"GO!"]:
+        screen.fill((30,30,30))
+        countdown_font = pygame.font.SysFont(None, 180)
+        text = countdown_font.render(str(i), True, (255,255,0))
+        screen.blit(text, (WIDTH//2-text.get_width()//2, HEIGHT//2-text.get_height()//2))
+        pygame.display.flip()
+        pygame.time.wait(800 if i!="GO!" else 600)
+
 # Lobby to get player names
 def get_player_name(prompt, ypos):
     name = ""
@@ -108,6 +117,8 @@ if mode == 1:
         x = random.randint(60, WIDTH-60)
         y = random.randint(100, HEIGHT-60)
         coin_rects.append(pygame.Rect(x, y, 24, 24))
+
+start_countdown()
 
 while True:
     now = time.time()
