@@ -401,10 +401,10 @@ while True:
 
     # Draw characters differently based on mode
     if mode == 0:
-        # Battle mode: mafia style with sunglasses, non-happy smile, and only dark fedora hat
+        # Battle mode: mafia style with sunglasses, non-happy smile, dark fedora hats, and no hair
         # Player 1
         pygame.draw.ellipse(screen, (224, 172, 105), (player1.centerx-15, player1.centery-35, 30, 38))
-        # Fedora hat (dark colors only)
+        # Fedora hat (dark colors only, no hair)
         pygame.draw.rect(screen, (60,60,60), (player1.centerx-15, player1.centery-45, 30, 10))
         pygame.draw.rect(screen, (30,30,30), (player1.centerx-10, player1.centery-50, 20, 8))
         # Sunglasses
