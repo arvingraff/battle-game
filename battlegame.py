@@ -76,8 +76,8 @@ def start_countdown():
         sound.play()
     except Exception as e:
         print(f"Error playing countdown sound: {e}")
-    # Use default timings for each cue
-    timings = [0, 800, 1600, 2400]  # ms after start for 3, 2, 1, GO!
+    # Use provided timings for each cue (in ms)
+    timings = [980, 960, 980, 910]  # ms for 3, 2, 1, GO!
     steps = [3,2,1,"GO!"]
     for idx, i in enumerate(steps):
         screen.fill((30,30,30))
@@ -85,7 +85,7 @@ def start_countdown():
         text = countdown_font.render(str(i), True, (255,255,0))
         screen.blit(text, (WIDTH//2-text.get_width()//2, HEIGHT//2-text.get_height()//2))
         pygame.display.flip()
-        pygame.time.wait(800 if i!="GO!" else 600)
+        pygame.time.wait(timings[idx])
 
 # Lobby to get player names
 def get_player_name(prompt, ypos):
