@@ -331,10 +331,13 @@ while True:
 
     # Draw guns only in battle mode
     if mode == 0:
+        # Gun follows hand (up/down movement)
+        gun_offset_y1 = player1.centery+10
+        gun_offset_y2 = player2.centery+10
         # Draw Player 1 AK-47 (attached to hand, correct direction)
         if p1_right:
             hand_x = player1.centerx+20
-            hand_y = player1.centery+10
+            hand_y = gun_offset_y1
             pygame.draw.rect(screen, (80,80,80), (hand_x+20, hand_y-4, 22, 4))
             pygame.draw.rect(screen, (139,69,19), (hand_x-18, hand_y-7, 16, 8))
             pygame.draw.rect(screen, (80,80,80), (hand_x, hand_y-7, 38, 8))
@@ -342,7 +345,7 @@ while True:
             pygame.draw.rect(screen, (60,60,60), (hand_x+30, hand_y+2, 6, 12))
         else:
             hand_x = player1.centerx-20
-            hand_y = player1.centery+10
+            hand_y = gun_offset_y1
             pygame.draw.rect(screen, (80,80,80), (hand_x-42, hand_y-4, 22, 4))
             pygame.draw.rect(screen, (139,69,19), (hand_x+2, hand_y-7, 16, 8))
             pygame.draw.rect(screen, (80,80,80), (hand_x-38, hand_y-7, 38, 8))
@@ -351,7 +354,7 @@ while True:
         # Draw Player 2 AK-47 (attached to hand, correct direction)
         if p2_right:
             hand_x = player2.centerx+20
-            hand_y = player2.centery+10
+            hand_y = gun_offset_y2
             pygame.draw.rect(screen, (80,80,80), (hand_x+20, hand_y-4, 22, 4))
             pygame.draw.rect(screen, (139,69,19), (hand_x-18, hand_y-7, 16, 8))
             pygame.draw.rect(screen, (80,80,80), (hand_x, hand_y-7, 38, 8))
@@ -359,7 +362,7 @@ while True:
             pygame.draw.rect(screen, (60,60,60), (hand_x+30, hand_y+2, 6, 12))
         else:
             hand_x = player2.centerx-20
-            hand_y = player2.centery+10
+            hand_y = gun_offset_y2
             pygame.draw.rect(screen, (80,80,80), (hand_x-42, hand_y-4, 22, 4))
             pygame.draw.rect(screen, (139,69,19), (hand_x+2, hand_y-7, 16, 8))
             pygame.draw.rect(screen, (80,80,80), (hand_x-38, hand_y-7, 38, 8))
