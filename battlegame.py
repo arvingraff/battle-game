@@ -218,15 +218,23 @@ while True:
         player2.x = WIDTH-150
         player2.y = HEIGHT//2
 
-    # Border collision: lose a life and respawn
-    if player1.left < 0 or player1.right > WIDTH or player1.top < 0 or player1.bottom > HEIGHT:
-        player1_health -= 1
-        player1.x = 100
-        player1.y = HEIGHT//2
-    if player2.left < 0 or player2.right > WIDTH or player2.top < 0 or player2.bottom > HEIGHT:
-        player2_health -= 1
-        player2.x = WIDTH-150
-        player2.y = HEIGHT//2
+    # Border collision: stop player from going out of bounds
+    if player1.left < 0:
+        player1.left = 0
+    if player1.right > WIDTH:
+        player1.right = WIDTH
+    if player1.top < 0:
+        player1.top = 0
+    if player1.bottom > HEIGHT:
+        player1.bottom = HEIGHT
+    if player2.left < 0:
+        player2.left = 0
+    if player2.right > WIDTH:
+        player2.right = WIDTH
+    if player2.top < 0:
+        player2.top = 0
+    if player2.bottom > HEIGHT:
+        player2.bottom = HEIGHT
 
     # Coin collection logic
     if mode == 1:
