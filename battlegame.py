@@ -260,66 +260,39 @@ while True:
     pygame.draw.rect(screen, border_color, (0, 0, WIDTH, HEIGHT), border_thickness)
 
 
-    # Draw Player 1 (Blue, more realistic)
-    # Head (oval, skin tone)
+    # Draw Player 1 (Cool, stylish)
+    # Head (skin tone, sunglasses)
     pygame.draw.ellipse(screen, (224, 172, 105), (player1.centerx-15, player1.centery-35, 30, 38))
-    # Eyes (white sclera, blue iris, black pupil)
-    pygame.draw.ellipse(screen, (255,255,255), (player1.centerx-10, player1.centery-25, 8, 12))
-    pygame.draw.ellipse(screen, (255,255,255), (player1.centerx+2, player1.centery-25, 8, 12))
-    pygame.draw.ellipse(screen, (30,144,255), (player1.centerx-7, player1.centery-21, 4, 6))
-    pygame.draw.ellipse(screen, (30,144,255), (player1.centerx+5, player1.centery-21, 4, 6))
-    pygame.draw.ellipse(screen, (0,0,0), (player1.centerx-6, player1.centery-19, 2, 3))
-    pygame.draw.ellipse(screen, (0,0,0), (player1.centerx+6, player1.centery-19, 2, 3))
-    # Eyebrows
-    pygame.draw.line(screen, (80, 42, 20), (player1.centerx-10, player1.centery-28), (player1.centerx-2, player1.centery-30), 2)
-    pygame.draw.line(screen, (80, 42, 20), (player1.centerx+10, player1.centery-28), (player1.centerx+2, player1.centery-30), 2)
-    # Nose
-    pygame.draw.line(screen, (160, 110, 60), (player1.centerx, player1.centery-18), (player1.centerx, player1.centery-13), 2)
-    # Mouth
-    pygame.draw.arc(screen, (150,75,0), (player1.centerx-7, player1.centery-10, 14, 8), 3.14, 2*3.14, 2)
-    # Body (shirt)
+    pygame.draw.rect(screen, (0,0,0), (player1.centerx-12, player1.centery-28, 24, 8))
+    pygame.draw.rect(screen, (30,144,255), (player1.centerx-12, player1.centery-28, 24, 8), 2)
+    pygame.draw.arc(screen, (255,255,255), (player1.centerx-7, player1.centery-10, 14, 8), 3.14, 2*3.14, 2)
+    pygame.draw.rect(screen, (0,255,255), (player1.centerx-15, player1.centery-35, 30, 8))
     pygame.draw.rect(screen, (0, 0, 200), (player1.centerx-10, player1.centery+3, 20, 38))
-    # Arms (skin tone)
+    pygame.draw.polygon(screen, (255,255,0), [(player1.centerx, player1.centery+10), (player1.centerx+6, player1.centery+30), (player1.centerx-6, player1.centery+30)])
     pygame.draw.line(screen, (224, 172, 105), (player1.centerx-20, player1.centery+10), (player1.centerx+20, player1.centery+10), 8)
-    # Hands
     pygame.draw.circle(screen, (224, 172, 105), (player1.centerx-20, player1.centery+10), 5)
     pygame.draw.circle(screen, (224, 172, 105), (player1.centerx+20, player1.centery+10), 5)
-    # Legs (pants)
-    pygame.draw.line(screen, (0,0,128), (player1.centerx-5, player1.centery+41), (player1.centerx-5, player1.centery+70), 8)
-    pygame.draw.line(screen, (0,0,128), (player1.centerx+5, player1.centery+41), (player1.centerx+5, player1.centery+70), 8)
-    # Shoes
-    pygame.draw.ellipse(screen, (0,0,0), (player1.centerx-12, player1.centery+68, 14, 8))
-    pygame.draw.ellipse(screen, (0,0,0), (player1.centerx-2, player1.centery+68, 14, 8))
+    pygame.draw.line(screen, (0,0,0), (player1.centerx-5, player1.centery+41), (player1.centerx-5, player1.centery+70), 8)
+    pygame.draw.line(screen, (0,0,0), (player1.centerx+5, player1.centery+41), (player1.centerx+5, player1.centery+70), 8)
+    pygame.draw.ellipse(screen, (0,0,200), (player1.centerx-12, player1.centery+68, 14, 8))
+    pygame.draw.ellipse(screen, (0,0,200), (player1.centerx-2, player1.centery+68, 14, 8))
 
-    # Draw Player 2 (Red, more realistic)
+    # Draw Player 2 (Cool, stylish)
+    # Head (skin tone, sunglasses)
     pygame.draw.ellipse(screen, (224, 172, 105), (player2.centerx-15, player2.centery-35, 30, 38))
-    # Eyes (white sclera, brown iris, black pupil)
-    pygame.draw.ellipse(screen, (255,255,255), (player2.centerx-10, player2.centery-25, 8, 12))
-    pygame.draw.ellipse(screen, (255,255,255), (player2.centerx+2, player2.centery-25, 8, 12))
-    pygame.draw.ellipse(screen, (139,69,19), (player2.centerx-7, player2.centery-21, 4, 6))
-    pygame.draw.ellipse(screen, (139,69,19), (player2.centerx+5, player2.centery-21, 4, 6))
-    pygame.draw.ellipse(screen, (0,0,0), (player2.centerx-6, player2.centery-19, 2, 3))
-    pygame.draw.ellipse(screen, (0,0,0), (player2.centerx+6, player2.centery-19, 2, 3))
-    # Eyebrows
-    pygame.draw.line(screen, (80, 42, 20), (player2.centerx-10, player2.centery-28), (player2.centerx-2, player2.centery-30), 2)
-    pygame.draw.line(screen, (80, 42, 20), (player2.centerx+10, player2.centery-28), (player2.centerx+2, player2.centery-30), 2)
-    # Nose
-    pygame.draw.line(screen, (160, 110, 60), (player2.centerx, player2.centery-18), (player2.centerx, player2.centery-13), 2)
-    # Mouth
-    pygame.draw.arc(screen, (150,75,0), (player2.centerx-7, player2.centery-10, 14, 8), 3.14, 2*3.14, 2)
-    # Body (shirt)
+    pygame.draw.rect(screen, (0,0,0), (player2.centerx-12, player2.centery-28, 24, 8))
+    pygame.draw.rect(screen, (255,0,0), (player2.centerx-12, player2.centery-28, 24, 8), 2)
+    pygame.draw.arc(screen, (255,255,255), (player2.centerx-7, player2.centery-10, 14, 8), 3.14, 2*3.14, 2)
+    pygame.draw.rect(screen, (255,255,0), (player2.centerx-15, player2.centery-35, 30, 8))
     pygame.draw.rect(screen, (200, 0, 0), (player2.centerx-10, player2.centery+3, 20, 38))
-    # Arms (skin tone)
+    pygame.draw.polygon(screen, (255,255,0), [(player2.centerx, player2.centery+18), (player2.centerx+6, player2.centery+30), (player2.centerx-6, player2.centery+30)])
     pygame.draw.line(screen, (224, 172, 105), (player2.centerx-20, player2.centery+10), (player2.centerx+20, player2.centery+10), 8)
-    # Hands
     pygame.draw.circle(screen, (224, 172, 105), (player2.centerx-20, player2.centery+10), 5)
     pygame.draw.circle(screen, (224, 172, 105), (player2.centerx+20, player2.centery+10), 5)
-    # Legs (pants)
-    pygame.draw.line(screen, (128,0,0), (player2.centerx-5, player2.centery+41), (player2.centerx-5, player2.centery+70), 8)
-    pygame.draw.line(screen, (128,0,0), (player2.centerx+5, player2.centery+41), (player2.centerx+5, player2.centery+70), 8)
-    # Shoes
-    pygame.draw.ellipse(screen, (0,0,0), (player2.centerx-12, player2.centery+68, 14, 8))
-    pygame.draw.ellipse(screen, (0,0,0), (player2.centerx-2, player2.centery+68, 14, 8))
+    pygame.draw.line(screen, (0,0,0), (player2.centerx-5, player2.centery+41), (player2.centerx-5, player2.centery+70), 8)
+    pygame.draw.line(screen, (0,0,0), (player2.centerx+5, player2.centery+41), (player2.centerx+5, player2.centery+70), 8)
+    pygame.draw.ellipse(screen, (200,0,0), (player2.centerx-12, player2.centery+68, 14, 8))
+    pygame.draw.ellipse(screen, (200,0,0), (player2.centerx-2, player2.centery+68, 14, 8))
 
     # Draw Player 1 name above head
     name_text1 = font.render(player1_name, True, (0,0,255))
@@ -368,6 +341,138 @@ while True:
             pygame.draw.rect(screen, (80,80,80), (hand_x-38, hand_y-7, 38, 8))
             pygame.draw.arc(screen, (60,60,60), (hand_x-28, hand_y+2, 18, 14), 0, 3.14, 4)
             pygame.draw.rect(screen, (60,60,60), (hand_x-36, hand_y+2, 6, 12))
+
+    # Draw bullets
+    for bullet in bullets:
+        pygame.draw.rect(screen, (255,255,0), bullet['rect'])
+    # Show shots and health only in battle mode
+    if mode == 0:
+        health_text = font.render(f"P1 Health: {player1_health}  P2 Health: {player2_health}", True, (255,255,255))
+        screen.blit(health_text, (WIDTH//2 - health_text.get_width()//2, 20))
+        if player1_shots < RELOAD_LIMIT and now > player1_reload_time:
+            p1_status = f"P1 Shots: {RELOAD_LIMIT - player1_shots}"
+        else:
+            p1_status = "P1 Reloading..."
+        if player2_shots < RELOAD_LIMIT and now > player2_reload_time:
+            p2_status = f"P2 Shots: {RELOAD_LIMIT - player2_shots}"
+        else:
+            p2_status = "P2 Reloading..."
+        p1_status_text = font.render(p1_status, True, (0,0,255))
+        p2_status_text = font.render(p2_status, True, (255,0,0))
+        screen.blit(p1_status_text, (40, 20))
+        screen.blit(p2_status_text, (WIDTH-40-p2_status_text.get_width(), 20))
+
+    # Win logic
+    if player1_health <= 0:
+        win_text = font.render("Player 2 Wins!", True, (255, 0, 0))
+        screen.blit(win_text, (WIDTH//2 - win_text.get_width()//2, HEIGHT//2))
+        pygame.display.flip()
+        pygame.time.wait(2000)
+        pygame.quit()
+        sys.exit()
+    if player2_health <= 0:
+        win_text = font.render("Player 1 Wins!", True, (0, 0, 255))
+        screen.blit(win_text, (WIDTH//2 - win_text.get_width()//2, HEIGHT//2))
+        pygame.display.flip()
+        pygame.time.wait(2000)
+        pygame.quit()
+        sys.exit()
+
+    # Draw coins in coin mode
+    if mode == 1:
+        for coin in coin_rects:
+            pygame.draw.circle(screen, (255,215,0), coin.center, 12)
+        # Show scores and timer
+        score_text = font.render(f"{player1_name}: {player1_score}   {player2_name}: {player2_score}", True, (255,255,255))
+        screen.blit(score_text, (WIDTH//2-score_text.get_width()//2, 20))
+        timer_text = font.render(f"Time left: {max(0,int(coin_timer-now))}", True, (255,255,255))
+        screen.blit(timer_text, (WIDTH//2-timer_text.get_width()//2, 60))
+        # End game after 30 seconds
+        if now > coin_timer:
+            winner = player1_name if player1_score > player2_score else player2_name if player2_score > player1_score else "Tie!"
+            win_text = font.render(f"Winner: {winner}", True, (0,255,0))
+            screen.blit(win_text, (WIDTH//2-win_text.get_width()//2, HEIGHT//2))
+            pygame.display.flip()
+            pygame.time.wait(3000)
+            pygame.quit()
+            sys.exit()
+
+    # Draw characters differently based on mode
+    if mode == 0:
+        # Battle mode: cool, action style
+        # Player 1
+        pygame.draw.ellipse(screen, (224, 172, 105), (player1.centerx-15, player1.centery-35, 30, 38))
+        pygame.draw.rect(screen, (0,0,0), (player1.centerx-12, player1.centery-28, 24, 8))
+        pygame.draw.rect(screen, (30,144,255), (player1.centerx-12, player1.centery-28, 24, 8), 2)
+        pygame.draw.arc(screen, (255,255,255), (player1.centerx-7, player1.centery-10, 14, 8), 3.14, 2*3.14, 2)
+        pygame.draw.rect(screen, (0,255,255), (player1.centerx-15, player1.centery-35, 30, 8))
+        pygame.draw.rect(screen, (0, 0, 200), (player1.centerx-10, player1.centery+3, 20, 38))
+        pygame.draw.polygon(screen, (255,255,0), [(player1.centerx, player1.centery+10), (player1.centerx+6, player1.centery+30), (player1.centerx-6, player1.centery+30)])
+        pygame.draw.line(screen, (224, 172, 105), (player1.centerx-20, player1.centery+10), (player1.centerx+20, player1.centery+10), 8)
+        pygame.draw.circle(screen, (224, 172, 105), (player1.centerx-20, player1.centery+10), 5)
+        pygame.draw.circle(screen, (224, 172, 105), (player1.centerx+20, player1.centery+10), 5)
+        pygame.draw.line(screen, (0,0,0), (player1.centerx-5, player1.centery+41), (player1.centerx-5, player1.centery+70), 8)
+        pygame.draw.line(screen, (0,0,0), (player1.centerx+5, player1.centery+41), (player1.centerx+5, player1.centery+70), 8)
+        pygame.draw.ellipse(screen, (0,0,200), (player1.centerx-12, player1.centery+68, 14, 8))
+        pygame.draw.ellipse(screen, (0,0,200), (player1.centerx-2, player1.centery+68, 14, 8))
+        # Player 2
+        pygame.draw.ellipse(screen, (224, 172, 105), (player2.centerx-15, player2.centery-35, 30, 38))
+        pygame.draw.rect(screen, (0,0,0), (player2.centerx-12, player2.centery-28, 24, 8))
+        pygame.draw.rect(screen, (255,0,0), (player2.centerx-12, player2.centery-28, 24, 8), 2)
+        pygame.draw.arc(screen, (255,255,255), (player2.centerx-7, player2.centery-10, 14, 8), 3.14, 2*3.14, 2)
+        pygame.draw.rect(screen, (255,255,0), (player2.centerx-15, player2.centery-35, 30, 8))
+        pygame.draw.rect(screen, (200, 0, 0), (player2.centerx-10, player2.centery+3, 20, 38))
+        pygame.draw.polygon(screen, (255,255,0), [(player2.centerx, player2.centery+18), (player2.centerx+6, player2.centery+30), (player2.centerx-6, player2.centery+30)])
+        pygame.draw.line(screen, (224, 172, 105), (player2.centerx-20, player2.centery+10), (player2.centerx+20, player2.centery+10), 8)
+        pygame.draw.circle(screen, (224, 172, 105), (player2.centerx-20, player2.centery+10), 5)
+        pygame.draw.circle(screen, (224, 172, 105), (player2.centerx+20, player2.centery+10), 5)
+        pygame.draw.line(screen, (0,0,0), (player2.centerx-5, player2.centery+41), (player2.centerx-5, player2.centery+70), 8)
+        pygame.draw.line(screen, (0,0,0), (player2.centerx+5, player2.centery+41), (player2.centerx+5, player2.centery+70), 8)
+        pygame.draw.ellipse(screen, (200,0,0), (player2.centerx-12, player2.centery+68, 14, 8))
+        pygame.draw.ellipse(screen, (200,0,0), (player2.centerx-2, player2.centery+68, 14, 8))
+    else:
+        # Coin mode: explorer/adventurer style
+        # Player 1
+        pygame.draw.ellipse(screen, (255, 224, 189), (player1.centerx-15, player1.centery-35, 30, 38))
+        # Explorer hat
+        pygame.draw.rect(screen, (139,69,19), (player1.centerx-15, player1.centery-40, 30, 10))
+        pygame.draw.rect(screen, (205,133,63), (player1.centerx-10, player1.centery-45, 20, 8))
+        # Big smile
+        pygame.draw.arc(screen, (255,0,0), (player1.centerx-7, player1.centery-10, 14, 10), 3.14, 2*3.14, 3)
+        # Backpack
+        pygame.draw.rect(screen, (0,128,0), (player1.centerx-18, player1.centery+10, 36, 18))
+        # Shirt (green)
+        pygame.draw.rect(screen, (0, 200, 0), (player1.centerx-10, player1.centery+3, 20, 38))
+        # Arms
+        pygame.draw.line(screen, (255, 224, 189), (player1.centerx-20, player1.centery+10), (player1.centerx+20, player1.centery+10), 8)
+        pygame.draw.circle(screen, (255, 224, 189), (player1.centerx-20, player1.centery+10), 5)
+        pygame.draw.circle(screen, (255, 224, 189), (player1.centerx+20, player1.centery+10), 5)
+        # Pants (brown)
+        pygame.draw.line(screen, (139,69,19), (player1.centerx-5, player1.centery+41), (player1.centerx-5, player1.centery+70), 8)
+        pygame.draw.line(screen, (139,69,19), (player1.centerx+5, player1.centery+41), (player1.centerx+5, player1.centery+70), 8)
+        # Shoes (tan)
+        pygame.draw.ellipse(screen, (205,133,63), (player1.centerx-12, player1.centery+68, 14, 8))
+        pygame.draw.ellipse(screen, (205,133,63), (player1.centerx-2, player1.centery+68, 14, 8))
+        # Player 2
+        pygame.draw.ellipse(screen, (255, 224, 189), (player2.centerx-15, player2.centery-35, 30, 38))
+        # Explorer hat
+        pygame.draw.rect(screen, (139,69,19), (player2.centerx-15, player2.centery-40, 30, 10))
+        pygame.draw.rect(screen, (205,133,63), (player2.centerx-10, player2.centery-45, 20, 8))
+        pygame.draw.arc(screen, (255,0,0), (player2.centerx-7, player2.centery-10, 14, 10), 3.14, 2*3.14, 3)
+        # Backpack
+        pygame.draw.rect(screen, (0,128,0), (player2.centerx-18, player2.centery+10, 36, 18))
+        # Shirt (orange)
+        pygame.draw.rect(screen, (255, 140, 0), (player2.centerx-10, player2.centery+3, 20, 38))
+        # Arms
+        pygame.draw.line(screen, (255, 224, 189), (player2.centerx-20, player2.centery+10), (player2.centerx+20, player2.centery+10), 8)
+        pygame.draw.circle(screen, (255, 224, 189), (player2.centerx-20, player2.centery+10), 5)
+        pygame.draw.circle(screen, (255, 224, 189), (player2.centerx+20, player2.centery+10), 5)
+        # Pants (brown)
+        pygame.draw.line(screen, (139,69,19), (player2.centerx-5, player2.centery+41), (player2.centerx-5, player2.centery+70), 8)
+        pygame.draw.line(screen, (139,69,19), (player2.centerx+5, player2.centery+41), (player2.centerx+5, player2.centery+70), 8)
+        # Shoes (tan)
+        pygame.draw.ellipse(screen, (205,133,63), (player2.centerx-12, player2.centery+68, 14, 8))
+        pygame.draw.ellipse(screen, (205,133,63), (player2.centerx-2, player2.centery+68, 14, 8))
 
     # Draw bullets
     for bullet in bullets:
