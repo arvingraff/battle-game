@@ -238,12 +238,14 @@ while True:
 
     # Coin collection logic
     if mode == 1:
-        # Check for coin collection
+        # Check for coin collection using full body hitbox
+        player1_body = pygame.Rect(player1.centerx-20, player1.centery-35, 40, 110)
+        player2_body = pygame.Rect(player2.centerx-20, player2.centery-35, 40, 110)
         for coin in coin_rects[:]:
-            if player1.colliderect(coin):
+            if player1_body.colliderect(coin):
                 player1_score += 1
                 coin_rects.remove(coin)
-            elif player2.colliderect(coin):
+            elif player2_body.colliderect(coin):
                 player2_score += 1
                 coin_rects.remove(coin)
         # Respawn coins if needed
