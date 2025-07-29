@@ -431,9 +431,14 @@ while True:
         pygame.draw.ellipse(screen, (200,0,0), (player2.centerx-12, player2.centery+68, 14, 8))
         pygame.draw.ellipse(screen, (200,0,0), (player2.centerx-2, player2.centery+68, 14, 8))
     else:
-        # Coin mode: explorer/adventurer style
+        # Coin mode: explorer/adventurer style with eyes
         # Player 1
         pygame.draw.ellipse(screen, (255, 224, 189), (player1.centerx-15, player1.centery-35, 30, 38))
+        # Eyes
+        pygame.draw.ellipse(screen, (255,255,255), (player1.centerx-8, player1.centery-25, 7, 10))
+        pygame.draw.ellipse(screen, (255,255,255), (player1.centerx+1, player1.centery-25, 7, 10))
+        pygame.draw.ellipse(screen, (0,0,0), (player1.centerx-5, player1.centery-21, 3, 5))
+        pygame.draw.ellipse(screen, (0,0,0), (player1.centerx+4, player1.centery-21, 3, 5))
         # Explorer hat
         pygame.draw.rect(screen, (139,69,19), (player1.centerx-15, player1.centery-40, 30, 10))
         pygame.draw.rect(screen, (205,133,63), (player1.centerx-10, player1.centery-45, 20, 8))
@@ -455,6 +460,11 @@ while True:
         pygame.draw.ellipse(screen, (205,133,63), (player1.centerx-2, player1.centery+68, 14, 8))
         # Player 2
         pygame.draw.ellipse(screen, (255, 224, 189), (player2.centerx-15, player2.centery-35, 30, 38))
+        # Eyes
+        pygame.draw.ellipse(screen, (255,255,255), (player2.centerx-8, player2.centery-25, 7, 10))
+        pygame.draw.ellipse(screen, (255,255,255), (player2.centerx+1, player2.centery-25, 7, 10))
+        pygame.draw.ellipse(screen, (0,0,0), (player2.centerx-5, player2.centery-21, 3, 5))
+        pygame.draw.ellipse(screen, (0,0,0), (player2.centerx+4, player2.centery-21, 3, 5))
         # Explorer hat
         pygame.draw.rect(screen, (139,69,19), (player2.centerx-15, player2.centery-40, 30, 10))
         pygame.draw.rect(screen, (205,133,63), (player2.centerx-10, player2.centery-45, 20, 8))
