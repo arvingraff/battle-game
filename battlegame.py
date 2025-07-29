@@ -72,7 +72,8 @@ mode = mode_lobby()
 
 def start_countdown():
     try:
-        pygame.mixer.Sound('321go.mp3').play()
+        sound = pygame.mixer.Sound('321go.mp3')
+        sound.play()
     except Exception as e:
         print(f"Error playing countdown sound: {e}")
     for i in [3,2,1,"GO!"]:
@@ -123,6 +124,7 @@ if mode == 1:
         coin_rects.append(pygame.Rect(x, y, 24, 24))
 
 start_countdown()
+countdown_done = True
 
 while True:
     now = time.time()
