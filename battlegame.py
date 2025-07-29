@@ -115,9 +115,140 @@ def get_player_name(prompt, ypos):
                     name += event.unicode
     return name
 
+# Character selection function
+
+def character_select(mode):
+    # Three character options per mode
+    if mode == 0:
+        options = ["Classic Mafia", "Mafia Boss", "Mafia Hitman"]
+    else:
+        options = ["Jungle Explorer", "Desert Adventurer", "Arctic Explorer"]
+    selected1 = 0
+    selected2 = 0
+    p1_done = False
+    p2_done = False
+    while not p1_done:
+        screen.fill((30,30,30))
+        title = lobby_font.render("Player 1: Choose Your Character (Enter to confirm)", True, (255,255,255))
+        screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-160))
+        for i, opt in enumerate(options):
+            color = (255,255,0) if i==selected1 else (200,200,200)
+            opt_text = font.render(opt, True, color)
+            screen.blit(opt_text, (WIDTH//2-opt_text.get_width()//2, HEIGHT//2-40+i*60))
+        pygame.display.flip()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    selected1 = (selected1-1)%len(options)
+                if event.key == pygame.K_DOWN:
+                    selected1 = (selected1+1)%len(options)
+                if event.key == pygame.K_RETURN:
+                    p1_done = True
+    while not p2_done:
+        screen.fill((30,30,30))
+        title = lobby_font.render("Player 2: Choose Your Character (Enter to confirm)", True, (255,255,255))
+        screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-160))
+        for i, opt in enumerate(options):
+            color = (255,255,0) if i==selected2 else (200,200,200)
+            opt_text = font.render(opt, True, color)
+            screen.blit(opt_text, (WIDTH//2-opt_text.get_width()//2, HEIGHT//2-40+i*60))
+        pygame.display.flip()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    selected2 = (selected2-1)%len(options)
+                if event.key == pygame.K_DOWN:
+                    selected2 = (selected2+1)%len(options)
+                if event.key == pygame.K_RETURN:
+                    p2_done = True
+    return [selected1, selected2]
+
+# Drawing functions for each character
+
+def draw_mafia_character(screen, x, y, style):
+    if style == 0:  # Classic Mafia
+        # Classic Mafia drawing code
+        pygame.draw.ellipse(screen, (224, 172, 105), (x-15, y-35, 30, 38))
+        pygame.draw.rect(screen, (60,60,60), (x-15, y-45, 30, 10))
+        pygame.draw.rect(screen, (30,30,30), (x-10, y-50, 20, 8))
+        pygame.draw.rect(screen, (0,0,0), (x-12, y-28, 24, 8))
+        pygame.draw.rect(screen, (30,144,255), (x-12, y-28, 24, 8), 2)
+        pygame.draw.arc(screen, (80,42,20), (x-7, y-8, 14, 6), 3.14, 2*3.14, 2)
+        pygame.draw.arc(screen, (0,0,0), (x-7, y-4, 14, 6), 3.14, 2*3.14, 2)
+        pygame.draw.rect(screen, (0,0,0), (x-14, y+3, 28, 38))
+        pygame.draw.rect(screen, (255,255,255), (x-6, y+3, 12, 38))
+        pygame.draw.rect(screen, (200,0,0), (x-2, y+10, 4, 24))
+    elif style == 1:  # Mafia Boss
+        # Mafia Boss drawing code
+        pygame.draw.ellipse(screen, (224, 172, 105), (x-18, y-38, 36, 44))
+        pygame.draw.rect(screen, (40,40,40), (x-18, y-50, 36, 12))
+        pygame.draw.rect(screen, (80,80,80), (x-10, y-58, 20, 10))
+        pygame.draw.rect(screen, (0,0,0), (x-14, y-28, 28, 10))
+        pygame.draw.circle(screen, (255,215,0), (x+10, y-20), 6)  # monocle
+        pygame.draw.rect(screen, (139,69,19), (x-8, y-8, 16, 8))  # cigar
+        pygame.draw.rect(screen, (0,0,0), (x-18, y+3, 36, 44))
+        pygame.draw.rect(screen, (255,255,255), (x-6, y+3, 12, 44))
+        pygame.draw.rect(screen, (200,0,0), (x-2, y+18, 4, 24))
+    elif style == 2:  # Mafia Hitman
+        # Mafia Hitman drawing code
+        pygame.draw.ellipse(screen, (224, 172, 105), (x-15, y-35, 30, 38))
+        pygame.draw.rect(screen, (0,0,0), (x-15, y-45, 30, 10))
+        pygame.draw.rect(screen, (80,80,80), (x-10, y-50, 20, 8))
+        pygame.draw.rect(screen, (0,0,0), (x-14, y-28, 28, 8))
+        pygame.draw.arc(screen, (255,0,0), (x-7, y-8, 14, 6), 3.14, 2*3.14, 2)
+        pygame.draw.rect(screen, (0,0,0), (x-14, y+3, 28, 38))
+        pygame.draw.rect(screen, (255,0,0), (x-6, y+3, 12, 38))
+        pygame.draw.rect(screen, (200,0,0), (x-2, y+10, 4, 24))
+        pygame.draw.line(screen, (150,0,0), (x-15, y-10), (x+15, y-10), 3)  # scar
+    # ...add arms, legs, shoes as needed...
+
+def draw_explorer_character(screen, x, y, style):
+    if style == 0:  # Jungle Explorer
+        pygame.draw.ellipse(screen, (255, 224, 189), (x-15, y-35, 30, 38))
+        pygame.draw.ellipse(screen, (255,255,255), (x-8, y-25, 7, 10))
+        pygame.draw.ellipse(screen, (255,255,255), (x+1, y-25, 7, 10))
+        pygame.draw.ellipse(screen, (0,0,0), (x-5, y-21, 3, 5))
+        pygame.draw.ellipse(screen, (0,0,0), (x+4, y-21, 3, 5))
+        pygame.draw.rect(screen, (139,69,19), (x-15, y-40, 30, 10))
+        pygame.draw.rect(screen, (205,133,63), (x-10, y-45, 20, 8))
+        pygame.draw.arc(screen, (255,0,0), (x-7, y-10, 14, 10), 3.14, 2*3.14, 3)
+        pygame.draw.rect(screen, (0,128,0), (x-18, y+10, 36, 18))
+        pygame.draw.rect(screen, (0, 200, 0), (x-10, y+3, 20, 38))
+    elif style == 1:  # Desert Adventurer
+        pygame.draw.ellipse(screen, (255, 224, 189), (x-15, y-35, 30, 38))
+        pygame.draw.ellipse(screen, (255,255,255), (x-8, y-25, 7, 10))
+        pygame.draw.ellipse(screen, (255,255,255), (x+1, y-25, 7, 10))
+        pygame.draw.ellipse(screen, (0,0,0), (x-5, y-21, 3, 5))
+        pygame.draw.ellipse(screen, (0,0,0), (x+4, y-21, 3, 5))
+        pygame.draw.rect(screen, (210,180,140), (x-15, y-40, 30, 10))  # sun hat
+        pygame.draw.rect(screen, (255,222,173), (x-10, y-45, 20, 8))  # scarf
+        pygame.draw.arc(screen, (255,140,0), (x-7, y-10, 14, 10), 3.14, 2*3.14, 3)
+        pygame.draw.rect(screen, (210,180,140), (x-18, y+10, 36, 18))
+        pygame.draw.rect(screen, (255, 228, 181), (x-10, y+3, 20, 38))
+        pygame.draw.rect(screen, (255,215,0), (x-10, y+25, 20, 8))  # goggles
+    elif style == 2:  # Arctic Explorer
+        pygame.draw.ellipse(screen, (220, 220, 255), (x-15, y-35, 30, 38))  # pale face
+        pygame.draw.ellipse(screen, (255,255,255), (x-8, y-25, 7, 10))
+        pygame.draw.ellipse(screen, (255,255,255), (x+1, y-25, 7, 10))
+        pygame.draw.ellipse(screen, (0,0,0), (x-5, y-21, 3, 5))
+        pygame.draw.ellipse(screen, (0,0,0), (x+4, y-21, 3, 5))
+        pygame.draw.rect(screen, (135,206,250), (x-15, y-40, 30, 10))  # fur hood
+        pygame.draw.rect(screen, (255,255,255), (x-10, y-45, 20, 8))  # fur trim
+        pygame.draw.arc(screen, (255,0,0), (x-7, y-10, 14, 10), 3.14, 2*3.14, 3)
+        pygame.draw.rect(screen, (0,191,255), (x-18, y+10, 36, 18))  # blue parka
+        pygame.draw.rect(screen, (135,206,250), (x-10, y+3, 20, 38))  # mittens
+        pygame.draw.circle(screen, (255,182,193), (x, y-20), 4)  # rosy cheeks
+    # ...add arms, legs, shoes as needed...
+
 # Main game loop refactored into a function
 
-def run_game(mode, player1_name, player2_name):
+def run_game(mode, player1_name, player2_name, char_choices):
     # Initialize game state variables for each session
     player1 = pygame.Rect(100, HEIGHT//2, 50, 50)
     player2 = pygame.Rect(WIDTH-150, HEIGHT//2, 50, 50)
@@ -314,6 +445,13 @@ def run_game(mode, player1_name, player2_name):
         pygame.draw.ellipse(screen, (200,0,0), (player2.centerx-12, player2.centery+68, 14, 8))
         pygame.draw.ellipse(screen, (200,0,0), (player2.centerx-2, player2.centery+68, 14, 8))
 
+        # Draw characters using selected styles
+        if mode == 0:
+            draw_mafia_character(screen, player1.centerx, player1.centery, char_choices[0])
+            draw_mafia_character(screen, player2.centerx, player2.centery, char_choices[1])
+        else:
+            draw_explorer_character(screen, player1.centerx, player1.centery, char_choices[0])
+            draw_explorer_character(screen, player2.centerx, player2.centery, char_choices[1])
         # Draw Player 1 name above head
         name_text1 = font.render(player1_name, True, (0,0,255))
         screen.blit(name_text1, (player1.centerx - name_text1.get_width()//2, player1.centery-60))
@@ -385,89 +523,13 @@ def run_game(mode, player1_name, player2_name):
         # Win logic
         if player1_health <= 0:
             win_text = font.render("Player 2 Wins!", True, (255, 0, 0))
-            screen.fill((30,30,30))
-            # Draw both players in mafia style (battle mode)
-            # Player 1
-            pygame.draw.ellipse(screen, (224, 172, 105), (WIDTH//2-100, HEIGHT//2-35, 30, 38))
-            pygame.draw.rect(screen, (60,60,60), (WIDTH//2-100, HEIGHT//2-45, 30, 10))
-            pygame.draw.rect(screen, (30,30,30), (WIDTH//2-95, HEIGHT//2-50, 20, 8))
-            pygame.draw.rect(screen, (0,0,0), (WIDTH//2-97, HEIGHT//2-28, 24, 8))
-            pygame.draw.rect(screen, (30,144,255), (WIDTH//2-97, HEIGHT//2-28, 24, 8), 2)
-            pygame.draw.arc(screen, (80,42,20), (WIDTH//2-92, HEIGHT//2-8, 14, 6), 3.14, 2*3.14, 2)
-            pygame.draw.arc(screen, (0,0,0), (WIDTH//2-92, HEIGHT//2-4, 14, 6), 3.14, 2*3.14, 2)
-            pygame.draw.rect(screen, (0,0,0), (WIDTH//2-99, HEIGHT//2+3, 28, 38))
-            pygame.draw.rect(screen, (255,255,255), (WIDTH//2-91, HEIGHT//2+3, 12, 38))
-            pygame.draw.rect(screen, (200,0,0), (WIDTH//2-87, HEIGHT//2+10, 4, 24))
-            pygame.draw.line(screen, (0,0,0), (WIDTH//2-105, HEIGHT//2+10), (WIDTH//2-85, HEIGHT//2+10), 8)
-            pygame.draw.circle(screen, (224, 172, 105), (WIDTH//2-105, HEIGHT//2+10), 5)
-            pygame.draw.circle(screen, (224, 172, 105), (WIDTH//2-85, HEIGHT//2+10), 5)
-            pygame.draw.line(screen, (0,0,0), (WIDTH//2-95, HEIGHT//2+41), (WIDTH//2-95, HEIGHT//2+70), 8)
-            pygame.draw.line(screen, (0,0,0), (WIDTH//2-85, HEIGHT//2+41), (WIDTH//2-85, HEIGHT//2+70), 8)
-            pygame.draw.ellipse(screen, (0,0,0), (WIDTH//2-97, HEIGHT//2+68, 14, 8))
-            pygame.draw.ellipse(screen, (0,0,0), (WIDTH//2-87, HEIGHT//2+68, 14, 8))
-            # Player 2
-            pygame.draw.ellipse(screen, (224, 172, 105), (WIDTH//2+70, HEIGHT//2-35, 30, 38))
-            pygame.draw.rect(screen, (60,60,60), (WIDTH//2+70, HEIGHT//2-45, 30, 10))
-            pygame.draw.rect(screen, (30,30,30), (WIDTH//2+75, HEIGHT//2-50, 20, 8))
-            pygame.draw.rect(screen, (0,0,0), (WIDTH//2+73, HEIGHT//2-28, 24, 8))
-            pygame.draw.rect(screen, (255,0,0), (WIDTH//2+73, HEIGHT//2-28, 24, 8), 2)
-            pygame.draw.arc(screen, (80,42,20), (WIDTH//2+78, HEIGHT//2-8, 14, 6), 3.14, 2*3.14, 2)
-            pygame.draw.arc(screen, (0,0,0), (WIDTH//2+78, HEIGHT//2-4, 14, 6), 3.14, 2*3.14, 2)
-            pygame.draw.rect(screen, (0,0,0), (WIDTH//2+71, HEIGHT//2+3, 28, 38))
-            pygame.draw.rect(screen, (255,255,255), (WIDTH//2+79, HEIGHT//2+3, 12, 38))
-            pygame.draw.rect(screen, (200,0,0), (WIDTH//2+83, HEIGHT//2+10, 4, 24))
-            pygame.draw.line(screen, (0,0,0), (WIDTH//2+65, HEIGHT//2+10), (WIDTH//2+105, HEIGHT//2+10), 8)
-            pygame.draw.circle(screen, (224, 172, 105), (WIDTH//2+65, HEIGHT//2+10), 5)
-            pygame.draw.circle(screen, (224, 172, 105), (WIDTH//2+105, HEIGHT//2+10), 5)
-            pygame.draw.line(screen, (0,0,0), (WIDTH//2+75, HEIGHT//2+41), (WIDTH//2+75, HEIGHT//2+70), 8)
-            pygame.draw.line(screen, (0,0,0), (WIDTH//2+85, HEIGHT//2+41), (WIDTH//2+85, HEIGHT//2+70), 8)
-            pygame.draw.ellipse(screen, (0,0,0), (WIDTH//2+73, HEIGHT//2+68, 14, 8))
-            pygame.draw.ellipse(screen, (0,0,0), (WIDTH//2+83, HEIGHT//2+68, 14, 8))
-            screen.blit(win_text, (WIDTH//2 - win_text.get_width()//2, HEIGHT//2-100))
+            screen.blit(win_text, (WIDTH//2 - win_text.get_width()//2, HEIGHT//2))
             pygame.display.flip()
             pygame.time.wait(2000)
             return
         if player2_health <= 0:
             win_text = font.render("Player 1 Wins!", True, (0, 0, 255))
-            screen.fill((30,30,30))
-            # Draw both players in mafia style (battle mode)
-            # Player 1
-            pygame.draw.ellipse(screen, (224, 172, 105), (WIDTH//2-100, HEIGHT//2-35, 30, 38))
-            pygame.draw.rect(screen, (60,60,60), (WIDTH//2-100, HEIGHT//2-45, 30, 10))
-            pygame.draw.rect(screen, (30,30,30), (WIDTH//2-95, HEIGHT//2-50, 20, 8))
-            pygame.draw.rect(screen, (0,0,0), (WIDTH//2-97, HEIGHT//2-28, 24, 8))
-            pygame.draw.rect(screen, (30,144,255), (WIDTH//2-97, HEIGHT//2-28, 24, 8), 2)
-            pygame.draw.arc(screen, (80,42,20), (WIDTH//2-92, HEIGHT//2-8, 14, 6), 3.14, 2*3.14, 2)
-            pygame.draw.arc(screen, (0,0,0), (WIDTH//2-92, HEIGHT//2-4, 14, 6), 3.14, 2*3.14, 2)
-            pygame.draw.rect(screen, (0,0,0), (WIDTH//2-99, HEIGHT//2+3, 28, 38))
-            pygame.draw.rect(screen, (255,255,255), (WIDTH//2-91, HEIGHT//2+3, 12, 38))
-            pygame.draw.rect(screen, (200,0,0), (WIDTH//2-87, HEIGHT//2+10, 4, 24))
-            pygame.draw.line(screen, (0,0,0), (WIDTH//2-105, HEIGHT//2+10), (WIDTH//2-85, HEIGHT//2+10), 8)
-            pygame.draw.circle(screen, (224, 172, 105), (WIDTH//2-105, HEIGHT//2+10), 5)
-            pygame.draw.circle(screen, (224, 172, 105), (WIDTH//2-85, HEIGHT//2+10), 5)
-            pygame.draw.line(screen, (0,0,0), (WIDTH//2-95, HEIGHT//2+41), (WIDTH//2-95, HEIGHT//2+70), 8)
-            pygame.draw.line(screen, (0,0,0), (WIDTH//2-85, HEIGHT//2+41), (WIDTH//2-85, HEIGHT//2+70), 8)
-            pygame.draw.ellipse(screen, (0,0,0), (WIDTH//2-97, HEIGHT//2+68, 14, 8))
-            pygame.draw.ellipse(screen, (0,0,0), (WIDTH//2-87, HEIGHT//2+68, 14, 8))
-            # Player 2
-            pygame.draw.ellipse(screen, (224, 172, 105), (WIDTH//2+70, HEIGHT//2-35, 30, 38))
-            pygame.draw.rect(screen, (60,60,60), (WIDTH//2+70, HEIGHT//2-45, 30, 10))
-            pygame.draw.rect(screen, (30,30,30), (WIDTH//2+75, HEIGHT//2-50, 20, 8))
-            pygame.draw.rect(screen, (0,0,0), (WIDTH//2+73, HEIGHT//2-28, 24, 8))
-            pygame.draw.rect(screen, (255,0,0), (WIDTH//2+73, HEIGHT//2-28, 24, 8), 2)
-            pygame.draw.arc(screen, (80,42,20), (WIDTH//2+78, HEIGHT//2-8, 14, 6), 3.14, 2*3.14, 2)
-            pygame.draw.arc(screen, (0,0,0), (WIDTH//2+78, HEIGHT//2-4, 14, 6), 3.14, 2*3.14, 2)
-            pygame.draw.rect(screen, (0,0,0), (WIDTH//2+71, HEIGHT//2+3, 28, 38))
-            pygame.draw.rect(screen, (255,255,255), (WIDTH//2+79, HEIGHT//2+3, 12, 38))
-            pygame.draw.rect(screen, (200,0,0), (WIDTH//2+83, HEIGHT//2+10, 4, 24))
-            pygame.draw.line(screen, (0,0,0), (WIDTH//2+65, HEIGHT//2+10), (WIDTH//2+105, HEIGHT//2+10), 8)
-            pygame.draw.circle(screen, (224, 172, 105), (WIDTH//2+65, HEIGHT//2+10), 5)
-            pygame.draw.circle(screen, (224, 172, 105), (WIDTH//2+105, HEIGHT//2+10), 5)
-            pygame.draw.line(screen, (0,0,0), (WIDTH//2+75, HEIGHT//2+41), (WIDTH//2+75, HEIGHT//2+70), 8)
-            pygame.draw.line(screen, (0,0,0), (WIDTH//2+85, HEIGHT//2+41), (WIDTH//2+85, HEIGHT//2+70), 8)
-            pygame.draw.ellipse(screen, (0,0,0), (WIDTH//2+73, HEIGHT//2+68, 14, 8))
-            pygame.draw.ellipse(screen, (0,0,0), (WIDTH//2+83, HEIGHT//2+68, 14, 8))
-            screen.blit(win_text, (WIDTH//2 - win_text.get_width()//2, HEIGHT//2-100))
+            screen.blit(win_text, (WIDTH//2 - win_text.get_width()//2, HEIGHT//2))
             pygame.display.flip()
             pygame.time.wait(2000)
             return
@@ -498,7 +560,8 @@ while True:
     mode = mode_lobby()
     player1_name = get_player_name("Player 1, enter your name:", HEIGHT//2 - 120)
     player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
-    run_game(mode, player1_name, player2_name)
+    char_choices = character_select(mode)
+    run_game(mode, player1_name, player2_name, char_choices)
 
 
 
