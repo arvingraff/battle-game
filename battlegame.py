@@ -331,22 +331,22 @@ while True:
     # Draw bullets
     for bullet in bullets:
         pygame.draw.rect(screen, (255,255,0), bullet['rect'])
-    health_text = font.render(f"P1 Health: {player1_health}  P2 Health: {player2_health}", True, (255,255,255))
-    screen.blit(health_text, (WIDTH//2 - health_text.get_width()//2, 20))
-
-    # Show shots left and reload status for both players
-    if player1_shots < RELOAD_LIMIT and now > player1_reload_time:
-        p1_status = f"P1 Shots: {RELOAD_LIMIT - player1_shots}"
-    else:
-        p1_status = "P1 Reloading..."
-    if player2_shots < RELOAD_LIMIT and now > player2_reload_time:
-        p2_status = f"P2 Shots: {RELOAD_LIMIT - player2_shots}"
-    else:
-        p2_status = "P2 Reloading..."
-    p1_status_text = font.render(p1_status, True, (0,0,255))
-    p2_status_text = font.render(p2_status, True, (255,0,0))
-    screen.blit(p1_status_text, (40, 20))
-    screen.blit(p2_status_text, (WIDTH-40-p2_status_text.get_width(), 20))
+    # Show shots and health only in battle mode
+    if mode == 0:
+        health_text = font.render(f"P1 Health: {player1_health}  P2 Health: {player2_health}", True, (255,255,255))
+        screen.blit(health_text, (WIDTH//2 - health_text.get_width()//2, 20))
+        if player1_shots < RELOAD_LIMIT and now > player1_reload_time:
+            p1_status = f"P1 Shots: {RELOAD_LIMIT - player1_shots}"
+        else:
+            p1_status = "P1 Reloading..."
+        if player2_shots < RELOAD_LIMIT and now > player2_reload_time:
+            p2_status = f"P2 Shots: {RELOAD_LIMIT - player2_shots}"
+        else:
+            p2_status = "P2 Reloading..."
+        p1_status_text = font.render(p1_status, True, (0,0,255))
+        p2_status_text = font.render(p2_status, True, (255,0,0))
+        screen.blit(p1_status_text, (40, 20))
+        screen.blit(p2_status_text, (WIDTH-40-p2_status_text.get_width(), 20))
 
     # Win logic
     if player1_health <= 0:
