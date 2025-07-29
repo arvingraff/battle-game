@@ -401,42 +401,36 @@ while True:
 
     # Draw characters differently based on mode
     if mode == 0:
-        # Battle mode: mafia style with sunglasses and non-happy smile
+        # Battle mode: mafia style with sunglasses, non-happy smile, and only dark fedora hat
         # Player 1
         pygame.draw.ellipse(screen, (224, 172, 105), (player1.centerx-15, player1.centery-35, 30, 38))
-        # Fedora hat
+        # Fedora hat (dark colors only)
         pygame.draw.rect(screen, (60,60,60), (player1.centerx-15, player1.centery-45, 30, 10))
-        pygame.draw.rect(screen, (0,0,0), (player1.centerx-10, player1.centery-50, 20, 8))
+        pygame.draw.rect(screen, (30,30,30), (player1.centerx-10, player1.centery-50, 20, 8))
         # Sunglasses
         pygame.draw.rect(screen, (0,0,0), (player1.centerx-12, player1.centery-28, 24, 8))
         pygame.draw.rect(screen, (30,144,255), (player1.centerx-12, player1.centery-28, 24, 8), 2)
-        # Eyes hidden by sunglasses
         # Mustache
         pygame.draw.arc(screen, (80,42,20), (player1.centerx-7, player1.centery-8, 14, 6), 3.14, 2*3.14, 2)
-        # Non-happy smile (flat or slight frown)
+        # Non-happy smile
         pygame.draw.arc(screen, (0,0,0), (player1.centerx-7, player1.centery-4, 14, 6), 3.14, 2*3.14, 2)
         # Suit (black jacket, white shirt, red tie)
         pygame.draw.rect(screen, (0,0,0), (player1.centerx-14, player1.centery+3, 28, 38))
         pygame.draw.rect(screen, (255,255,255), (player1.centerx-6, player1.centery+3, 12, 38))
         pygame.draw.rect(screen, (200,0,0), (player1.centerx-2, player1.centery+10, 4, 24))
-        # Arms (black jacket)
         pygame.draw.line(screen, (0,0,0), (player1.centerx-20, player1.centery+10), (player1.centerx+20, player1.centery+10), 8)
-        # Hands
         pygame.draw.circle(screen, (224, 172, 105), (player1.centerx-20, player1.centery+10), 5)
         pygame.draw.circle(screen, (224, 172, 105), (player1.centerx+20, player1.centery+10), 5)
-        # Pants (black)
         pygame.draw.line(screen, (0,0,0), (player1.centerx-5, player1.centery+41), (player1.centerx-5, player1.centery+70), 8)
         pygame.draw.line(screen, (0,0,0), (player1.centerx+5, player1.centery+41), (player1.centerx+5, player1.centery+70), 8)
-        # Shoes (black)
         pygame.draw.ellipse(screen, (0,0,0), (player1.centerx-12, player1.centery+68, 14, 8))
         pygame.draw.ellipse(screen, (0,0,0), (player1.centerx-2, player1.centery+68, 14, 8))
         # Player 2
         pygame.draw.ellipse(screen, (224, 172, 105), (player2.centerx-15, player2.centery-35, 30, 38))
         pygame.draw.rect(screen, (60,60,60), (player2.centerx-15, player2.centery-45, 30, 10))
-        pygame.draw.rect(screen, (0,0,0), (player2.centerx-10, player2.centery-50, 20, 8))
+        pygame.draw.rect(screen, (30,30,30), (player2.centerx-10, player2.centery-50, 20, 8))
         pygame.draw.rect(screen, (0,0,0), (player2.centerx-12, player2.centery-28, 24, 8))
         pygame.draw.rect(screen, (255,0,0), (player2.centerx-12, player2.centery-28, 24, 8), 2)
-        # Eyes hidden by sunglasses
         pygame.draw.arc(screen, (80,42,20), (player2.centerx-7, player2.centery-8, 14, 6), 3.14, 2*3.14, 2)
         pygame.draw.arc(screen, (0,0,0), (player2.centerx-7, player2.centery-4, 14, 6), 3.14, 2*3.14, 2)
         pygame.draw.rect(screen, (0,0,0), (player2.centerx-14, player2.centery+3, 28, 38))
