@@ -385,163 +385,89 @@ def run_game(mode, player1_name, player2_name):
         # Win logic
         if player1_health <= 0:
             win_text = font.render("Player 2 Wins!", True, (255, 0, 0))
-            screen.blit(win_text, (WIDTH//2 - win_text.get_width()//2, HEIGHT//2))
+            screen.fill((30,30,30))
+            # Draw both players in mafia style (battle mode)
+            # Player 1
+            pygame.draw.ellipse(screen, (224, 172, 105), (WIDTH//2-100, HEIGHT//2-35, 30, 38))
+            pygame.draw.rect(screen, (60,60,60), (WIDTH//2-100, HEIGHT//2-45, 30, 10))
+            pygame.draw.rect(screen, (30,30,30), (WIDTH//2-95, HEIGHT//2-50, 20, 8))
+            pygame.draw.rect(screen, (0,0,0), (WIDTH//2-97, HEIGHT//2-28, 24, 8))
+            pygame.draw.rect(screen, (30,144,255), (WIDTH//2-97, HEIGHT//2-28, 24, 8), 2)
+            pygame.draw.arc(screen, (80,42,20), (WIDTH//2-92, HEIGHT//2-8, 14, 6), 3.14, 2*3.14, 2)
+            pygame.draw.arc(screen, (0,0,0), (WIDTH//2-92, HEIGHT//2-4, 14, 6), 3.14, 2*3.14, 2)
+            pygame.draw.rect(screen, (0,0,0), (WIDTH//2-99, HEIGHT//2+3, 28, 38))
+            pygame.draw.rect(screen, (255,255,255), (WIDTH//2-91, HEIGHT//2+3, 12, 38))
+            pygame.draw.rect(screen, (200,0,0), (WIDTH//2-87, HEIGHT//2+10, 4, 24))
+            pygame.draw.line(screen, (0,0,0), (WIDTH//2-105, HEIGHT//2+10), (WIDTH//2-85, HEIGHT//2+10), 8)
+            pygame.draw.circle(screen, (224, 172, 105), (WIDTH//2-105, HEIGHT//2+10), 5)
+            pygame.draw.circle(screen, (224, 172, 105), (WIDTH//2-85, HEIGHT//2+10), 5)
+            pygame.draw.line(screen, (0,0,0), (WIDTH//2-95, HEIGHT//2+41), (WIDTH//2-95, HEIGHT//2+70), 8)
+            pygame.draw.line(screen, (0,0,0), (WIDTH//2-85, HEIGHT//2+41), (WIDTH//2-85, HEIGHT//2+70), 8)
+            pygame.draw.ellipse(screen, (0,0,0), (WIDTH//2-97, HEIGHT//2+68, 14, 8))
+            pygame.draw.ellipse(screen, (0,0,0), (WIDTH//2-87, HEIGHT//2+68, 14, 8))
+            # Player 2
+            pygame.draw.ellipse(screen, (224, 172, 105), (WIDTH//2+70, HEIGHT//2-35, 30, 38))
+            pygame.draw.rect(screen, (60,60,60), (WIDTH//2+70, HEIGHT//2-45, 30, 10))
+            pygame.draw.rect(screen, (30,30,30), (WIDTH//2+75, HEIGHT//2-50, 20, 8))
+            pygame.draw.rect(screen, (0,0,0), (WIDTH//2+73, HEIGHT//2-28, 24, 8))
+            pygame.draw.rect(screen, (255,0,0), (WIDTH//2+73, HEIGHT//2-28, 24, 8), 2)
+            pygame.draw.arc(screen, (80,42,20), (WIDTH//2+78, HEIGHT//2-8, 14, 6), 3.14, 2*3.14, 2)
+            pygame.draw.arc(screen, (0,0,0), (WIDTH//2+78, HEIGHT//2-4, 14, 6), 3.14, 2*3.14, 2)
+            pygame.draw.rect(screen, (0,0,0), (WIDTH//2+71, HEIGHT//2+3, 28, 38))
+            pygame.draw.rect(screen, (255,255,255), (WIDTH//2+79, HEIGHT//2+3, 12, 38))
+            pygame.draw.rect(screen, (200,0,0), (WIDTH//2+83, HEIGHT//2+10, 4, 24))
+            pygame.draw.line(screen, (0,0,0), (WIDTH//2+65, HEIGHT//2+10), (WIDTH//2+105, HEIGHT//2+10), 8)
+            pygame.draw.circle(screen, (224, 172, 105), (WIDTH//2+65, HEIGHT//2+10), 5)
+            pygame.draw.circle(screen, (224, 172, 105), (WIDTH//2+105, HEIGHT//2+10), 5)
+            pygame.draw.line(screen, (0,0,0), (WIDTH//2+75, HEIGHT//2+41), (WIDTH//2+75, HEIGHT//2+70), 8)
+            pygame.draw.line(screen, (0,0,0), (WIDTH//2+85, HEIGHT//2+41), (WIDTH//2+85, HEIGHT//2+70), 8)
+            pygame.draw.ellipse(screen, (0,0,0), (WIDTH//2+73, HEIGHT//2+68, 14, 8))
+            pygame.draw.ellipse(screen, (0,0,0), (WIDTH//2+83, HEIGHT//2+68, 14, 8))
+            screen.blit(win_text, (WIDTH//2 - win_text.get_width()//2, HEIGHT//2-100))
             pygame.display.flip()
             pygame.time.wait(2000)
             return
         if player2_health <= 0:
             win_text = font.render("Player 1 Wins!", True, (0, 0, 255))
-            screen.blit(win_text, (WIDTH//2 - win_text.get_width()//2, HEIGHT//2))
-            pygame.display.flip()
-            pygame.time.wait(2000)
-            return
-
-        # Draw coins in coin mode
-        if mode == 1:
-            for coin in coin_rects:
-                pygame.draw.circle(screen, (255,215,0), coin.center, 12)
-            # Show scores and timer
-            score_text = font.render(f"{player1_name}: {player1_score}   {player2_name}: {player2_score}", True, (255,255,255))
-            screen.blit(score_text, (WIDTH//2-score_text.get_width()//2, 20))
-            timer_text = font.render(f"Time left: {max(0,int(coin_timer-now))}", True, (255,255,255))
-            screen.blit(timer_text, (WIDTH//2-timer_text.get_width()//2, 60))
-            # End game after 30 seconds
-            if now > coin_timer:
-                winner = player1_name if player1_score > player2_score else player2_name if player2_score > player1_score else "Tie!"
-                win_text = font.render(f"Winner: {winner}", True, (0,255,0))
-                screen.blit(win_text, (WIDTH//2-win_text.get_width()//2, HEIGHT//2))
-                pygame.display.flip()
-                pygame.time.wait(3000)
-                return
-
-        # Draw characters differently based on mode
-        if mode == 0:
-            # Battle mode: mafia style with sunglasses, non-happy smile, dark fedora hats, and no hair
+            screen.fill((30,30,30))
+            # Draw both players in mafia style (battle mode)
             # Player 1
-            pygame.draw.ellipse(screen, (224, 172, 105), (player1.centerx-15, player1.centery-35, 30, 38))
-            # Fedora hat (dark colors only, no hair)
-            pygame.draw.rect(screen, (60,60,60), (player1.centerx-15, player1.centery-45, 30, 10))
-            pygame.draw.rect(screen, (30,30,30), (player1.centerx-10, player1.centery-50, 20, 8))
-            # Sunglasses
-            pygame.draw.rect(screen, (0,0,0), (player1.centerx-12, player1.centery-28, 24, 8))
-            pygame.draw.rect(screen, (30,144,255), (player1.centerx-12, player1.centery-28, 24, 8), 2)
-            # Mustache
-            pygame.draw.arc(screen, (80,42,20), (player1.centerx-7, player1.centery-8, 14, 6), 3.14, 2*3.14, 2)
-            # Non-happy smile
-            pygame.draw.arc(screen, (0,0,0), (player1.centerx-7, player1.centery-4, 14, 6), 3.14, 2*3.14, 2)
-            # Suit (black jacket, white shirt, red tie)
-            pygame.draw.rect(screen, (0,0,0), (player1.centerx-14, player1.centery+3, 28, 38))
-            pygame.draw.rect(screen, (255,255,255), (player1.centerx-6, player1.centery+3, 12, 38))
-            pygame.draw.rect(screen, (200,0,0), (player1.centerx-2, player1.centery+10, 4, 24))
-            pygame.draw.line(screen, (0,0,0), (player1.centerx-20, player1.centery+10), (player1.centerx+20, player1.centery+10), 8)
-            pygame.draw.circle(screen, (224, 172, 105), (player1.centerx-20, player1.centery+10), 5)
-            pygame.draw.circle(screen, (224, 172, 105), (player1.centerx+20, player1.centery+10), 5)
-            pygame.draw.line(screen, (0,0,0), (player1.centerx-5, player1.centery+41), (player1.centerx-5, player1.centery+70), 8)
-            pygame.draw.line(screen, (0,0,0), (player1.centerx+5, player1.centery+41), (player1.centerx+5, player1.centery+70), 8)
-            pygame.draw.ellipse(screen, (0,0,0), (player1.centerx-12, player1.centery+68, 14, 8))
-            pygame.draw.ellipse(screen, (0,0,0), (player1.centerx-2, player1.centery+68, 14, 8))
+            pygame.draw.ellipse(screen, (224, 172, 105), (WIDTH//2-100, HEIGHT//2-35, 30, 38))
+            pygame.draw.rect(screen, (60,60,60), (WIDTH//2-100, HEIGHT//2-45, 30, 10))
+            pygame.draw.rect(screen, (30,30,30), (WIDTH//2-95, HEIGHT//2-50, 20, 8))
+            pygame.draw.rect(screen, (0,0,0), (WIDTH//2-97, HEIGHT//2-28, 24, 8))
+            pygame.draw.rect(screen, (30,144,255), (WIDTH//2-97, HEIGHT//2-28, 24, 8), 2)
+            pygame.draw.arc(screen, (80,42,20), (WIDTH//2-92, HEIGHT//2-8, 14, 6), 3.14, 2*3.14, 2)
+            pygame.draw.arc(screen, (0,0,0), (WIDTH//2-92, HEIGHT//2-4, 14, 6), 3.14, 2*3.14, 2)
+            pygame.draw.rect(screen, (0,0,0), (WIDTH//2-99, HEIGHT//2+3, 28, 38))
+            pygame.draw.rect(screen, (255,255,255), (WIDTH//2-91, HEIGHT//2+3, 12, 38))
+            pygame.draw.rect(screen, (200,0,0), (WIDTH//2-87, HEIGHT//2+10, 4, 24))
+            pygame.draw.line(screen, (0,0,0), (WIDTH//2-105, HEIGHT//2+10), (WIDTH//2-85, HEIGHT//2+10), 8)
+            pygame.draw.circle(screen, (224, 172, 105), (WIDTH//2-105, HEIGHT//2+10), 5)
+            pygame.draw.circle(screen, (224, 172, 105), (WIDTH//2-85, HEIGHT//2+10), 5)
+            pygame.draw.line(screen, (0,0,0), (WIDTH//2-95, HEIGHT//2+41), (WIDTH//2-95, HEIGHT//2+70), 8)
+            pygame.draw.line(screen, (0,0,0), (WIDTH//2-85, HEIGHT//2+41), (WIDTH//2-85, HEIGHT//2+70), 8)
+            pygame.draw.ellipse(screen, (0,0,0), (WIDTH//2-97, HEIGHT//2+68, 14, 8))
+            pygame.draw.ellipse(screen, (0,0,0), (WIDTH//2-87, HEIGHT//2+68, 14, 8))
             # Player 2
-            pygame.draw.ellipse(screen, (224, 172, 105), (player2.centerx-15, player2.centery-35, 30, 38))
-            pygame.draw.rect(screen, (60,60,60), (player2.centerx-15, player2.centery-45, 30, 10))
-            pygame.draw.rect(screen, (30,30,30), (player2.centerx-10, player2.centery-50, 20, 8))
-            pygame.draw.rect(screen, (0,0,0), (player2.centerx-12, player2.centery-28, 24, 8))
-            pygame.draw.rect(screen, (255,0,0), (player2.centerx-12, player2.centery-28, 24, 8), 2)
-            pygame.draw.arc(screen, (80,42,20), (player2.centerx-7, player2.centery-8, 14, 6), 3.14, 2*3.14, 2)
-            pygame.draw.arc(screen, (0,0,0), (player2.centerx-7, player2.centery-4, 14, 6), 3.14, 2*3.14, 2)
-            pygame.draw.rect(screen, (0,0,0), (player2.centerx-14, player2.centery+3, 28, 38))
-            pygame.draw.rect(screen, (255,255,255), (player2.centerx-6, player2.centery+3, 12, 38))
-            pygame.draw.rect(screen, (200,0,0), (player2.centerx-2, player2.centery+10, 4, 24))
-            pygame.draw.line(screen, (0,0,0), (player2.centerx-20, player2.centery+10), (player2.centerx+20, player2.centery+10), 8)
-            pygame.draw.circle(screen, (224, 172, 105), (player2.centerx-20, player2.centery+10), 5)
-            pygame.draw.circle(screen, (224, 172, 105), (player2.centerx+20, player2.centery+10), 5)
-            pygame.draw.line(screen, (0,0,0), (player2.centerx-5, player2.centery+41), (player2.centerx-5, player2.centery+70), 8)
-            pygame.draw.line(screen, (0,0,0), (player2.centerx+5, player2.centery+41), (player2.centerx+5, player2.centery+70), 8)
-            pygame.draw.ellipse(screen, (0,0,0), (player2.centerx-12, player2.centery+68, 14, 8))
-            pygame.draw.ellipse(screen, (0,0,0), (player2.centerx-2, player2.centery+68, 14, 8))
-        else:
-            # Coin mode: explorer/adventurer style with eyes
-            # Player 1
-            pygame.draw.ellipse(screen, (255, 224, 189), (player1.centerx-15, player1.centery-35, 30, 38))
-            # Eyes
-            pygame.draw.ellipse(screen, (255,255,255), (player1.centerx-8, player1.centery-25, 7, 10))
-            pygame.draw.ellipse(screen, (255,255,255), (player1.centerx+1, player1.centery-25, 7, 10))
-            pygame.draw.ellipse(screen, (0,0,0), (player1.centerx-5, player1.centery-21, 3, 5))
-            pygame.draw.ellipse(screen, (0,0,0), (player1.centerx+4, player1.centery-21, 3, 5))
-            # Explorer hat
-            pygame.draw.rect(screen, (139,69,19), (player1.centerx-15, player1.centery-40, 30, 10))
-            pygame.draw.rect(screen, (205,133,63), (player1.centerx-10, player1.centery-45, 20, 8))
-            # Big smile
-            pygame.draw.arc(screen, (255,0,0), (player1.centerx-7, player1.centery-10, 14, 10), 3.14, 2*3.14, 3)
-            # Backpack
-            pygame.draw.rect(screen, (0,128,0), (player1.centerx-18, player1.centery+10, 36, 18))
-            # Shirt (green)
-            pygame.draw.rect(screen, (0, 200, 0), (player1.centerx-10, player1.centery+3, 20, 38))
-            # Arms
-            pygame.draw.line(screen, (255, 224, 189), (player1.centerx-20, player1.centery+10), (player1.centerx+20, player1.centery+10), 8)
-            pygame.draw.circle(screen, (255, 224, 189), (player1.centerx-20, player1.centery+10), 5)
-            pygame.draw.circle(screen, (255, 224, 189), (player1.centerx+20, player1.centery+10), 5)
-            # Pants (brown)
-            pygame.draw.line(screen, (139,69,19), (player1.centerx-5, player1.centery+41), (player1.centerx-5, player1.centery+70), 8)
-            pygame.draw.line(screen, (139,69,19), (player1.centerx+5, player1.centery+41), (player1.centerx+5, player1.centery+70), 8)
-            # Shoes (tan)
-            pygame.draw.ellipse(screen, (205,133,63), (player1.centerx-12, player1.centery+68, 14, 8))
-            pygame.draw.ellipse(screen, (205,133,63), (player1.centerx-2, player1.centery+68, 14, 8))
-            # Player 2
-            pygame.draw.ellipse(screen, (255, 224, 189), (player2.centerx-15, player2.centery-35, 30, 38))
-            # Eyes
-            pygame.draw.ellipse(screen, (255,255,255), (player2.centerx-8, player2.centery-25, 7, 10))
-            pygame.draw.ellipse(screen, (255,255,255), (player2.centerx+1, player2.centery-25, 7, 10))
-            pygame.draw.ellipse(screen, (0,0,0), (player2.centerx-5, player2.centery-21, 3, 5))
-            pygame.draw.ellipse(screen, (0,0,0), (player2.centerx+4, player2.centery-21, 3, 5))
-            # Explorer hat
-            pygame.draw.rect(screen, (139,69,19), (player2.centerx-15, player2.centery-40, 30, 10))
-            pygame.draw.rect(screen, (205,133,63), (player2.centerx-10, player2.centery-45, 20, 8))
-            pygame.draw.arc(screen, (255,0,0), (player2.centerx-7, player2.centery-10, 14, 10), 3.14, 2*3.14, 3)
-            # Backpack
-            pygame.draw.rect(screen, (0,128,0), (player2.centerx-18, player2.centery+10, 36, 18))
-            # Shirt (orange)
-            pygame.draw.rect(screen, (255, 140, 0), (player2.centerx-10, player2.centery+3, 20, 38))
-            # Arms
-            pygame.draw.line(screen, (255, 224, 189), (player2.centerx-20, player2.centery+10), (player2.centerx+20, player2.centery+10), 8)
-            pygame.draw.circle(screen, (255, 224, 189), (player2.centerx-20, player2.centery+10), 5)
-            pygame.draw.circle(screen, (255, 224,189), (player2.centerx+20, player2.centery+10), 5)
-            # Pants (brown)
-            pygame.draw.line(screen, (139,69,19), (player2.centerx-5, player2.centery+41), (player2.centerx-5, player2.centery+70), 8)
-            pygame.draw.line(screen, (139,69,19), (player2.centerx+5, player2.centery+41), (player2.centerx+5, player2.centery+70), 8)
-            # Shoes (tan)
-            pygame.draw.ellipse(screen, (205,133,63), (player2.centerx-12, player2.centery+68, 14, 8))
-            pygame.draw.ellipse(screen, (205,133,63), (player2.centerx-2, player2.centery+68, 14, 8))
-
-        # Draw bullets
-        for bullet in bullets:
-            pygame.draw.rect(screen, (255,255,0), bullet['rect'])
-        # Show shots and health only in battle mode
-        if mode == 0:
-            health_text = font.render(f"P1 Health: {player1_health}  P2 Health: {player2_health}", True, (255,255,255))
-            screen.blit(health_text, (WIDTH//2 - health_text.get_width()//2, 20))
-            if player1_shots < RELOAD_LIMIT and now > player1_reload_time:
-                p1_status = f"P1 Shots: {RELOAD_LIMIT - player1_shots}"
-            else:
-                p1_status = "P1 Reloading..."
-            if player2_shots < RELOAD_LIMIT and now > player2_reload_time:
-                p2_status = f"P2 Shots: {RELOAD_LIMIT - player2_shots}"
-            else:
-                p2_status = "P2 Reloading..."
-            p1_status_text = font.render(p1_status, True, (0,0,255))
-            p2_status_text = font.render(p2_status, True, (255,0,0))
-            screen.blit(p1_status_text, (40, 20))
-            screen.blit(p2_status_text, (WIDTH-40-p2_status_text.get_width(), 20))
-
-        # Win logic
-        if player1_health <= 0:
-            win_text = font.render("Player 2 Wins!", True, (255, 0, 0))
-            screen.blit(win_text, (WIDTH//2 - win_text.get_width()//2, HEIGHT//2))
-            pygame.display.flip()
-            pygame.time.wait(2000)
-            return
-        if player2_health <= 0:
-            win_text = font.render("Player 1 Wins!", True, (0, 0, 255))
-            screen.blit(win_text, (WIDTH//2 - win_text.get_width()//2, HEIGHT//2))
+            pygame.draw.ellipse(screen, (224, 172, 105), (WIDTH//2+70, HEIGHT//2-35, 30, 38))
+            pygame.draw.rect(screen, (60,60,60), (WIDTH//2+70, HEIGHT//2-45, 30, 10))
+            pygame.draw.rect(screen, (30,30,30), (WIDTH//2+75, HEIGHT//2-50, 20, 8))
+            pygame.draw.rect(screen, (0,0,0), (WIDTH//2+73, HEIGHT//2-28, 24, 8))
+            pygame.draw.rect(screen, (255,0,0), (WIDTH//2+73, HEIGHT//2-28, 24, 8), 2)
+            pygame.draw.arc(screen, (80,42,20), (WIDTH//2+78, HEIGHT//2-8, 14, 6), 3.14, 2*3.14, 2)
+            pygame.draw.arc(screen, (0,0,0), (WIDTH//2+78, HEIGHT//2-4, 14, 6), 3.14, 2*3.14, 2)
+            pygame.draw.rect(screen, (0,0,0), (WIDTH//2+71, HEIGHT//2+3, 28, 38))
+            pygame.draw.rect(screen, (255,255,255), (WIDTH//2+79, HEIGHT//2+3, 12, 38))
+            pygame.draw.rect(screen, (200,0,0), (WIDTH//2+83, HEIGHT//2+10, 4, 24))
+            pygame.draw.line(screen, (0,0,0), (WIDTH//2+65, HEIGHT//2+10), (WIDTH//2+105, HEIGHT//2+10), 8)
+            pygame.draw.circle(screen, (224, 172, 105), (WIDTH//2+65, HEIGHT//2+10), 5)
+            pygame.draw.circle(screen, (224, 172, 105), (WIDTH//2+105, HEIGHT//2+10), 5)
+            pygame.draw.line(screen, (0,0,0), (WIDTH//2+75, HEIGHT//2+41), (WIDTH//2+75, HEIGHT//2+70), 8)
+            pygame.draw.line(screen, (0,0,0), (WIDTH//2+85, HEIGHT//2+41), (WIDTH//2+85, HEIGHT//2+70), 8)
+            pygame.draw.ellipse(screen, (0,0,0), (WIDTH//2+73, HEIGHT//2+68, 14, 8))
+            pygame.draw.ellipse(screen, (0,0,0), (WIDTH//2+83, HEIGHT//2+68, 14, 8))
+            screen.blit(win_text, (WIDTH//2 - win_text.get_width()//2, HEIGHT//2-100))
             pygame.display.flip()
             pygame.time.wait(2000)
             return
