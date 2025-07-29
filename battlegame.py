@@ -71,6 +71,10 @@ def mode_lobby():
 mode = mode_lobby()
 
 def start_countdown():
+    try:
+        pygame.mixer.Sound('321go.mp3').play()
+    except Exception as e:
+        print(f"Error playing countdown sound: {e}")
     for i in [3,2,1,"GO!"]:
         screen.fill((30,30,30))
         countdown_font = pygame.font.SysFont(None, 180)
