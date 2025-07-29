@@ -73,26 +73,19 @@ mode = mode_lobby()
 def start_countdown():
     try:
         sound = pygame.mixer.Sound('321go.mp3')
-        duration = sound.get_length()
         sound.play()
-        steps = [3,2,1,"GO!"]
-        step_time = duration / len(steps)
-        for i in steps:
-            screen.fill((30,30,30))
-            countdown_font = pygame.font.SysFont(None, 180)
-            text = countdown_font.render(str(i), True, (255,255,0))
-            screen.blit(text, (WIDTH//2-text.get_width()//2, HEIGHT//2-text.get_height()//2))
-            pygame.display.flip()
-            pygame.time.wait(int(step_time*1000))
     except Exception as e:
         print(f"Error playing countdown sound: {e}")
-        for i in [3,2,1,"GO!"]:
-            screen.fill((30,30,30))
-            countdown_font = pygame.font.SysFont(None, 180)
-            text = countdown_font.render(str(i), True, (255,255,0))
-            screen.blit(text, (WIDTH//2-text.get_width()//2, HEIGHT//2-text.get_height()//2))
-            pygame.display.flip()
-            pygame.time.wait(800 if i!="GO!" else 600)
+    # Use default timings for each cue
+    timings = [0, 800, 1600, 2400]  # ms after start for 3, 2, 1, GO!
+    steps = [3,2,1,"GO!"]
+    for idx, i in enumerate(steps):
+        screen.fill((30,30,30))
+        countdown_font = pygame.font.SysFont(None, 180)
+        text = countdown_font.render(str(i), True, (255,255,0))
+        screen.blit(text, (WIDTH//2-text.get_width()//2, HEIGHT//2-text.get_height()//2))
+        pygame.display.flip()
+        pygame.time.wait(800 if i!="GO!" else 600)
 
 # Lobby to get player names
 def get_player_name(prompt, ypos):
