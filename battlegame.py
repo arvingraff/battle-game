@@ -1224,7 +1224,7 @@ def run_survival_mode(player_name, char_choice):
     player = pygame.Rect(WIDTH//2, HEIGHT-120, 50, 50)
     speed = 8
     monsters = []
-    monster_speed = 3
+    monster_speed = 1  # Slower monsters
     monster_size = 40
     bullets = []
     shots = 0
@@ -1233,6 +1233,8 @@ def run_survival_mode(player_name, char_choice):
     RELOAD_DURATION = 2
     font_big = pygame.font.SysFont(None, 72)
     health = 5  # Player starts with 5 health
+    # Add blocks (barriers)
+    blocks = [ {'rect': pygame.Rect(x, HEIGHT-200, 60, 24), 'hp': 3} for x in range(120, WIDTH-120, 120) ]
     running = True
     start_countdown()
     while running:
@@ -1262,7 +1264,7 @@ def run_survival_mode(player_name, char_choice):
         player.clamp_ip(pygame.Rect(0,0,WIDTH,HEIGHT))
         # Move monsters
         for m in monsters:
-            m['rect'].y += monster_speed + level
+            m['rect'].y += monster_speed + level//2
         # Move bullets
         for bullet in bullets[:]:
             bullet['rect'].y += bullet['dir'] * 16
@@ -1279,9 +1281,18 @@ def run_survival_mode(player_name, char_choice):
                     if bullet in bullets:
                         bullets.remove(bullet)
                     break
-        # Monster-player collision
+        # Monster-block collision
         for m in monsters[:]:
-            if m['rect'].colliderect(player):
+            for b in blocks:
+                if m['rect'].colliderect(b['rect']):
+                    b['hp'] -= 1
+                    if b['hp'] <= 0:
+                        blocks.remove(b)
+                    monsters.remove(m)
+                    break
+        # Monster-base collision
+        for m in monsters[:]:
+            if m['rect'].bottom >= HEIGHT-10:
                 health -= 1
                 monsters.remove(m)
         if health <= 0:
@@ -1289,6 +1300,10 @@ def run_survival_mode(player_name, char_choice):
         # Draw everything
         screen.fill((20,20,30))
         draw_mafia_character(screen, player.centerx, player.centery, char_choice)
+        for b in blocks:
+            pygame.draw.rect(screen, (100,100,255), b['rect'])
+            block_hp = font.render(str(b['hp']), True, (255,255,255))
+            screen.blit(block_hp, (b['rect'].centerx-block_hp.get_width()//2, b['rect'].centery-block_hp.get_height()//2))
         for m in monsters:
             pygame.draw.rect(screen, (200,0,0), m['rect'])
             hp_text = font.render(str(m['hp']), True, (255,255,255))
