@@ -955,6 +955,45 @@ def run_coin_collection_and_shop(player1_name, player2_name, char_choices):
     run_game_with_upgrades(player1_name, player2_name, mafia_choices, p1_bazooka, p2_bazooka, p1_kannon, p2_kannon, p1_life, p2_life)
     return
 
+def draw_weapon(screen, x, y, right, weapon):
+    # Draws the selected weapon for a player
+    if weapon == "bazooka":
+        # Bazooka: big green tube, orange tip
+        if right:
+            pygame.draw.rect(screen, (0,180,0), (x, y-8, 44, 14))
+            pygame.draw.ellipse(screen, (255,140,0), (x+44, y-12, 12, 22))
+            pygame.draw.rect(screen, (80,40,0), (x+10, y-8, 10, 14))
+        else:
+            pygame.draw.rect(screen, (0,180,0), (x-56, y-8, 44, 14))
+            pygame.draw.ellipse(screen, (255,140,0), (x-68, y-12, 12, 22))
+            pygame.draw.rect(screen, (80,40,0), (x-20, y-8, 10, 14))
+    elif weapon == "kannon":
+        # Kannon: big gray barrel, gold tip
+        if right:
+            pygame.draw.rect(screen, (120,120,120), (x, y-10, 38, 18))
+            pygame.draw.ellipse(screen, (255,215,0), (x+38, y-14, 14, 26))
+            pygame.draw.rect(screen, (80,80,80), (x+10, y-10, 10, 18))
+        else:
+            pygame.draw.rect(screen, (120,120,120), (x-52, y-10, 38, 18))
+            pygame.draw.ellipse(screen, (255,215,0), (x-66, y-14, 14, 26))
+            pygame.draw.rect(screen, (80,80,80), (x-20, y-10, 10, 18))
+    else:
+        # Default gun: AK-47 style
+        if right:
+            pygame.draw.rect(screen, (80,80,80), (x+20, y-4, 22, 4))
+            pygame.draw.rect(screen, (139,69,19), (x-18, y-7, 16, 8))
+            pygame.draw.rect(screen, (80,80,80), (x, y-7, 38, 8))
+            pygame.draw.arc(screen, (60,60,60), (x+10, y+2, 18, 14), 3.14, 2*3.14, 4)
+            pygame.draw.rect(screen, (60,60,60), (x+30, y+2, 6, 12))
+        else:
+            pygame.draw.rect(screen, (80,80,80), (x-42, y-4, 22, 4))
+            pygame.draw.rect(screen, (139,69,19), (x+2, y-7, 16, 8))
+            pygame.draw.rect(screen, (80,80,80), (x-38, y-7, 38, 8))
+            pygame.draw.arc(screen, (60,60,60), (x-28, y+2, 18, 14), 0, 3.14, 4)
+            pygame.draw.rect(screen, (60,60,60), (x-36, y+2, 6, 12))
+
+# Main game with upgrades
+
 def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka, p2_bazooka, p1_kannon, p2_kannon, p1_life, p2_life):
     # Battle mode with upgrades: bazooka/kannon = 2 shots each, then normal
     try:
@@ -982,6 +1021,9 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
     p2_bazooka_left = 2 * p2_bazooka
     p1_kannon_left = 2 * p1_kannon
     p2_kannon_left = 2 * p2_kannon
+    # Weapon selection state
+    p1_weapon = "default"
+    p2_weapon = "default"
     start_countdown()
     while True:
         now = time.time()
@@ -990,20 +1032,33 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.KEYDOWN:
+                # Weapon switching
+                if event.key == pygame.K_q:
+                    p1_weapon = "default"
+                if event.key == pygame.K_e:
+                    p1_weapon = "bazooka"
+                if event.key == pygame.K_r:
+                    p1_weapon = "kannon"
+                if event.key == pygame.K_o:
+                    p2_weapon = "default"
+                if event.key == pygame.K_p:
+                    p2_weapon = "bazooka"
+                if event.key == pygame.K_l:
+                    p2_weapon = "kannon"
                 # Player 1 shoot (space)
                 if event.key == pygame.K_SPACE:
                     if player1_shots < RELOAD_LIMIT and now > player1_reload_time:
                         bx = player1.right if p1_right else player1.left - 10
-                        # Determine damage for next shot
-                        if p1_bazooka_left > 0:
+                        # Use selected weapon's upgrade shots if available
+                        if p1_weapon == "bazooka" and p1_bazooka_left > 0:
                             damage = 2
                             p1_bazooka_left -= 1
-                        elif p1_kannon_left > 0:
+                        elif p1_weapon == "kannon" and p1_kannon_left > 0:
                             damage = 3
                             p1_kannon_left -= 1
                         else:
                             damage = 1
-                        bullets.append({'rect': pygame.Rect(bx, player1.centery-5, 10, 10), 'dir': 1 if p1_right else -1, 'owner': 1, 'damage': damage})
+                        bullets.append({'rect': pygame.Rect(bx, player1.centery-5, 10, 10), 'dir': 1 if p1_right else -1, 'owner': 1, 'damage': damage, 'weapon': p1_weapon})
                         player1_shots += 1
                         if player1_shots == RELOAD_LIMIT:
                             player1_reload_time = now + RELOAD_DURATION
@@ -1011,15 +1066,15 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
                 if event.key == pygame.K_RSHIFT:
                     if player2_shots < RELOAD_LIMIT and now > player2_reload_time:
                         bx = player2.right if p2_right else player2.left - 10
-                        if p2_bazooka_left > 0:
+                        if p2_weapon == "bazooka" and p2_bazooka_left > 0:
                             damage = 2
                             p2_bazooka_left -= 1
-                        elif p2_kannon_left > 0:
+                        elif p2_weapon == "kannon" and p2_kannon_left > 0:
                             damage = 3
                             p2_kannon_left -= 1
                         else:
                             damage = 1
-                        bullets.append({'rect': pygame.Rect(bx, player2.centery-5, 10, 10), 'dir': 1 if p2_right else -1, 'owner': 2, 'damage': damage})
+                        bullets.append({'rect': pygame.Rect(bx, player2.centery-5, 10, 10), 'dir': 1 if p2_right else -1, 'owner': 2, 'damage': damage, 'weapon': p2_weapon})
                         player2_shots += 1
                         if player2_shots == RELOAD_LIMIT:
                             player2_reload_time = now + RELOAD_DURATION
@@ -1101,8 +1156,14 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
         screen.blit(name_text1, (player1.centerx - name_text1.get_width()//2, player1.centery-60))
         name_text2 = font.render(player2_name, True, (255,0,0))
         screen.blit(name_text2, (player2.centerx - name_text2.get_width()//2, player2.centery-60))
-        # Draw guns (reuse from battle mode)
-        # ...existing gun drawing code can be reused here...
+        # Draw Player 1 weapon
+        gun_offset_y1 = player1.centery+10
+        hand_x1 = player1.centerx+20 if p1_right else player1.centerx-20
+        draw_weapon(screen, hand_x1, gun_offset_y1, p1_right, p1_weapon)
+        # Draw Player 2 weapon
+        gun_offset_y2 = player2.centery+10
+        hand_x2 = player2.centerx+20 if p2_right else player2.centerx-20
+        draw_weapon(screen, hand_x2, gun_offset_y2, p2_right, p2_weapon)
         # Draw bullets
         for bullet in bullets:
             pygame.draw.rect(screen, (255,255,0), bullet['rect'])
