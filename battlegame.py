@@ -789,6 +789,7 @@ def run_combine_mode(player1_name, player2_name, char_choices):
     player1 = pygame.Rect(100, HEIGHT//2, 50, 50)
     player2 = pygame.Rect(WIDTH-150, HEIGHT//2, 50, 50)
     speed = 6
+    debug_font = pygame.font.SysFont(None, 32)
     while time.time() < timer:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -823,14 +824,20 @@ def run_combine_mode(player1_name, player2_name, char_choices):
             coin_rects.append(pygame.Rect(x, y, 24, 24))
         # Draw
         screen.fill((30,30,30))
-        for coin in coin_rects:
+        for idx, coin in enumerate(coin_rects):
             pygame.draw.circle(screen, (255,215,0), coin.center, 12)
+            # Draw debug index for each coin
+            debug_text = debug_font.render(str(idx+1), True, (0,0,0))
+            screen.blit(debug_text, (coin.centerx-8, coin.centery-8))
         draw_explorer_character(screen, player1.centerx, player1.centery, char_choices[0])
         draw_explorer_character(screen, player2.centerx, player2.centery, char_choices[1])
         score_text = font.render(f"{player1_name}: {player1_score}   {player2_name}: {player2_score}", True, (255,255,255))
         screen.blit(score_text, (WIDTH//2-score_text.get_width()//2, 20))
         timer_text = font.render(f"Time left: {int(timer-time.time())}", True, (255,255,255))
         screen.blit(timer_text, (WIDTH//2-timer_text.get_width()//2, 60))
+        # Debug: show number of coins
+        coin_count_text = debug_font.render(f"Coins on screen: {len(coin_rects)}", True, (255,0,0))
+        screen.blit(coin_count_text, (20, HEIGHT-40))
         pygame.display.flip()
         clock.tick(60)
     # 2. Shop phase
@@ -895,7 +902,12 @@ while True:
     player1_name = get_player_name("Player 1, enter your name:", HEIGHT//2 - 120)
     player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
     char_choices = character_select(mode)
-    run_game(mode, player1_name, player2_name, char_choices)
+    if mode == "Combine Mode":
+        # Use run_game for coin phase, then shop and advanced battle
+        # Mode 2 = Combine
+        run_game(2, player1_name, player2_name, char_choices)
+    else:
+        run_game(0 if mode == "Battle Mode" else 1, player1_name, player2_name, char_choices)
 
 
 
