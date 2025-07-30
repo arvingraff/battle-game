@@ -120,30 +120,34 @@ def get_player_name(prompt, ypos):
 def character_select(mode):
     # Three character options per mode
     if mode == 0:
-        options = ["Classic Mafia", "Mafia Boss", "Mafia Hitman"]
+        options = [0, 1, 2]  # Mafia styles
+        draw_func = draw_mafia_character
     else:
-        options = ["Jungle Explorer", "Desert Adventurer", "Arctic Explorer"]
+        options = [0, 1, 2]  # Explorer styles
+        draw_func = draw_explorer_character
     selected1 = 0
     selected2 = 0
     p1_done = False
     p2_done = False
+    preview_y = HEIGHT//2+20
+    preview_xs = [WIDTH//2-180, WIDTH//2, WIDTH//2+180]
     while not p1_done:
         screen.fill((30,30,30))
         title = lobby_font.render("Player 1: Choose Your Character (Enter to confirm)", True, (255,255,255))
         screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-160))
-        for i, opt in enumerate(options):
-            color = (255,255,0) if i==selected1 else (200,200,200)
-            opt_text = font.render(opt, True, color)
-            screen.blit(opt_text, (WIDTH//2-opt_text.get_width()//2, HEIGHT//2-40+i*60))
+        for i, style in enumerate(options):
+            highlight = (255,255,0) if i==selected1 else (80,80,80)
+            pygame.draw.rect(screen, highlight, (preview_xs[i]-50, preview_y-70, 100, 140), 4)
+            draw_func(screen, preview_xs[i], preview_y, style)
         pygame.display.flip()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP:
+                if event.key == pygame.K_LEFT:
                     selected1 = (selected1-1)%len(options)
-                if event.key == pygame.K_DOWN:
+                if event.key == pygame.K_RIGHT:
                     selected1 = (selected1+1)%len(options)
                 if event.key == pygame.K_RETURN:
                     p1_done = True
@@ -151,19 +155,19 @@ def character_select(mode):
         screen.fill((30,30,30))
         title = lobby_font.render("Player 2: Choose Your Character (Enter to confirm)", True, (255,255,255))
         screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-160))
-        for i, opt in enumerate(options):
-            color = (255,255,0) if i==selected2 else (200,200,200)
-            opt_text = font.render(opt, True, color)
-            screen.blit(opt_text, (WIDTH//2-opt_text.get_width()//2, HEIGHT//2-40+i*60))
+        for i, style in enumerate(options):
+            highlight = (255,0,0) if i==selected2 else (80,80,80)
+            pygame.draw.rect(screen, highlight, (preview_xs[i]-50, preview_y-70, 100, 140), 4)
+            draw_func(screen, preview_xs[i], preview_y, style)
         pygame.display.flip()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP:
+                if event.key == pygame.K_LEFT:
                     selected2 = (selected2-1)%len(options)
-                if event.key == pygame.K_DOWN:
+                if event.key == pygame.K_RIGHT:
                     selected2 = (selected2+1)%len(options)
                 if event.key == pygame.K_RETURN:
                     p2_done = True
