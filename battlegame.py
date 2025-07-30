@@ -1218,35 +1218,46 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
         clock.tick(60)
 
 def draw_monster(screen, rect, color, hp):
-    # Draw a much more realistic and menacing monster (not cute)
+    # Even more realistic and menacing monster
     import pygame.gfxdraw
-    # Body: jagged polygon, rough edges
+    import math
+    # Body: jagged polygon, rough edges, animated breathing
+    t = pygame.time.get_ticks() // 100 % 6
+    breath = 4 + math.sin(t) * 2
     body_points = [
-        (rect.left+8, rect.top+10),
+        (rect.left+8, rect.top+10+breath),
         (rect.left+rect.width//4, rect.top),
         (rect.centerx, rect.top+random.randint(0,8)),
         (rect.right-rect.width//4, rect.top),
-        (rect.right-8, rect.top+10),
+        (rect.right-8, rect.top+10+breath),
         (rect.right, rect.centery-10),
         (rect.right-8, rect.bottom-18),
-        (rect.centerx+random.randint(-8,8), rect.bottom-8),
+        (rect.centerx+random.randint(-8,8), rect.bottom-8-breath),
         (rect.left+8, rect.bottom-18),
         (rect.left, rect.centery-10)
     ]
     pygame.gfxdraw.filled_polygon(screen, body_points, color)
+    # Scales/bumpy skin
+    for i in range(8):
+        scale_x = rect.left+random.randint(10,rect.width-20)
+        scale_y = rect.top+random.randint(10,rect.height-20)
+        pygame.draw.ellipse(screen, (max(color[0]-30,0), max(color[1]-30,0), max(color[2]-30,0)), (scale_x, scale_y, 8, 5))
     # Spikes on back
     for i in range(5):
         spike_x = rect.left+20+i*rect.width//6
         pygame.draw.polygon(screen, (60,60,60), [(spike_x, rect.top+8), (spike_x+8, rect.top-12), (spike_x+16, rect.top+8)])
-    # Horns
+    # Asymmetrical horns
     pygame.draw.polygon(screen, (120,120,120), [(rect.left+18, rect.top+10), (rect.left+8, rect.top-18), (rect.left+28, rect.top+10)])
-    pygame.draw.polygon(screen, (120,120,120), [(rect.right-18, rect.top+10), (rect.right-8, rect.top-18), (rect.right-28, rect.top+10)])
+    pygame.draw.polygon(screen, (120,120,120), [(rect.right-18, rect.top+10), (rect.right-8, rect.top-28), (rect.right-28, rect.top+10)])
     # Arms (clawed)
     arm_y = rect.centery+8
     pygame.draw.line(screen, color, (rect.left, arm_y), (rect.left-18, arm_y+18), 10)
     pygame.draw.line(screen, color, (rect.right, arm_y), (rect.right+18, arm_y+18), 10)
     pygame.draw.line(screen, (80,80,80), (rect.left-18, arm_y+18), (rect.left-28, arm_y+28), 5)
     pygame.draw.line(screen, (80,80,80), (rect.right+18, arm_y+18), (rect.right+28, arm_y+28), 5)
+    # Veins/muscle lines
+    pygame.draw.arc(screen, (120,60,60), (rect.left+20, rect.centery, 18, 8), 0, math.pi, 2)
+    pygame.draw.arc(screen, (120,60,60), (rect.right-38, rect.centery, 18, 8), 0, math.pi, 2)
     # Legs (clawed)
     leg_y = rect.bottom-4
     pygame.draw.line(screen, color, (rect.left+14, leg_y), (rect.left+14, leg_y+18), 8)
@@ -1255,9 +1266,10 @@ def draw_monster(screen, rect, color, hp):
     pygame.draw.line(screen, (80,80,80), (rect.right-14, leg_y+18), (rect.right-8, leg_y+28), 4)
     # Face: angry eyes, jagged mouth, scars
     eye_y = rect.top + rect.height//3
+    # Bloodshot/glowing eyes
     pygame.draw.ellipse(screen, (200,0,0), (rect.left+rect.width//4-8, eye_y-8, 16, 12))
-    pygame.draw.ellipse(screen, (200,0,0), (rect.right-rect.width//4-8, eye_y-8, 16, 12))
     pygame.draw.ellipse(screen, (255,255,0), (rect.left+rect.width//4-2, eye_y-2, 8, 6))
+    pygame.draw.ellipse(screen, (200,0,0), (rect.right-rect.width//4-8, eye_y-8, 16, 12))
     pygame.draw.ellipse(screen, (255,255,0), (rect.right-rect.width//4-2, eye_y-2, 8, 6))
     pygame.draw.line(screen, (120,0,0), (rect.left+rect.width//4-8, eye_y-8), (rect.left+rect.width//4+8, eye_y-12), 3)
     pygame.draw.line(screen, (120,0,0), (rect.right-rect.width//4-8, eye_y-12), (rect.right-rect.width//4+8, eye_y-8), 3)
@@ -1267,12 +1279,16 @@ def draw_monster(screen, rect, color, hp):
     # Scars
     pygame.draw.line(screen, (120,60,60), (rect.centerx-10, rect.centery-8), (rect.centerx+10, rect.centery-2), 2)
     pygame.draw.line(screen, (120,60,60), (rect.centerx-8, rect.centery+8), (rect.centerx+12, rect.centery+12), 2)
-    # Mouth: jagged, sharp teeth
+    # Mouth: jagged, sharp teeth, drool/blood
     mouth_rect = pygame.Rect(rect.centerx-18, rect.bottom-28, 36, 16)
     pygame.draw.arc(screen, (120,0,0), mouth_rect, 3.14, 2*3.14, 5)
     for i in range(6):
         tooth_x = mouth_rect.left+4+i*6
         pygame.draw.polygon(screen, (255,255,255), [(tooth_x, mouth_rect.bottom-2), (tooth_x+4, mouth_rect.bottom-2), (tooth_x+2, mouth_rect.bottom+6)])
+    # Drool
+    pygame.draw.arc(screen, (100,200,255), (mouth_rect.left+10, mouth_rect.bottom-2, 8, 8), 0, math.pi, 2)
+    # Blood
+    pygame.draw.arc(screen, (200,0,0), (mouth_rect.right-18, mouth_rect.bottom-2, 8, 8), 0, math.pi, 2)
     # Health above head
     hp_text = font.render(f"HP: {hp}", True, (255,255,0))
     screen.blit(hp_text, (rect.centerx-hp_text.get_width()//2, rect.top-24))
