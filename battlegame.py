@@ -1227,14 +1227,10 @@ def run_survival_mode(player_name, char_choice):
     monster_speed = 1  # Slower monsters
     monster_size = 40
     bullets = []
-    shots = 0
-    reload_time = 0
-    RELOAD_LIMIT = 3
-    RELOAD_DURATION = 2
     font_big = pygame.font.SysFont(None, 72)
     health = 5  # Player starts with 5 health
-    # Add blocks (barriers)
-    blocks = [ {'rect': pygame.Rect(x, HEIGHT-200, 60, 24), 'hp': 3} for x in range(120, WIDTH-120, 120) ]
+    # Single barrier line
+    barrier = {'rect': pygame.Rect(60, HEIGHT-200, WIDTH-120, 24), 'hp': 50}
     running = True
     start_countdown()
     while running:
@@ -1250,14 +1246,7 @@ def run_survival_mode(player_name, char_choice):
                 sys.exit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    if shots < RELOAD_LIMIT and pygame.time.get_ticks() > reload_time:
-                        bullets.append({'rect': pygame.Rect(player.centerx-5, player.top-10, 10, 20), 'dir': -1})
-                        shots += 1
-                        if shots == RELOAD_LIMIT:
-                            reload_time = pygame.time.get_ticks() + RELOAD_DURATION*1000
-        # Reset shots after reload
-        if shots == RELOAD_LIMIT and pygame.time.get_ticks() > reload_time:
-            shots = 0
+                    bullets.append({'rect': pygame.Rect(player.centerx-5, player.top-10, 10, 20), 'dir': -1})
         keys = pygame.key.get_pressed()
         if keys[pygame.K_a]: player.x -= speed
         if keys[pygame.K_d]: player.x += speed
@@ -1281,29 +1270,24 @@ def run_survival_mode(player_name, char_choice):
                     if bullet in bullets:
                         bullets.remove(bullet)
                     break
-        # Monster-block collision
+        # Monster-barrier collision
         for m in monsters[:]:
-            for b in blocks:
-                if m['rect'].colliderect(b['rect']):
-                    b['hp'] -= 1
-                    if b['hp'] <= 0:
-                        blocks.remove(b)
-                    monsters.remove(m)
-                    break
+            if m['rect'].colliderect(barrier['rect']):
+                barrier['hp'] -= 1
+                monsters.remove(m)
         # Monster-base collision
         for m in monsters[:]:
             if m['rect'].bottom >= HEIGHT-10:
                 health -= 1
                 monsters.remove(m)
-        if health <= 0:
+        if health <= 0 or barrier['hp'] <= 0:
             running = False
         # Draw everything
         screen.fill((20,20,30))
         draw_mafia_character(screen, player.centerx, player.centery, char_choice)
-        for b in blocks:
-            pygame.draw.rect(screen, (100,100,255), b['rect'])
-            block_hp = font.render(str(b['hp']), True, (255,255,255))
-            screen.blit(block_hp, (b['rect'].centerx-block_hp.get_width()//2, b['rect'].centery-block_hp.get_height()//2))
+        pygame.draw.rect(screen, (100,100,255), barrier['rect'])
+        barrier_hp = font.render(f"Barrier HP: {barrier['hp']}", True, (255,255,255))
+        screen.blit(barrier_hp, (barrier['rect'].centerx-barrier_hp.get_width()//2, barrier['rect'].top-30))
         for m in monsters:
             pygame.draw.rect(screen, (200,0,0), m['rect'])
             hp_text = font.render(str(m['hp']), True, (255,255,255))
