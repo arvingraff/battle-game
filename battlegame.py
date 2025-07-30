@@ -121,9 +121,11 @@ def character_select(mode):
     # Three character options per mode
     if mode == 0:
         options = [0, 1, 2]  # Mafia styles
+        names = ["Classic Mafia", "Mafia Boss", "Mafia Hitman"]
         draw_func = draw_mafia_character
     else:
         options = [0, 1, 2]  # Explorer styles
+        names = ["Jungle Explorer", "Desert Adventurer", "Arctic Explorer"]
         draw_func = draw_explorer_character
     selected1 = 0
     selected2 = 0
@@ -139,6 +141,9 @@ def character_select(mode):
             highlight = (255,255,0) if i==selected1 else (80,80,80)
             pygame.draw.rect(screen, highlight, (preview_xs[i]-50, preview_y-70, 100, 140), 4)
             draw_func(screen, preview_xs[i], preview_y, style)
+            # Draw name below preview
+            name_text = font.render(names[i], True, highlight)
+            screen.blit(name_text, (preview_xs[i]-name_text.get_width()//2, preview_y+80))
         pygame.display.flip()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -159,6 +164,9 @@ def character_select(mode):
             highlight = (255,0,0) if i==selected2 else (80,80,80)
             pygame.draw.rect(screen, highlight, (preview_xs[i]-50, preview_y-70, 100, 140), 4)
             draw_func(screen, preview_xs[i], preview_y, style)
+            # Draw name below preview
+            name_text = font.render(names[i], True, highlight)
+            screen.blit(name_text, (preview_xs[i]-name_text.get_width()//2, preview_y+80))
         pygame.display.flip()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
