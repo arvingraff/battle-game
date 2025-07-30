@@ -234,7 +234,7 @@ def draw_mafia_character(screen, x, y, style):
             pygame.draw.line(screen, (200,200,200), (x+i, y+3), (x+i, y+51), 2)
         pygame.draw.rect(screen, (255,255,255), (x-6, y+3, 12, 48))
         pygame.draw.rect(screen, (200,0,0), (x-2, y+18, 4, 28))
-    elif style == 2:  # Mafia Hitman (no smile)
+    elif style == 2:  # Mafia Hitman (no smile, no scar)
         # Head
         pygame.draw.ellipse(screen, (224, 172, 105), (x-15, y-35, 30, 38))
         # Slicked-back hair
@@ -244,9 +244,7 @@ def draw_mafia_character(screen, x, y, style):
         pygame.draw.ellipse(screen, (255,255,255), (x+1, y-25, 7, 6))
         pygame.draw.ellipse(screen, (0,0,0), (x-5, y-23, 3, 3))
         pygame.draw.ellipse(screen, (0,0,0), (x+4, y-23, 3, 3))
-        # Scar
-        pygame.draw.line(screen, (200,0,0), (x-10, y-18), (x+10, y-10), 2)
-        # Sharper, more angular frown
+        # Stern mouth (no smile)
         pygame.draw.arc(screen, (0,0,0), (x-7, y-2, 14, 6), 3.8, 5.5, 2)
         # Angular sunglasses
         pygame.draw.polygon(screen, (0,0,0), [(x-10, y-25), (x, y-25), (x, y-19), (x-10, y-19)])
