@@ -1217,19 +1217,24 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
         pygame.display.flip()
         clock.tick(60)
 
-def draw_monster(screen, rect, color):
+def draw_monster(screen, rect, color, hp):
     # Draw a much more realistic monster
-    # Body (shaded ellipse)
-    pygame.draw.ellipse(screen, color, rect)
-    shade = (max(color[0]-40,0), max(color[1]-40,0), max(color[2]-40,0))
-    pygame.draw.ellipse(screen, shade, rect.inflate(-8, -8))
+    # Body (gradient ellipse)
+    import pygame.gfxdraw
+    for i in range(rect.width//2):
+        shade = (
+            min(color[0]+i//2,255),
+            min(color[1]+i//3,255),
+            min(color[2]+i//4,255)
+        )
+        pygame.gfxdraw.ellipse(screen, rect.centerx, rect.centery, rect.width//2-i, rect.height//2-i, shade)
     # Shadow
     shadow_rect = pygame.Rect(rect.left+8, rect.bottom-8, rect.width-16, 10)
     pygame.draw.ellipse(screen, (40,40,40), shadow_rect)
     # Legs
     leg_y = rect.bottom-4
-    pygame.draw.line(screen, shade, (rect.left+10, leg_y), (rect.left+10, leg_y+16), 6)
-    pygame.draw.line(screen, shade, (rect.right-10, leg_y), (rect.right-10, leg_y+16), 6)
+    pygame.draw.line(screen, color, (rect.left+10, leg_y), (rect.left+10, leg_y+16), 6)
+    pygame.draw.line(screen, color, (rect.right-10, leg_y), (rect.right-10, leg_y+16), 6)
     # Feet
     pygame.draw.ellipse(screen, (80,40,0), (rect.left+2, leg_y+14, 16, 8))
     pygame.draw.ellipse(screen, (80,40,0), (rect.right-18, leg_y+14, 16, 8))
@@ -1242,21 +1247,33 @@ def draw_monster(screen, rect, color):
     pygame.draw.line(screen, (200,200,200), (rect.right+18, arm_y+18), (rect.right+24, arm_y+24), 3)
     # Face
     eye_y = rect.top + rect.height//3
+    # Eyes with highlights
     pygame.draw.ellipse(screen, (255,255,255), (rect.left+rect.width//4-6, eye_y-6, 12, 14))
     pygame.draw.ellipse(screen, (255,255,255), (rect.right-rect.width//4-6, eye_y-6, 12, 14))
     pygame.draw.circle(screen, (0,0,0), (rect.left+rect.width//4, eye_y), 5)
     pygame.draw.circle(screen, (0,0,0), (rect.right-rect.width//4, eye_y), 5)
+    pygame.draw.circle(screen, (255,255,255), (rect.left+rect.width//4+2, eye_y-2), 2)
+    pygame.draw.circle(screen, (255,255,255), (rect.right-rect.width//4+2, eye_y-2), 2)
     # Eyebrows
     pygame.draw.line(screen, (60,30,0), (rect.left+rect.width//4-8, eye_y-10), (rect.left+rect.width//4+8, eye_y-12), 3)
     pygame.draw.line(screen, (60,30,0), (rect.right-rect.width//4-8, eye_y-12), (rect.right-rect.width//4+8, eye_y-10), 3)
-    # Mouth (teeth)
+    # Nostrils
+    pygame.draw.circle(screen, (60,30,0), (rect.centerx-6, rect.centery-8), 2)
+    pygame.draw.circle(screen, (60,30,0), (rect.centerx+6, rect.centery-8), 2)
+    # Mouth (open/closed)
     mouth_rect = pygame.Rect(rect.centerx-14, rect.bottom-22, 28, 12)
-    pygame.draw.arc(screen, (200,0,0), mouth_rect, 3.14, 2*3.14, 4)
-    pygame.draw.rect(screen, (255,255,255), (mouth_rect.left+4, mouth_rect.top+4, 20, 6))
-    pygame.draw.line(screen, (0,0,0), (mouth_rect.left+14, mouth_rect.top+4), (mouth_rect.left+14, mouth_rect.top+10), 2)
-    # Fangs
-    pygame.draw.polygon(screen, (255,255,255), [(mouth_rect.left+8, mouth_rect.bottom-2), (mouth_rect.left+12, mouth_rect.bottom-2), (mouth_rect.left+10, mouth_rect.bottom+4)])
-    pygame.draw.polygon(screen, (255,255,255), [(mouth_rect.right-8, mouth_rect.bottom-2), (mouth_rect.right-12, mouth_rect.bottom-2), (mouth_rect.right-10, mouth_rect.bottom+4)])
+    if hp % 2 == 0:
+        pygame.draw.arc(screen, (200,0,0), mouth_rect, 3.14, 2*3.14, 4)
+        pygame.draw.rect(screen, (255,255,255), (mouth_rect.left+4, mouth_rect.top+4, 20, 6))
+        pygame.draw.line(screen, (0,0,0), (mouth_rect.left+14, mouth_rect.top+4), (mouth_rect.left+14, mouth_rect.top+10), 2)
+        pygame.draw.polygon(screen, (255,255,255), [(mouth_rect.left+8, mouth_rect.bottom-2), (mouth_rect.left+12, mouth_rect.bottom-2), (mouth_rect.left+10, mouth_rect.bottom+4)])
+        pygame.draw.polygon(screen, (255,255,255), [(mouth_rect.right-8, mouth_rect.bottom-2), (mouth_rect.right-12, mouth_rect.bottom-2), (mouth_rect.right-10, mouth_rect.bottom+4)])
+    else:
+        pygame.draw.arc(screen, (200,0,0), mouth_rect, 3.14, 2*3.14, 4)
+        pygame.draw.rect(screen, (0,0,0), (mouth_rect.left+4, mouth_rect.top+4, 20, 6))
+    # Health above head
+    hp_text = font.render(f"HP: {hp}", True, (255,255,0))
+    screen.blit(hp_text, (rect.centerx-hp_text.get_width()//2, rect.top-24))
 
 def run_survival_mode(player1_name, player2_name, char_choices):
     # 2-player survival mode with realistic monsters, easier levels
@@ -1340,7 +1357,7 @@ def run_survival_mode(player1_name, player2_name, char_choices):
         barrier_hp = font.render(f"Barrier HP: {barrier['hp']}", True, (255,255,255))
         screen.blit(barrier_hp, (barrier['rect'].centerx-barrier_hp.get_width()//2, barrier['rect'].top-30))
         for m in monsters:
-            draw_monster(screen, m['rect'], m['color'])
+            draw_monster(screen, m['rect'], m['color'], m['hp'])
             hp_text = font.render(str(m['hp']), True, (255,255,255))
             screen.blit(hp_text, (m['rect'].centerx-hp_text.get_width()//2, m['rect'].centery-m['rect'].height//2))
         for bullet in bullets:
