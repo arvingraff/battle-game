@@ -172,7 +172,7 @@ def character_select(mode):
 # Drawing functions for each character
 
 def draw_mafia_character(screen, x, y, style):
-    if style == 0:  # Classic Mafia (improved)
+    if style == 0:  # Classic Mafia (improved with sunglasses)
         # Head with subtle jawline
         pygame.draw.ellipse(screen, (224, 172, 105), (x-15, y-35, 30, 38))
         pygame.draw.line(screen, (200,160,90), (x-10, y-10), (x+10, y-10), 2)
@@ -180,13 +180,11 @@ def draw_mafia_character(screen, x, y, style):
         pygame.draw.rect(screen, (60,60,60), (x-15, y-45, 30, 10))
         pygame.draw.rect(screen, (200,0,0), (x-15, y-42, 30, 4))
         pygame.draw.rect(screen, (30,30,30), (x-10, y-50, 20, 8))
-        # Eyes and eyebrows
-        pygame.draw.ellipse(screen, (255,255,255), (x-8, y-25, 7, 8))
-        pygame.draw.ellipse(screen, (255,255,255), (x+1, y-25, 7, 8))
-        pygame.draw.ellipse(screen, (0,0,0), (x-5, y-22, 3, 4))
-        pygame.draw.ellipse(screen, (0,0,0), (x+4, y-22, 3, 4))
-        pygame.draw.rect(screen, (60,40,20), (x-8, y-28, 7, 2))
-        pygame.draw.rect(screen, (60,40,20), (x+2, y-28, 7, 2))
+        # Sunglasses
+        pygame.draw.rect(screen, (0,0,0), (x-8, y-25, 8, 6))
+        pygame.draw.rect(screen, (0,0,0), (x+2, y-25, 8, 6))
+        pygame.draw.line(screen, (0,0,0), (x, y-22), (x+2, y-22), 2)
+        # Eyes and eyebrows (hidden by sunglasses)
         # Mustache
         pygame.draw.arc(screen, (80,42,20), (x-7, y-8, 14, 6), 3.14, 2*3.14, 2)
         # Suit with pocket square
