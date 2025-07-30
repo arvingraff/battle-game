@@ -557,40 +557,77 @@ def run_game(mode, player1_name, player2_name, char_choices):
             # Gun follows hand (up/down movement)
             gun_offset_y1 = player1.centery+10
             gun_offset_y2 = player2.centery+10
-            # Draw Player 1 AK-47 (attached to hand, correct direction)
-            if p1_right:
-                hand_x = player1.centerx+20
-                hand_y = gun_offset_y1
-                pygame.draw.rect(screen, (80,80,80), (hand_x+20, hand_y-4, 22, 4))
-                pygame.draw.rect(screen, (139,69,19), (hand_x-18, hand_y-7, 16, 8))
-                pygame.draw.rect(screen, (80,80,80), (hand_x, hand_y-7, 38, 8))
-                pygame.draw.arc(screen, (60,60,60), (hand_x+10, hand_y+2, 18, 14), 3.14, 2*3.14, 4)
-                pygame.draw.rect(screen, (60,60,60), (hand_x+30, hand_y+2, 6, 12))
+            # Draw Player 1 gun
+            if char_choices[0] == 2:  # Mafia Hitman with minigun
+                if p1_right:
+                    hand_x = player1.centerx+20
+                    hand_y = gun_offset_y1
+                    # Minigun body
+                    pygame.draw.rect(screen, (80,80,80), (hand_x, hand_y-10, 30, 20))
+                    # Barrels
+                    for i in range(5):
+                        pygame.draw.rect(screen, (160,160,160), (hand_x+30, hand_y-8+i*4, 18, 3))
+                    # Handle
+                    pygame.draw.rect(screen, (60,60,60), (hand_x-8, hand_y+8, 8, 16))
+                else:
+                    hand_x = player1.centerx-20
+                    hand_y = gun_offset_y1
+                    pygame.draw.rect(screen, (80,80,80), (hand_x-30, hand_y-10, 30, 20))
+                    for i in range(5):
+                        pygame.draw.rect(screen, (160,160,160), (hand_x-48, hand_y-8+i*4, 18, 3))
+                    pygame.draw.rect(screen, (60,60,60), (hand_x+22, hand_y+8, 8, 16))
             else:
-                hand_x = player1.centerx-20
-                hand_y = gun_offset_y1
-                pygame.draw.rect(screen, (80,80,80), (hand_x-42, hand_y-4, 22, 4))
-                pygame.draw.rect(screen, (139,69,19), (hand_x+2, hand_y-7, 16, 8))
-                pygame.draw.rect(screen, (80,80,80), (hand_x-38, hand_y-7, 38, 8))
-                pygame.draw.arc(screen, (60,60,60), (hand_x-28, hand_y+2, 18, 14), 0, 3.14, 4)
-                pygame.draw.rect(screen, (60,60,60), (hand_x-36, hand_y+2, 6, 12))
-            # Draw Player 2 AK-47 (attached to hand, correct direction)
-            if p2_right:
-                hand_x = player2.centerx+20
-                hand_y = gun_offset_y2
-                pygame.draw.rect(screen, (80,80,80), (hand_x+20, hand_y-4, 22, 4))
-                pygame.draw.rect(screen, (139,69,19), (hand_x-18, hand_y-7, 16, 8))
-                pygame.draw.rect(screen, (80,80,80), (hand_x, hand_y-7, 38, 8))
-                pygame.draw.arc(screen, (60,60,60), (hand_x+10, hand_y+2, 18, 14), 3.14, 2*3.14, 4)
-                pygame.draw.rect(screen, (60,60,60), (hand_x+30, hand_y+2, 6, 12))
+                # AK-47 for other mafia
+                if p1_right:
+                    hand_x = player1.centerx+20
+                    hand_y = gun_offset_y1
+                    pygame.draw.rect(screen, (80,80,80), (hand_x+20, hand_y-4, 22, 4))
+                    pygame.draw.rect(screen, (139,69,19), (hand_x-18, hand_y-7, 16, 8))
+                    pygame.draw.rect(screen, (80,80,80), (hand_x, hand_y-7, 38, 8))
+                    pygame.draw.arc(screen, (60,60,60), (hand_x+10, hand_y+2, 18, 14), 3.14, 2*3.14, 4)
+                    pygame.draw.rect(screen, (60,60,60), (hand_x+30, hand_y+2, 6, 12))
+                else:
+                    hand_x = player1.centerx-20
+                    hand_y = gun_offset_y1
+                    pygame.draw.rect(screen, (80,80,80), (hand_x-42, hand_y-4, 22, 4))
+                    pygame.draw.rect(screen, (139,69,19), (hand_x+2, hand_y-7, 16, 8))
+                    pygame.draw.rect(screen, (80,80,80), (hand_x-38, hand_y-7, 38, 8))
+                    pygame.draw.arc(screen, (60,60,60), (hand_x-28, hand_y+2, 18, 14), 0, 3.14, 4)
+                    pygame.draw.rect(screen, (60,60,60), (hand_x-36, hand_y+2, 6, 12))
+            # Draw Player 2 gun
+            if char_choices[1] == 2:  # Mafia Hitman with minigun
+                if p2_right:
+                    hand_x = player2.centerx+20
+                    hand_y = gun_offset_y2
+                    pygame.draw.rect(screen, (80,80,80), (hand_x, hand_y-10, 30, 20))
+                    for i in range(5):
+                        pygame.draw.rect(screen, (160,160,160), (hand_x+30, hand_y-8+i*4, 18, 3))
+                    pygame.draw.rect(screen, (60,60,60), (hand_x-8, hand_y+8, 8, 16))
+                else:
+                    hand_x = player2.centerx-20
+                    hand_y = gun_offset_y2
+                    pygame.draw.rect(screen, (80,80,80), (hand_x-30, hand_y-10, 30, 20))
+                    for i in range(5):
+                        pygame.draw.rect(screen, (160,160,160), (hand_x-48, hand_y-8+i*4, 18, 3))
+                    pygame.draw.rect(screen, (60,60,60), (hand_x+22, hand_y+8, 8, 16))
             else:
-                hand_x = player2.centerx-20
-                hand_y = gun_offset_y2
-                pygame.draw.rect(screen, (80,80,80), (hand_x-42, hand_y-4, 22, 4))
-                pygame.draw.rect(screen, (139,69,19), (hand_x+2, hand_y-7, 16, 8))
-                pygame.draw.rect(screen, (80,80,80), (hand_x-38, hand_y-7, 38, 8))
-                pygame.draw.arc(screen, (60,60,60), (hand_x-28, hand_y+2, 18, 14), 0, 3.14, 4)
-                pygame.draw.rect(screen, (60,60,60), (hand_x-36, hand_y+2, 6, 12))
+                # AK-47 for other mafia
+                if p2_right:
+                    hand_x = player2.centerx+20
+                    hand_y = gun_offset_y2
+                    pygame.draw.rect(screen, (80,80,80), (hand_x+20, hand_y-4, 22, 4))
+                    pygame.draw.rect(screen, (139,69,19), (hand_x-18, hand_y-7, 16, 8))
+                    pygame.draw.rect(screen, (80,80,80), (hand_x, hand_y-7, 38, 8))
+                    pygame.draw.arc(screen, (60,60,60), (hand_x+10, hand_y+2, 18, 14), 3.14, 2*3.14, 4)
+                    pygame.draw.rect(screen, (60,60,60), (hand_x+30, hand_y+2, 6, 12))
+                else:
+                    hand_x = player2.centerx-20
+                    hand_y = gun_offset_y2
+                    pygame.draw.rect(screen, (80,80,80), (hand_x-42, hand_y-4, 22, 4))
+                    pygame.draw.rect(screen, (139,69,19), (hand_x+2, hand_y-7, 16, 8))
+                    pygame.draw.rect(screen, (80,80,80), (hand_x-38, hand_y-7, 38, 8))
+                    pygame.draw.arc(screen, (60,60,60), (hand_x-28, hand_y+2, 18, 14), 0, 3.14, 4)
+                    pygame.draw.rect(screen, (60,60,60), (hand_x-36, hand_y+2, 6, 12))
 
         # Draw bullets
         for bullet in bullets:
