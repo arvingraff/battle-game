@@ -1232,7 +1232,7 @@ def draw_monster(screen, rect, color):
     pygame.draw.line(screen, color, (rect.right, rect.centery), (rect.right+10, rect.centery+10), 6)
 
 def run_survival_mode(player1_name, player2_name, char_choices):
-    # 2-player survival mode with realistic monsters, no player health
+    # 2-player survival mode with realistic monsters, easier levels
     level = 1
     score = 0
     player1 = pygame.Rect(WIDTH//3, HEIGHT-120, 50, 50)
@@ -1247,13 +1247,13 @@ def run_survival_mode(player1_name, player2_name, char_choices):
     running = True
     start_countdown()
     while running:
-        # Spawn monsters for current level
+        # Spawn fewer monsters per level, slower scaling
         if not monsters:
-            for _ in range(level * 3):
+            for _ in range(2 + level):  # 2 + level monsters per wave
                 x = random.randint(60, WIDTH-60)
                 y = random.randint(-300, -40)
                 color = (random.randint(80,200), random.randint(80,200), random.randint(80,200))
-                monsters.append({'rect': pygame.Rect(x, y, monster_size, monster_size), 'hp': 2+level//2, 'color': color})
+                monsters.append({'rect': pygame.Rect(x, y, monster_size, monster_size), 'hp': 2 + level//3, 'color': color})
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -1276,7 +1276,7 @@ def run_survival_mode(player1_name, player2_name, char_choices):
         player2.clamp_ip(pygame.Rect(0,0,WIDTH,HEIGHT))
         # Move monsters
         for m in monsters:
-            m['rect'].y += monster_speed + level//2
+            m['rect'].y += monster_speed + level//4  # slower speed increase
         # Move bullets
         for bullet in bullets[:]:
             bullet['rect'].y += bullet['dir'] * 16
