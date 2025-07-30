@@ -884,7 +884,14 @@ def run_coin_collection_and_shop(player1_name, player2_name, char_choices):
             paper_rects.append(pygame.Rect(x, y, 24, 24))
         screen.fill((30,30,30))
         for paper in paper_rects:
-            pygame.draw.rect(screen, (0,255,0), paper)  # Green rectangle for money paper
+            # Draw green rectangle
+            pygame.draw.rect(screen, (0,180,0), paper)
+            # Draw yellow border
+            pygame.draw.rect(screen, (255,220,0), paper, 3)
+            # Draw yellow $ symbol in center
+            dollar_font = pygame.font.SysFont(None, 32)
+            dollar_text = dollar_font.render("$", True, (255,220,0))
+            screen.blit(dollar_text, (paper.centerx - dollar_text.get_width()//2, paper.centery - dollar_text.get_height()//2))
         draw_explorer_character(screen, player1.centerx, player1.centery, char_choices[0])
         draw_explorer_character(screen, player2.centerx, player2.centery, char_choices[1])
         score_text = font.render(f"{player1_name}: {player1_score}   {player2_name}: {player2_score}", True, (255,255,255))
@@ -947,7 +954,7 @@ def run_coin_collection_and_shop(player1_name, player2_name, char_choices):
     return
 
 def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka, p2_bazooka, p1_kannon, p2_kannon, p1_life, p2_life):
-    # Battle mode with upgrades
+    # Battle mode with upgrades: bazooka/kannon = 2 shots each, then normal
     try:
         pygame.mixer.music.stop()
         pygame.mixer.music.load('coolwav.mp3')
@@ -956,7 +963,6 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
         print(f"Error playing background music: {e}")
     player1 = pygame.Rect(100, HEIGHT//2, 50, 50)
     player2 = pygame.Rect(WIDTH-150, HEIGHT//2, 50, 50)
-    # Health includes extra lives
     player1_health = 5 + p1_life
     player2_health = 5 + p2_life
     speed = 6
@@ -969,9 +975,11 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
     player2_reload_time = 0
     RELOAD_LIMIT = 3
     RELOAD_DURATION = 3
-    # Damage calculation
-    p1_damage = 1 + p1_bazooka*2 + p1_kannon*3
-    p2_damage = 1 + p2_bazooka*2 + p2_kannon*3
+    # Track bazooka/kannon shots left
+    p1_bazooka_left = 2 * p1_bazooka
+    p2_bazooka_left = 2 * p2_bazooka
+    p1_kannon_left = 2 * p1_kannon
+    p2_kannon_left = 2 * p2_kannon
     start_countdown()
     while True:
         now = time.time()
@@ -984,7 +992,16 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
                 if event.key == pygame.K_SPACE:
                     if player1_shots < RELOAD_LIMIT and now > player1_reload_time:
                         bx = player1.right if p1_right else player1.left - 10
-                        bullets.append({'rect': pygame.Rect(bx, player1.centery-5, 10, 10), 'dir': 1 if p1_right else -1, 'owner': 1})
+                        # Determine damage for next shot
+                        if p1_bazooka_left > 0:
+                            damage = 2
+                            p1_bazooka_left -= 1
+                        elif p1_kannon_left > 0:
+                            damage = 3
+                            p1_kannon_left -= 1
+                        else:
+                            damage = 1
+                        bullets.append({'rect': pygame.Rect(bx, player1.centery-5, 10, 10), 'dir': 1 if p1_right else -1, 'owner': 1, 'damage': damage})
                         player1_shots += 1
                         if player1_shots == RELOAD_LIMIT:
                             player1_reload_time = now + RELOAD_DURATION
@@ -992,7 +1009,15 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
                 if event.key == pygame.K_RSHIFT:
                     if player2_shots < RELOAD_LIMIT and now > player2_reload_time:
                         bx = player2.right if p2_right else player2.left - 10
-                        bullets.append({'rect': pygame.Rect(bx, player2.centery-5, 10, 10), 'dir': 1 if p2_right else -1, 'owner': 2})
+                        if p2_bazooka_left > 0:
+                            damage = 2
+                            p2_bazooka_left -= 1
+                        elif p2_kannon_left > 0:
+                            damage = 3
+                            p2_kannon_left -= 1
+                        else:
+                            damage = 1
+                        bullets.append({'rect': pygame.Rect(bx, player2.centery-5, 10, 10), 'dir': 1 if p2_right else -1, 'owner': 2, 'damage': damage})
                         player2_shots += 1
                         if player2_shots == RELOAD_LIMIT:
                             player2_reload_time = now + RELOAD_DURATION
@@ -1033,10 +1058,10 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
             if bullet['rect'].right < 0 or bullet['rect'].left > WIDTH:
                 bullets.remove(bullet)
             elif bullet['owner'] == 1 and bullet['rect'].colliderect(player2_hitbox):
-                player2_health -= p1_damage
+                player2_health -= bullet['damage']
                 bullets.remove(bullet)
             elif bullet['owner'] == 2 and bullet['rect'].colliderect(player1_hitbox):
-                player1_health -= p2_damage
+                player1_health -= bullet['damage']
                 bullets.remove(bullet)
         # Collision: if players touch, reduce health
         if player1.colliderect(player2):
@@ -1090,6 +1115,11 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
             p2_status = f"P2 Shots: {RELOAD_LIMIT - player2_shots}"
         else:
             p2_status = "P2 Reloading..."
+        # Show bazooka/kannon shots left
+        upgrade_text1 = font.render(f"Bazooka:{p1_bazooka_left} Kannon:{p1_kannon_left}", True, (0,255,0))
+        upgrade_text2 = font.render(f"Bazooka:{p2_bazooka_left} Kannon:{p2_kannon_left}", True, (255,255,0))
+        screen.blit(upgrade_text1, (40, 60))
+        screen.blit(upgrade_text2, (WIDTH-40-upgrade_text2.get_width(), 60))
         p1_status_text = font.render(p1_status, True, (0,0,255))
         p2_status_text = font.render(p2_status, True, (255,0,0))
         screen.blit(p1_status_text, (40, 20))
