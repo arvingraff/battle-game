@@ -732,6 +732,13 @@ def run_game(mode, player1_name, player2_name, char_choices):
             screen.blit(p2_status_text, (WIDTH-40-p2_status_text.get_width(), 20))
 
         # Win logic
+        if player1_health <= 0 and player2_health <= 0:
+            win_text = font.render("Tie!", True, (0,255,0))
+            screen.blit(win_text, (WIDTH//2 - win_text.get_width()//2, HEIGHT//2))
+            pygame.display.flip()
+            pygame.time.wait(2000)
+            pygame.mixer.music.stop()
+            return
         if player1_health <= 0:
             win_text = font.render("Player 2 Wins!", True, (255, 0, 0))
             screen.blit(win_text, (WIDTH//2 - win_text.get_width()//2, HEIGHT//2))
