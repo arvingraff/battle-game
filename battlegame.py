@@ -13,14 +13,6 @@ WIDTH, HEIGHT = screen.get_size()
 pygame.display.set_caption("2 Player Battle Game")
 clock = pygame.time.Clock()
 
-# Play background music in a loop
-try:
-  pygame.mixer.music.load('coolwav.mp3')
-except pygame.error as e:
-    print(f"Error loading music file: {e}")
-    sys.exit()      
-pygame.mixer.music.play(-1)  # -1 means loop forever
-
 # Game state variables (moved inside run_game)
 player1 = None
 player2 = None
@@ -370,6 +362,13 @@ def draw_explorer_character(screen, x, y, style):
 # Main game loop refactored into a function
 
 def run_game(mode, player1_name, player2_name, char_choices):
+    # Start original background music
+    try:
+        pygame.mixer.music.stop()
+        pygame.mixer.music.load('coolwav.mp3')
+        pygame.mixer.music.play(-1)
+    except Exception as e:
+        print(f"Error playing background music: {e}")
     # Initialize game state variables for each session
     player1 = pygame.Rect(100, HEIGHT//2, 50, 50)
     player2 = pygame.Rect(WIDTH-150, HEIGHT//2, 50, 50)
@@ -690,12 +689,14 @@ def run_game(mode, player1_name, player2_name, char_choices):
             screen.blit(win_text, (WIDTH//2 - win_text.get_width()//2, HEIGHT//2))
             pygame.display.flip()
             pygame.time.wait(2000)
+            pygame.mixer.music.stop()
             return
         if player2_health <= 0:
             win_text = font.render("Player 1 Wins!", True, (0, 0, 255))
             screen.blit(win_text, (WIDTH//2 - win_text.get_width()//2, HEIGHT//2))
             pygame.display.flip()
             pygame.time.wait(2000)
+            pygame.mixer.music.stop()
             return
 
         # Draw coins in coin mode
@@ -714,6 +715,7 @@ def run_game(mode, player1_name, player2_name, char_choices):
                 screen.blit(win_text, (WIDTH//2-win_text.get_width()//2, HEIGHT//2))
                 pygame.display.flip()
                 pygame.time.wait(3000)
+                pygame.mixer.music.stop()
                 return
 
         pygame.display.flip()
