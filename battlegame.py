@@ -464,8 +464,8 @@ def run_game(mode, player1_name, player2_name, char_choices):
                 player1_health -= 1
                 bullets.remove(bullet)
 
-        # Collision: if players touch, reduce health
-        if player1.colliderect(player2):
+        # Collision: if players touch, reduce health (battle mode only)
+        if mode == 0 and player1.colliderect(player2):
             player1_health -= 1
             player2_health -= 1
             player1.x = 100
