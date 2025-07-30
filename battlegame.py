@@ -1232,7 +1232,7 @@ def draw_monster(screen, rect, color):
     pygame.draw.line(screen, color, (rect.right, rect.centery), (rect.right+10, rect.centery+10), 6)
 
 def run_survival_mode(player1_name, player2_name, char_choices):
-    # 2-player survival mode with realistic monsters
+    # 2-player survival mode with realistic monsters, no player health
     level = 1
     score = 0
     player1 = pygame.Rect(WIDTH//3, HEIGHT-120, 50, 50)
@@ -1243,8 +1243,6 @@ def run_survival_mode(player1_name, player2_name, char_choices):
     monster_size = 40
     bullets = []
     font_big = pygame.font.SysFont(None, 72)
-    health1 = 5
-    health2 = 5
     barrier = {'rect': pygame.Rect(60, HEIGHT-200, WIDTH-120, 24), 'hp': 50}
     running = True
     start_countdown()
@@ -1303,13 +1301,9 @@ def run_survival_mode(player1_name, player2_name, char_choices):
         # Monster-base collision
         for m in monsters[:]:
             if m['rect'].bottom >= HEIGHT-10:
-                # Randomly hit one player
-                if random.choice([True, False]):
-                    health1 -= 1
-                else:
-                    health2 -= 1
+                barrier['hp'] -= 1
                 monsters.remove(m)
-        if health1 <= 0 or health2 <= 0 or barrier['hp'] <= 0:
+        if barrier['hp'] <= 0:
             running = False
         # Draw everything
         screen.fill((20,20,30))
@@ -1328,10 +1322,6 @@ def run_survival_mode(player1_name, player2_name, char_choices):
         screen.blit(score_text, (40, 20))
         level_text = font.render(f"Level: {level}", True, (0,255,0))
         screen.blit(level_text, (WIDTH-200, 20))
-        health_text1 = font.render(f"P1 Health: {health1}", True, (0,255,255))
-        health_text2 = font.render(f"P2 Health: {health2}", True, (255,0,255))
-        screen.blit(health_text1, (WIDTH//2-180, 20))
-        screen.blit(health_text2, (WIDTH//2+60, 20))
         if not monsters:
             # Level up
             level += 1
