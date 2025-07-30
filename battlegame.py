@@ -184,22 +184,27 @@ def draw_mafia_character(screen, x, y, style):
         pygame.draw.rect(screen, (0,0,0), (x-14, y+3, 28, 38))
         pygame.draw.rect(screen, (255,255,255), (x-6, y+3, 12, 38))
         pygame.draw.rect(screen, (200,0,0), (x-2, y+10, 4, 24))
-    elif style == 1:  # Mafia Boss (even cooler)
-        # Head with sharper jawline
-        pygame.draw.ellipse(screen, (224, 172, 105), (x-20, y-40, 40, 48))
-        pygame.draw.polygon(screen, (200, 160, 90), [(x-20, y+8), (x, y+24), (x+20, y+8), (x, y-8)])
+    elif style == 1:  # Mafia Boss (mature, intimidating)
+        # Head with sharper, more angular jawline
+        pygame.draw.polygon(screen, (224, 172, 105), [(x-20, y-40), (x-15, y+8), (x+15, y+8), (x+20, y-40), (x, y-8)])
+        # Cheekbones
+        pygame.draw.line(screen, (200,160,90), (x-12, y-20), (x-18, y-10), 3)
+        pygame.draw.line(screen, (200,160,90), (x+12, y-20), (x+18, y-10), 3)
+        # Thicker eyebrows
+        pygame.draw.rect(screen, (60,40,20), (x-12, y-28, 10, 3))
+        pygame.draw.rect(screen, (60,40,20), (x+2, y-28, 10, 3))
+        # Eyes (intense)
+        pygame.draw.ellipse(screen, (255,255,255), (x-8, y-22, 10, 8))
+        pygame.draw.ellipse(screen, (255,255,255), (x+8, y-22, 10, 8))
+        pygame.draw.ellipse(screen, (0,0,0), (x-4, y-19, 4, 5))
+        pygame.draw.ellipse(screen, (0,0,0), (x+12, y-19, 4, 5))
+        # Confident, adult smirk
+        pygame.draw.arc(screen, (0,0,0), (x-6, y-10, 16, 8), 3.7, 5.2, 2)
         # Big hat with feather (more detail)
         pygame.draw.rect(screen, (40,40,40), (x-22, y-55, 44, 14))
         pygame.draw.rect(screen, (80,80,80), (x-10, y-65, 24, 12))
         pygame.draw.polygon(screen, (255,255,0), [(x+10, y-55), (x+18, y-70), (x+14, y-55)])  # feather
         pygame.draw.line(screen, (255,255,255), (x-10, y-60), (x+10, y-60), 2)
-        # Expressive eyes
-        pygame.draw.ellipse(screen, (255,255,255), (x-8, y-22, 10, 8))
-        pygame.draw.ellipse(screen, (255,255,255), (x+8, y-22, 10, 8))
-        pygame.draw.ellipse(screen, (0,0,0), (x-4, y-19, 4, 5))
-        pygame.draw.ellipse(screen, (0,0,0), (x+12, y-19, 4, 5))
-        # Confident smirk
-        pygame.draw.arc(screen, (0,0,0), (x-6, y-10, 16, 8), 3.7, 5.2, 2)
         # Monocle
         pygame.draw.circle(screen, (255,215,0), (x+12, y-18), 7, 2)
         pygame.draw.line(screen, (255,215,0), (x+12, y-11), (x+12, y-5), 2)
