@@ -40,7 +40,7 @@ coin_rects = []  # For coin collection mode
 
 def mode_lobby():
     selected = 0
-    options = ["Battle Mode", "Coin Collection Mode", "Play Music", "Stop Music", "Exit"]
+    options = ["Battle Mode", "Coin Collection Mode", "Play Music", "Stop Music", "Watch Cute Video", "Exit"]
     music_playing = False
     pygame.mixer.music.stop()  # Ensure no music plays automatically
     while True:
@@ -76,9 +76,55 @@ def mode_lobby():
                     elif options[selected] == "Stop Music":
                         pygame.mixer.music.stop()
                         music_playing = False
+                    elif options[selected] == "Watch Cute Video":
+                        watch_cute_video()
                     else:
                         pygame.mixer.music.stop()
-                        return selected if options[selected] not in ["Play Music", "Stop Music"] else None
+                        return selected if options[selected] not in ["Play Music", "Stop Music", "Watch Cute Video"] else None
+
+def watch_cute_video():
+    import cv2
+    cap = cv2.VideoCapture('cutevideo.mp4')
+    if not cap.isOpened():
+        # Show error message in lobby
+        screen.fill((30,30,30))
+        error_text = lobby_font.render("Error: Could not open cutevideo.mp4", True, (255,0,0))
+        screen.blit(error_text, (WIDTH//2-error_text.get_width()//2, HEIGHT//2-error_text.get_height()//2))
+        pygame.display.flip()
+        pygame.time.wait(2000)
+        return
+    exit_button_rect = pygame.Rect(WIDTH//2-100, HEIGHT-120, 200, 60)
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+        try:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame = cv2.resize(frame, (WIDTH, HEIGHT))
+            frame_surface = pygame.surfarray.make_surface(frame.swapaxes(0,1))
+            screen.blit(frame_surface, (0,0))
+        except Exception as e:
+            screen.fill((30,30,30))
+            error_text = lobby_font.render(f"Video error: {e}", True, (255,0,0))
+            screen.blit(error_text, (WIDTH//2-error_text.get_width()//2, HEIGHT//2-error_text.get_height()//2))
+            pygame.display.flip()
+            pygame.time.wait(2000)
+            cap.release()
+            return
+        pygame.draw.rect(screen, (255,0,0), exit_button_rect)
+        exit_text = lobby_font.render("Exit", True, (255,255,255))
+        screen.blit(exit_text, (exit_button_rect.centerx-exit_text.get_width()//2, exit_button_rect.centery-exit_text.get_height()//2))
+        pygame.display.flip()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                cap.release()
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if exit_button_rect.collidepoint(event.pos):
+                    cap.release()
+                    return
+    cap.release()
 
 # Countdown and player name input functions remain the same...
 
@@ -216,12 +262,14 @@ def draw_mafia_character(screen, x, y, style):
         # Shoes
         pygame.draw.ellipse(screen, (0,0,0), (x-12, y+38, 12, 8))
         pygame.draw.ellipse(screen, (0,0,0), (x+0, y+38, 12, 8))
-    elif style == 1:  # Mafia Boss (no smile)
-        # Head with sharper, more angular jawline
-        pygame.draw.polygon(screen, (224, 172, 105), [(x-20, y-40), (x-15, y+8), (x+15, y+8), (x+20, y-40), (x, y-8)])
-        # Cheekbones
-        pygame.draw.line(screen, (200,160,90), (x-12, y-20), (x-18, y-10), 3)
-        pygame.draw.line(screen, (200,160,90), (x+12, y-20), (x+18, y-10), 3)
+    elif style == 1:  # Mafia Boss (improved head)
+        # Head: oval, natural jawline
+        pygame.draw.ellipse(screen, (224, 172, 105), (x-20, y-40, 40, 48))
+        # Jaw shadow for depth
+        pygame.draw.arc(screen, (200,160,90), (x-12, y-10, 24, 18), 3.14, 2*3.14, 3)
+        # Cheekbones (subtle)
+        pygame.draw.arc(screen, (200,160,90), (x-16, y-20, 12, 10), 3.8, 5.5, 2)
+        pygame.draw.arc(screen, (200,160,90), (x+4, y-20, 12, 10), 3.8, 5.5, 2)
         # Thicker eyebrows
         pygame.draw.rect(screen, (60,40,20), (x-12, y-28, 10, 3))
         pygame.draw.rect(screen, (60,40,20), (x+2, y-28, 10, 3))
@@ -230,7 +278,7 @@ def draw_mafia_character(screen, x, y, style):
         pygame.draw.ellipse(screen, (255,255,255), (x+8, y-22, 10, 8))
         pygame.draw.ellipse(screen, (0,0,0), (x-4, y-19, 4, 5))
         pygame.draw.ellipse(screen, (0,0,0), (x+12, y-19, 4, 5))
-        # Confident, adult smirk
+        # Stern mouth
         pygame.draw.arc(screen, (0,0,0), (x-6, y-10, 16, 8), 3.8, 5.5, 2)
         # Big hat with feather (more detail)
         pygame.draw.rect(screen, (40,40,40), (x-22, y-55, 44, 14))
