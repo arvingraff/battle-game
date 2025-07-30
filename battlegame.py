@@ -949,8 +949,10 @@ def run_coin_collection_and_shop(player1_name, player2_name, char_choices):
             p1_bazooka, p1_kannon, p1_life = bazooka, kannon, life
         else:
             p2_bazooka, p2_kannon, p2_life = bazooka, kannon, life
-    # Start battle mode with upgrades
-    run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka, p2_bazooka, p1_kannon, p2_kannon, p1_life, p2_life)
+    # After shop, let players choose mafia character for battle
+    mafia_choices = character_select(0)  # 0 = mafia mode
+    # Start battle mode with upgrades and selected mafia
+    run_game_with_upgrades(player1_name, player2_name, mafia_choices, p1_bazooka, p2_bazooka, p1_kannon, p2_kannon, p1_life, p2_life)
     return
 
 def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka, p2_bazooka, p1_kannon, p2_kannon, p1_life, p2_life):
