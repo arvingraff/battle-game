@@ -40,7 +40,7 @@ coin_rects = []  # For coin collection mode
 
 def mode_lobby():
     selected = 0
-    options = ["Battle Mode", "Coin Collection Mode", "Combine Mode", "Play Music", "Stop Music", "Watch Cute Video", "Exit"]
+    options = ["Battle Mode", "Coin Collection Mode", "Play Music", "Stop Music", "Watch Cute Video", "Exit"]
     music_playing = False
     pygame.mixer.music.stop()  # Ensure no music plays automatically
     while True:
@@ -776,27 +776,27 @@ def run_game(mode, player1_name, player2_name, char_choices):
         pygame.display.flip()
         clock.tick(60)
 
-def run_combine_mode(player1_name, player2_name, char_choices):
-    # 1. Coin collection phase
+# Re-add Coin Collection mode
+
+def run_coin_collection(player1_name, player2_name, char_choices):
     player1_score = 0
     player2_score = 0
     coin_rects = []
-    timer = time.time() + 30
+    coin_timer = time.time() + 30
+    player1 = pygame.Rect(100, HEIGHT//2, 50, 50)
+    player2 = pygame.Rect(WIDTH-150, HEIGHT//2, 50, 50)
+    speed = 6
     for _ in range(10):
         x = random.randint(60, WIDTH-60)
         y = random.randint(100, HEIGHT-60)
         coin_rects.append(pygame.Rect(x, y, 24, 24))
-    player1 = pygame.Rect(100, HEIGHT//2, 50, 50)
-    player2 = pygame.Rect(WIDTH-150, HEIGHT//2, 50, 50)
-    speed = 6
-    debug_font = pygame.font.SysFont(None, 32)
-    while time.time() < timer:
+    start_countdown()
+    while time.time() < coin_timer:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
         keys = pygame.key.get_pressed()
-        # Player movement
         if keys[pygame.K_a]: player1.x -= speed
         if keys[pygame.K_d]: player1.x += speed
         if keys[pygame.K_w]: player1.y -= speed
@@ -805,10 +805,8 @@ def run_combine_mode(player1_name, player2_name, char_choices):
         if keys[pygame.K_RIGHT]: player2.x += speed
         if keys[pygame.K_UP]: player2.y -= speed
         if keys[pygame.K_DOWN]: player2.y += speed
-        # Border collision
         player1.clamp_ip(pygame.Rect(0,0,WIDTH,HEIGHT))
         player2.clamp_ip(pygame.Rect(0,0,WIDTH,HEIGHT))
-        # Coin collection
         p1_body = pygame.Rect(player1.centerx-20, player1.centery-35, 40, 110)
         p2_body = pygame.Rect(player2.centerx-20, player2.centery-35, 40, 110)
         for coin in coin_rects[:]:
@@ -822,79 +820,24 @@ def run_combine_mode(player1_name, player2_name, char_choices):
             x = random.randint(60, WIDTH-60)
             y = random.randint(100, HEIGHT-60)
             coin_rects.append(pygame.Rect(x, y, 24, 24))
-        # Draw
         screen.fill((30,30,30))
-        for idx, coin in enumerate(coin_rects):
+        for coin in coin_rects:
             pygame.draw.circle(screen, (255,215,0), coin.center, 12)
-            # Draw debug index for each coin
-            debug_text = debug_font.render(str(idx+1), True, (0,0,0))
-            screen.blit(debug_text, (coin.centerx-8, coin.centery-8))
         draw_explorer_character(screen, player1.centerx, player1.centery, char_choices[0])
         draw_explorer_character(screen, player2.centerx, player2.centery, char_choices[1])
         score_text = font.render(f"{player1_name}: {player1_score}   {player2_name}: {player2_score}", True, (255,255,255))
         screen.blit(score_text, (WIDTH//2-score_text.get_width()//2, 20))
-        timer_text = font.render(f"Time left: {int(timer-time.time())}", True, (255,255,255))
+        timer_text = font.render(f"Time left: {int(coin_timer-time.time())}", True, (255,255,255))
         screen.blit(timer_text, (WIDTH//2-timer_text.get_width()//2, 60))
-        # Debug: show number of coins
-        coin_count_text = debug_font.render(f"Coins on screen: {len(coin_rects)}", True, (255,0,0))
-        screen.blit(coin_count_text, (20, HEIGHT-40))
         pygame.display.flip()
         clock.tick(60)
-    # 2. Shop phase
-    shop_items = ["Bazooka (10)", "New Life (10)", "Kannon (30)"]
-    p1_coins = player1_score
-    p2_coins = player2_score
-    p1_bazooka = 0
-    p2_bazooka = 0
-    p1_kannon = 0
-    p2_kannon = 0
-    p1_life = 0
-    p2_life = 0
-    for player, coins, bazooka, kannon, life, name in [(1, p1_coins, p1_bazooka, p1_kannon, p1_life, player1_name), (2, p2_coins, p2_bazooka, p2_kannon, p2_life, player2_name)]:
-        done = False
-        selected = 0
-        while not done:
-            screen.fill((30,30,30))
-            shop_text = lobby_font.render(f"{name}'s Shop - Coins: {coins}", True, (255,255,0))
-            screen.blit(shop_text, (WIDTH//2-shop_text.get_width()//2, HEIGHT//2-160))
-            for i, item in enumerate(shop_items):
-                color = (0,255,0) if i==selected else (200,200,200)
-                item_text = font.render(item, True, color)
-                screen.blit(item_text, (WIDTH//2-item_text.get_width()//2, HEIGHT//2-40+i*60))
-            info_text = font.render("Enter: Buy, Esc: Done, Up/Down: Select", True, (255,255,255))
-            screen.blit(info_text, (WIDTH//2-info_text.get_width()//2, HEIGHT-80))
-            pygame.display.flip()
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_UP:
-                        selected = (selected-1)%len(shop_items)
-                    if event.key == pygame.K_DOWN:
-                        selected = (selected+1)%len(shop_items)
-                    if event.key == pygame.K_RETURN:
-                        if selected == 0 and coins >= 10:
-                            bazooka += 1
-                            coins -= 10
-                        if selected == 1 and coins >= 10:
-                            life += 1
-                            coins -= 10
-                        if selected == 2 and coins >= 30:
-                            kannon += 1
-                            coins -= 30
-                    if event.key == pygame.K_ESCAPE:
-                        done = True
-        if player == 1:
-            p1_bazooka, p1_kannon, p1_life = bazooka, kannon, life
-        else:
-            p2_bazooka, p2_kannon, p2_life = bazooka, kannon, life
-    # 3. Battle phase
-    run_combine_battle(player1_name, player2_name, char_choices, p1_bazooka, p2_bazooka, p1_kannon, p2_kannon, p1_life, p2_life)
-
-def run_combine_battle(player1_name, player2_name, char_choices, p1_bazooka, p2_bazooka, p1_kannon, p2_kannon, p1_life, p2_life):
-    # ...implement battle logic with bazooka/kannon and extra life...
-    pass
+    winner = player1_name if player1_score > player2_score else player2_name if player2_score > player1_score else "Tie!"
+    win_text = font.render(f"Winner: {winner}", True, (0,255,0))
+    screen.blit(win_text, (WIDTH//2-win_text.get_width()//2, HEIGHT//2))
+    pygame.display.flip()
+    pygame.time.wait(3000)
+    pygame.mixer.music.stop()
+    return
 
 # Main program loop
 while True:
@@ -902,12 +845,10 @@ while True:
     player1_name = get_player_name("Player 1, enter your name:", HEIGHT//2 - 120)
     player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
     char_choices = character_select(mode)
-    if mode == "Combine Mode":
-        # Use run_game for coin phase, then shop and advanced battle
-        # Mode 2 = Combine
-        run_game(2, player1_name, player2_name, char_choices)
-    else:
-        run_game(0 if mode == "Battle Mode" else 1, player1_name, player2_name, char_choices)
+    if mode == 0:
+        run_game(0, player1_name, player2_name, char_choices)  # Battle Mode
+    elif mode == 1:
+        run_coin_collection(player1_name, player2_name, char_choices)  # Coin Collection Mode
 
 
 
