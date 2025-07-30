@@ -33,6 +33,7 @@ bullets = []  # Each bullet: {'rect': ..., 'dir': ..., 'owner': ...}
 
 font = pygame.font.SysFont(None, 48)
 lobby_font = pygame.font.SysFont(None, 64)
+name_font = pygame.font.SysFont(None, 28)  # Small font for character names
 
 player1_shots = 0
 player2_shots = 0
@@ -142,8 +143,8 @@ def character_select(mode):
             highlight = (255,255,0) if i==selected1 else (80,80,80)
             pygame.draw.rect(screen, highlight, (preview_xs[i]-50, preview_y-70, 100, 140), 4)
             draw_func(screen, preview_xs[i], preview_y, style)
-            # Draw name below preview, spaced further down
-            name_text = font.render(names[i], True, highlight)
+            # Draw name below preview, spaced further down, smaller font
+            name_text = name_font.render(names[i], True, highlight)
             screen.blit(name_text, (preview_xs[i]-name_text.get_width()//2, preview_y+name_y_offset))
         pygame.display.flip()
         for event in pygame.event.get():
@@ -165,8 +166,8 @@ def character_select(mode):
             highlight = (255,0,0) if i==selected2 else (80,80,80)
             pygame.draw.rect(screen, highlight, (preview_xs[i]-50, preview_y-70, 100, 140), 4)
             draw_func(screen, preview_xs[i], preview_y, style)
-            # Draw name below preview, spaced further down
-            name_text = font.render(names[i], True, highlight)
+            # Draw name below preview, spaced further down, smaller font
+            name_text = name_font.render(names[i], True, highlight)
             screen.blit(name_text, (preview_xs[i]-name_text.get_width()//2, preview_y+name_y_offset))
         pygame.display.flip()
         for event in pygame.event.get():
