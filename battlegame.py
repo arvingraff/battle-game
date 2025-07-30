@@ -839,6 +839,286 @@ def run_coin_collection(player1_name, player2_name, char_choices):
     pygame.mixer.music.stop()
     return
 
+def run_coin_collection_and_shop(player1_name, player2_name, char_choices):
+    # Coin collection phase
+    player1_score = 0
+    player2_score = 0
+    paper_rects = []
+    paper_timer = time.time() + 30
+    player1 = pygame.Rect(100, HEIGHT//2, 50, 50)
+    player2 = pygame.Rect(WIDTH-150, HEIGHT//2, 50, 50)
+    speed = 6
+    for _ in range(10):
+        x = random.randint(60, WIDTH-60)
+        y = random.randint(100, HEIGHT-60)
+        paper_rects.append(pygame.Rect(x, y, 24, 24))
+    start_countdown()
+    while time.time() < paper_timer:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_a]: player1.x -= speed
+        if keys[pygame.K_d]: player1.x += speed
+        if keys[pygame.K_w]: player1.y -= speed
+        if keys[pygame.K_s]: player1.y += speed
+        if keys[pygame.K_LEFT]: player2.x -= speed
+        if keys[pygame.K_RIGHT]: player2.x += speed
+        if keys[pygame.K_UP]: player2.y -= speed
+        if keys[pygame.K_DOWN]: player2.y += speed
+        player1.clamp_ip(pygame.Rect(0,0,WIDTH,HEIGHT))
+        player2.clamp_ip(pygame.Rect(0,0,WIDTH,HEIGHT))
+        p1_body = pygame.Rect(player1.centerx-20, player1.centery-35, 40, 110)
+        p2_body = pygame.Rect(player2.centerx-20, player2.centery-35, 40, 110)
+        for paper in paper_rects[:]:
+            if p1_body.colliderect(paper):
+                player1_score += 1
+                paper_rects.remove(paper)
+            elif p2_body.colliderect(paper):
+                player2_score += 1
+                paper_rects.remove(paper)
+        while len(paper_rects) < 10:
+            x = random.randint(60, WIDTH-60)
+            y = random.randint(100, HEIGHT-60)
+            paper_rects.append(pygame.Rect(x, y, 24, 24))
+        screen.fill((30,30,30))
+        for paper in paper_rects:
+            pygame.draw.rect(screen, (0,255,0), paper)  # Green rectangle for money paper
+        draw_explorer_character(screen, player1.centerx, player1.centery, char_choices[0])
+        draw_explorer_character(screen, player2.centerx, player2.centery, char_choices[1])
+        score_text = font.render(f"{player1_name}: {player1_score}   {player2_name}: {player2_score}", True, (255,255,255))
+        screen.blit(score_text, (WIDTH//2-score_text.get_width()//2, 20))
+        timer_text = font.render(f"Time left: {int(paper_timer-time.time())}", True, (255,255,255))
+        screen.blit(timer_text, (WIDTH//2-timer_text.get_width()//2, 60))
+        pygame.display.flip()
+        clock.tick(60)
+    # Shop phase
+    shop_items = ["Bazooka (10)", "Kannon (20)", "Extra Life (10)"]
+    p1_paper = player1_score
+    p2_paper = player2_score
+    p1_bazooka = 0
+    p2_bazooka = 0
+    p1_kannon = 0
+    p2_kannon = 0
+    p1_life = 0
+    p2_life = 0
+    for player, paper, bazooka, kannon, life, name in [(1, p1_paper, p1_bazooka, p1_kannon, p1_life, player1_name), (2, p2_paper, p2_bazooka, p2_kannon, p2_life, player2_name)]:
+        done = False
+        selected = 0
+        while not done:
+            screen.fill((30,30,30))
+            shop_text = lobby_font.render(f"{name}'s Shop - Paper: {paper}", True, (0,255,0))
+            screen.blit(shop_text, (WIDTH//2-shop_text.get_width()//2, HEIGHT//2-160))
+            for i, item in enumerate(shop_items):
+                color = (0,255,0) if i==selected else (200,200,200)
+                item_text = font.render(item, True, color)
+                screen.blit(item_text, (WIDTH//2-item_text.get_width()//2, HEIGHT//2-40+i*60))
+            info_text = font.render("Enter: Buy, Esc: Done, Up/Down: Select", True, (255,255,255))
+            screen.blit(info_text, (WIDTH//2-info_text.get_width()//2, HEIGHT-80))
+            pygame.display.flip()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_UP:
+                        selected = (selected-1)%len(shop_items)
+                    if event.key == pygame.K_DOWN:
+                        selected = (selected+1)%len(shop_items)
+                    if event.key == pygame.K_RETURN:
+                        if selected == 0 and paper >= 10:
+                            bazooka += 1
+                            paper -= 10
+                        if selected == 1 and paper >= 20:
+                            kannon += 1
+                            paper -= 20
+                        if selected == 2 and paper >= 10:
+                            life += 1
+                            paper -= 10
+                    if event.key == pygame.K_ESCAPE:
+                        done = True
+        if player == 1:
+            p1_bazooka, p1_kannon, p1_life = bazooka, kannon, life
+        else:
+            p2_bazooka, p2_kannon, p2_life = bazooka, kannon, life
+    # Start battle mode with upgrades
+    run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka, p2_bazooka, p1_kannon, p2_kannon, p1_life, p2_life)
+    return
+
+def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka, p2_bazooka, p1_kannon, p2_kannon, p1_life, p2_life):
+    # Battle mode with upgrades
+    try:
+        pygame.mixer.music.stop()
+        pygame.mixer.music.load('coolwav.mp3')
+        pygame.mixer.music.play(-1)
+    except Exception as e:
+        print(f"Error playing background music: {e}")
+    player1 = pygame.Rect(100, HEIGHT//2, 50, 50)
+    player2 = pygame.Rect(WIDTH-150, HEIGHT//2, 50, 50)
+    # Health includes extra lives
+    player1_health = 5 + p1_life
+    player2_health = 5 + p2_life
+    speed = 6
+    p1_right = True
+    p2_right = False
+    bullets = []
+    player1_shots = 0
+    player2_shots = 0
+    player1_reload_time = 0
+    player2_reload_time = 0
+    RELOAD_LIMIT = 3
+    RELOAD_DURATION = 3
+    # Damage calculation
+    p1_damage = 1 + p1_bazooka*2 + p1_kannon*3
+    p2_damage = 1 + p2_bazooka*2 + p2_kannon*3
+    start_countdown()
+    while True:
+        now = time.time()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                # Player 1 shoot (space)
+                if event.key == pygame.K_SPACE:
+                    if player1_shots < RELOAD_LIMIT and now > player1_reload_time:
+                        bx = player1.right if p1_right else player1.left - 10
+                        bullets.append({'rect': pygame.Rect(bx, player1.centery-5, 10, 10), 'dir': 1 if p1_right else -1, 'owner': 1})
+                        player1_shots += 1
+                        if player1_shots == RELOAD_LIMIT:
+                            player1_reload_time = now + RELOAD_DURATION
+                # Player 2 shoot (right shift)
+                if event.key == pygame.K_RSHIFT:
+                    if player2_shots < RELOAD_LIMIT and now > player2_reload_time:
+                        bx = player2.right if p2_right else player2.left - 10
+                        bullets.append({'rect': pygame.Rect(bx, player2.centery-5, 10, 10), 'dir': 1 if p2_right else -1, 'owner': 2})
+                        player2_shots += 1
+                        if player2_shots == RELOAD_LIMIT:
+                            player2_reload_time = now + RELOAD_DURATION
+        # Reset shots after reload
+        if player1_shots == RELOAD_LIMIT and now > player1_reload_time:
+            player1_shots = 0
+        if player2_shots == RELOAD_LIMIT and now > player2_reload_time:
+            player2_shots = 0
+        keys = pygame.key.get_pressed()
+        # Player 1 controls (WASD)
+        if keys[pygame.K_a]:
+            player1.x -= speed
+            p1_right = False
+        if keys[pygame.K_d]:
+            player1.x += speed
+            p1_right = True
+        if keys[pygame.K_w]:
+            player1.y -= speed
+        if keys[pygame.K_s]:
+            player1.y += speed
+        # Player 2 controls (Arrow keys)
+        if keys[pygame.K_LEFT]:
+            player2.x -= speed
+            p2_right = False
+        if keys[pygame.K_RIGHT]:
+            player2.x += speed
+            p2_right = True
+        if keys[pygame.K_UP]:
+            player2.y -= speed
+        if keys[pygame.K_DOWN]:
+            player2.y += speed
+        # Hitboxes
+        player1_hitbox = pygame.Rect(player1.centerx-20, player1.centery-35, 40, 110)
+        player2_hitbox = pygame.Rect(player2.centerx-20, player2.centery-35, 40, 110)
+        # Move bullets
+        for bullet in bullets[:]:
+            bullet['rect'].x += bullet['dir'] * 12
+            if bullet['rect'].right < 0 or bullet['rect'].left > WIDTH:
+                bullets.remove(bullet)
+            elif bullet['owner'] == 1 and bullet['rect'].colliderect(player2_hitbox):
+                player2_health -= p1_damage
+                bullets.remove(bullet)
+            elif bullet['owner'] == 2 and bullet['rect'].colliderect(player1_hitbox):
+                player1_health -= p2_damage
+                bullets.remove(bullet)
+        # Collision: if players touch, reduce health
+        if player1.colliderect(player2):
+            player1_health -= 1
+            player2_health -= 1
+            player1.x = 100
+            player1.y = HEIGHT//2
+            player2.x = WIDTH-150
+            player2.y = HEIGHT//2
+        # Border collision
+        if player1.left < 0:
+            player1.left = 0
+        if player1.right > WIDTH:
+            player1.right = WIDTH
+        if player1.top < 0:
+            player1.top = 0
+        if player1.bottom > HEIGHT:
+            player1.bottom = HEIGHT
+        if player2.left < 0:
+            player2.left = 0
+        if player2.right > WIDTH:
+            player2.right = WIDTH
+        if player2.top < 0:
+            player2.top = 0
+        if player2.bottom > HEIGHT:
+            player2.bottom = HEIGHT
+        # Draw everything (reuse battle mode visuals)
+        screen.fill((30, 30, 30))
+        border_color = (200, 200, 200)
+        border_thickness = 8
+        pygame.draw.rect(screen, border_color, (0, 0, WIDTH, HEIGHT), border_thickness)
+        draw_mafia_character(screen, player1.centerx, player1.centery, char_choices[0])
+        draw_mafia_character(screen, player2.centerx, player2.centery, char_choices[1])
+        name_text1 = font.render(player1_name, True, (0,0,255))
+        screen.blit(name_text1, (player1.centerx - name_text1.get_width()//2, player1.centery-60))
+        name_text2 = font.render(player2_name, True, (255,0,0))
+        screen.blit(name_text2, (player2.centerx - name_text2.get_width()//2, player2.centery-60))
+        # Draw guns (reuse from battle mode)
+        # ...existing gun drawing code can be reused here...
+        # Draw bullets
+        for bullet in bullets:
+            pygame.draw.rect(screen, (255,255,0), bullet['rect'])
+        # Show health and shots
+        health_text = font.render(f"P1 Health: {player1_health}  P2 Health: {player2_health}", True, (255,255,255))
+        screen.blit(health_text, (WIDTH//2 - health_text.get_width()//2, 20))
+        if player1_shots < RELOAD_LIMIT and now > player1_reload_time:
+            p1_status = f"P1 Shots: {RELOAD_LIMIT - player1_shots}"
+        else:
+            p1_status = "P1 Reloading..."
+        if player2_shots < RELOAD_LIMIT and now > player2_reload_time:
+            p2_status = f"P2 Shots: {RELOAD_LIMIT - player2_shots}"
+        else:
+            p2_status = "P2 Reloading..."
+        p1_status_text = font.render(p1_status, True, (0,0,255))
+        p2_status_text = font.render(p2_status, True, (255,0,0))
+        screen.blit(p1_status_text, (40, 20))
+        screen.blit(p2_status_text, (WIDTH-40-p2_status_text.get_width(), 20))
+        # Win logic
+        if player1_health <= 0 and player2_health <= 0:
+            win_text = font.render("Tie!", True, (0,255,0))
+            screen.blit(win_text, (WIDTH//2 - win_text.get_width()//2, HEIGHT//2))
+            pygame.display.flip()
+            pygame.time.wait(2000)
+            pygame.mixer.music.stop()
+            return
+        if player1_health <= 0:
+            win_text = font.render("Player 2 Wins!", True, (255, 0, 0))
+            screen.blit(win_text, (WIDTH//2 - win_text.get_width()//2, HEIGHT//2))
+            pygame.display.flip()
+            pygame.time.wait(2000)
+            pygame.mixer.music.stop()
+            return
+        if player2_health <= 0:
+            win_text = font.render("Player 1 Wins!", True, (0, 0, 255))
+            screen.blit(win_text, (WIDTH//2 - win_text.get_width()//2, HEIGHT//2))
+            pygame.display.flip()
+            pygame.time.wait(2000)
+            pygame.mixer.music.stop()
+            return
+        pygame.display.flip()
+        clock.tick(60)
+
 # Main program loop
 while True:
     mode = mode_lobby()
@@ -848,7 +1128,7 @@ while True:
     if mode == 0:
         run_game(0, player1_name, player2_name, char_choices)  # Battle Mode
     elif mode == 1:
-        run_coin_collection(player1_name, player2_name, char_choices)  # Coin Collection Mode
+        run_coin_collection_and_shop(player1_name, player2_name, char_choices)  # Coin Collection + Shop + Battle Mode
 
 
 
