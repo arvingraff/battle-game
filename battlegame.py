@@ -1358,8 +1358,6 @@ def run_survival_mode(player1_name, player2_name, char_choices):
         screen.blit(barrier_hp, (barrier['rect'].centerx-barrier_hp.get_width()//2, barrier['rect'].top-30))
         for m in monsters:
             draw_monster(screen, m['rect'], m['color'], m['hp'])
-            hp_text = font.render(str(m['hp']), True, (255,255,255))
-            screen.blit(hp_text, (m['rect'].centerx-hp_text.get_width()//2, m['rect'].centery-m['rect'].height//2))
         for bullet in bullets:
             pygame.draw.rect(screen, (255,255,0), bullet['rect'])
         score_text = font.render(f"Score: {score}", True, (255,255,255))
