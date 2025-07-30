@@ -133,6 +133,7 @@ def character_select(mode):
     p2_done = False
     preview_y = HEIGHT//2+20
     preview_xs = [WIDTH//2-180, WIDTH//2, WIDTH//2+180]
+    name_y_offset = 120  # Move names further down
     while not p1_done:
         screen.fill((30,30,30))
         title = lobby_font.render("Player 1: Choose Your Character (Enter to confirm)", True, (255,255,255))
@@ -141,9 +142,9 @@ def character_select(mode):
             highlight = (255,255,0) if i==selected1 else (80,80,80)
             pygame.draw.rect(screen, highlight, (preview_xs[i]-50, preview_y-70, 100, 140), 4)
             draw_func(screen, preview_xs[i], preview_y, style)
-            # Draw name below preview
+            # Draw name below preview, spaced further down
             name_text = font.render(names[i], True, highlight)
-            screen.blit(name_text, (preview_xs[i]-name_text.get_width()//2, preview_y+80))
+            screen.blit(name_text, (preview_xs[i]-name_text.get_width()//2, preview_y+name_y_offset))
         pygame.display.flip()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -164,9 +165,9 @@ def character_select(mode):
             highlight = (255,0,0) if i==selected2 else (80,80,80)
             pygame.draw.rect(screen, highlight, (preview_xs[i]-50, preview_y-70, 100, 140), 4)
             draw_func(screen, preview_xs[i], preview_y, style)
-            # Draw name below preview
+            # Draw name below preview, spaced further down
             name_text = font.render(names[i], True, highlight)
-            screen.blit(name_text, (preview_xs[i]-name_text.get_width()//2, preview_y+80))
+            screen.blit(name_text, (preview_xs[i]-name_text.get_width()//2, preview_y+name_y_offset))
         pygame.display.flip()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
