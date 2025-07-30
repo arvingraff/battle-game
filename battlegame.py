@@ -1217,6 +1217,19 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
         pygame.display.flip()
         clock.tick(60)
 
+def point_in_polygon(x, y, poly):
+    # Ray casting algorithm for point-in-polygon
+    n = len(poly)
+    inside = False
+    px, py = x, y
+    for i in range(n):
+        j = (i-1)%n
+        xi, yi = poly[i]
+        xj, yj = poly[j]
+        if ((yi > py) != (yj > py)) and (px < (xj-xi)*(py-yi)/(yj-yi)+xi):
+            inside = not inside
+    return inside
+
 def draw_monster(screen, rect, color, hp):
     # Even more realistic and menacing monster
     import pygame.gfxdraw
@@ -1292,6 +1305,7 @@ def draw_monster(screen, rect, color, hp):
     # Health above head
     hp_text = font.render(f"HP: {hp}", True, (255,255,0))
     screen.blit(hp_text, (rect.centerx-hp_text.get_width()//2, rect.top-24))
+    return body_points
 
 def run_survival_mode(player1_name, player2_name, char_choices):
     # 2-player survival mode with realistic monsters, easier levels
@@ -1346,15 +1360,19 @@ def run_survival_mode(player1_name, player2_name, char_choices):
                 bullets.remove(bullet)
         # Bullet-monster collision
         for bullet in bullets[:]:
+            hit = False
             for m in monsters:
-                if bullet['rect'].colliderect(m['rect']):
+                poly = draw_monster(screen, m['rect'], m['color'], m['hp'])
+                bx, by = bullet['rect'].center
+                if point_in_polygon(bx, by, poly):
                     m['hp'] -= 1
                     if m['hp'] <= 0:
                         monsters.remove(m)
                         score += 1
-                    if bullet in bullets:
-                        bullets.remove(bullet)
+                    hit = True
                     break
+            if hit and bullet in bullets:
+                bullets.remove(bullet)
         # Monster-barrier collision
         for m in monsters[:]:
             if m['rect'].colliderect(barrier['rect']):
