@@ -1217,19 +1217,34 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
         pygame.display.flip()
         clock.tick(60)
 
-def run_survival_mode(player_name, char_choice):
-    # Survival mode: defeat waves of monsters, levels get harder
+def draw_monster(screen, rect, color):
+    # Draw a more realistic monster
+    pygame.draw.ellipse(screen, color, rect)  # Body
+    eye_y = rect.top + rect.height//3
+    pygame.draw.circle(screen, (255,255,255), (rect.left+rect.width//3, eye_y), 6)
+    pygame.draw.circle(screen, (255,255,255), (rect.right-rect.width//3, eye_y), 6)
+    pygame.draw.circle(screen, (0,0,0), (rect.left+rect.width//3, eye_y), 3)
+    pygame.draw.circle(screen, (0,0,0), (rect.right-rect.width//3, eye_y), 3)
+    mouth_rect = pygame.Rect(rect.centerx-10, rect.bottom-18, 20, 8)
+    pygame.draw.arc(screen, (200,0,0), mouth_rect, 3.14, 2*3.14, 3)
+    # Arms
+    pygame.draw.line(screen, color, (rect.left, rect.centery), (rect.left-10, rect.centery+10), 6)
+    pygame.draw.line(screen, color, (rect.right, rect.centery), (rect.right+10, rect.centery+10), 6)
+
+def run_survival_mode(player1_name, player2_name, char_choices):
+    # 2-player survival mode with realistic monsters
     level = 1
     score = 0
-    player = pygame.Rect(WIDTH//2, HEIGHT-120, 50, 50)
+    player1 = pygame.Rect(WIDTH//3, HEIGHT-120, 50, 50)
+    player2 = pygame.Rect(2*WIDTH//3, HEIGHT-120, 50, 50)
     speed = 8
     monsters = []
-    monster_speed = 1  # Slower monsters
+    monster_speed = 1
     monster_size = 40
     bullets = []
     font_big = pygame.font.SysFont(None, 72)
-    health = 5  # Player starts with 5 health
-    # Single barrier line
+    health1 = 5
+    health2 = 5
     barrier = {'rect': pygame.Rect(60, HEIGHT-200, WIDTH-120, 24), 'hp': 50}
     running = True
     start_countdown()
@@ -1239,18 +1254,28 @@ def run_survival_mode(player_name, char_choice):
             for _ in range(level * 3):
                 x = random.randint(60, WIDTH-60)
                 y = random.randint(-300, -40)
-                monsters.append({'rect': pygame.Rect(x, y, monster_size, monster_size), 'hp': 2+level//2})
+                color = (random.randint(80,200), random.randint(80,200), random.randint(80,200))
+                monsters.append({'rect': pygame.Rect(x, y, monster_size, monster_size), 'hp': 2+level//2, 'color': color})
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.KEYDOWN:
+                # Player 1 shoot (space)
                 if event.key == pygame.K_SPACE:
-                    bullets.append({'rect': pygame.Rect(player.centerx-5, player.top-10, 10, 20), 'dir': -1})
+                    bullets.append({'rect': pygame.Rect(player1.centerx-5, player1.top-10, 10, 20), 'dir': -1, 'owner': 1})
+                # Player 2 shoot (right shift)
+                if event.key == pygame.K_RSHIFT:
+                    bullets.append({'rect': pygame.Rect(player2.centerx-5, player2.top-10, 10, 20), 'dir': -1, 'owner': 2})
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_a]: player.x -= speed
-        if keys[pygame.K_d]: player.x += speed
-        player.clamp_ip(pygame.Rect(0,0,WIDTH,HEIGHT))
+        # Player 1 controls (WASD)
+        if keys[pygame.K_a]: player1.x -= speed
+        if keys[pygame.K_d]: player1.x += speed
+        player1.clamp_ip(pygame.Rect(0,0,WIDTH,HEIGHT))
+        # Player 2 controls (Arrow keys)
+        if keys[pygame.K_LEFT]: player2.x -= speed
+        if keys[pygame.K_RIGHT]: player2.x += speed
+        player2.clamp_ip(pygame.Rect(0,0,WIDTH,HEIGHT))
         # Move monsters
         for m in monsters:
             m['rect'].y += monster_speed + level//2
@@ -1278,28 +1303,35 @@ def run_survival_mode(player_name, char_choice):
         # Monster-base collision
         for m in monsters[:]:
             if m['rect'].bottom >= HEIGHT-10:
-                health -= 1
+                # Randomly hit one player
+                if random.choice([True, False]):
+                    health1 -= 1
+                else:
+                    health2 -= 1
                 monsters.remove(m)
-        if health <= 0 or barrier['hp'] <= 0:
+        if health1 <= 0 or health2 <= 0 or barrier['hp'] <= 0:
             running = False
         # Draw everything
         screen.fill((20,20,30))
-        draw_mafia_character(screen, player.centerx, player.centery, char_choice)
+        draw_mafia_character(screen, player1.centerx, player1.centery, char_choices[0])
+        draw_mafia_character(screen, player2.centerx, player2.centery, char_choices[1])
         pygame.draw.rect(screen, (100,100,255), barrier['rect'])
         barrier_hp = font.render(f"Barrier HP: {barrier['hp']}", True, (255,255,255))
         screen.blit(barrier_hp, (barrier['rect'].centerx-barrier_hp.get_width()//2, barrier['rect'].top-30))
         for m in monsters:
-            pygame.draw.rect(screen, (200,0,0), m['rect'])
+            draw_monster(screen, m['rect'], m['color'])
             hp_text = font.render(str(m['hp']), True, (255,255,255))
-            screen.blit(hp_text, (m['rect'].centerx-hp_text.get_width()//2, m['rect'].centery-hp_text.get_height()//2))
+            screen.blit(hp_text, (m['rect'].centerx-hp_text.get_width()//2, m['rect'].centery-m['rect'].height//2))
         for bullet in bullets:
             pygame.draw.rect(screen, (255,255,0), bullet['rect'])
         score_text = font.render(f"Score: {score}", True, (255,255,255))
         screen.blit(score_text, (40, 20))
         level_text = font.render(f"Level: {level}", True, (0,255,0))
         screen.blit(level_text, (WIDTH-200, 20))
-        health_text = font.render(f"Health: {health}", True, (255,0,0))
-        screen.blit(health_text, (WIDTH//2-health_text.get_width()//2, 20))
+        health_text1 = font.render(f"P1 Health: {health1}", True, (0,255,255))
+        health_text2 = font.render(f"P2 Health: {health2}", True, (255,0,255))
+        screen.blit(health_text1, (WIDTH//2-180, 20))
+        screen.blit(health_text2, (WIDTH//2+60, 20))
         if not monsters:
             # Level up
             level += 1
@@ -1330,9 +1362,10 @@ while True:
         char_choices = character_select(mode)
         run_coin_collection_and_shop(player1_name, player2_name, char_choices)  # Coin Collection + Shop + Battle Mode
     elif mode == 2:
-        player_name = get_player_name("Enter your name for Survival Mode:", HEIGHT//2)
-        char_choice = character_select(0)[0]
-        run_survival_mode(player_name, char_choice)
+        player1_name = get_player_name("Player 1, enter your name for Survival Mode:", HEIGHT//2-60)
+        player2_name = get_player_name("Player 2, enter your name for Survival Mode:", HEIGHT//2+60)
+        char_choices = character_select(0)
+        run_survival_mode(player1_name, player2_name, char_choices)
 
 
 
