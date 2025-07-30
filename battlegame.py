@@ -48,7 +48,8 @@ coin_rects = []  # For coin collection mode
 
 def mode_lobby():
     selected = 0
-    options = ["Battle Mode", "Coin Collection Mode", "Exit"]
+    options = ["Battle Mode", "Coin Collection Mode", "Play Music", "Exit"]
+    music_playing = False
     while True:
         screen.fill((30, 30, 30))
         title = lobby_font.render("Choose Game Mode", True, (255,255,255))
@@ -71,7 +72,18 @@ def mode_lobby():
                     if options[selected] == "Exit":
                         pygame.quit()
                         sys.exit()
-                    return selected
+                    elif options[selected] == "Play Music":
+                        try:
+                            pygame.mixer.music.stop()
+                            pygame.mixer.music.load('playmusic.mp3')
+                            pygame.mixer.music.play(-1)
+                            music_playing = True
+                        except Exception as e:
+                            print(f"Error playing music: {e}")
+                    else:
+                        if music_playing:
+                            pygame.mixer.music.stop()
+                        return selected if options[selected] != "Play Music" else None
 
 # Countdown and player name input functions remain the same...
 
