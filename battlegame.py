@@ -558,21 +558,27 @@ def run_game(mode, player1_name, player2_name, char_choices):
             gun_offset_y1 = player1.centery+10
             gun_offset_y2 = player2.centery+10
             # Draw Player 1 gun
-            if char_choices[0] == 2:  # Mafia Hitman with shotgun
+            if char_choices[0] == 2:  # Mafia Hitman with enhanced shotgun
                 if p1_right:
                     hand_x = player1.centerx+20
                     hand_y = gun_offset_y1
-                    # Shotgun barrel
-                    pygame.draw.rect(screen, (80,80,80), (hand_x, hand_y-5, 36, 8))
-                    # Shotgun stock
-                    pygame.draw.rect(screen, (139,69,19), (hand_x-16, hand_y-8, 16, 14))
+                    # Barrel (long, metallic)
+                    pygame.draw.rect(screen, (160,160,160), (hand_x, hand_y-5, 44, 7))
+                    # Muzzle
+                    pygame.draw.ellipse(screen, (200,200,200), (hand_x+44, hand_y-7, 8, 11))
+                    # Pump
+                    pygame.draw.rect(screen, (100,100,100), (hand_x+18, hand_y-7, 12, 11))
+                    # Stock (wood)
+                    pygame.draw.polygon(screen, (139,69,19), [(hand_x-16, hand_y-8), (hand_x, hand_y-8), (hand_x, hand_y+6), (hand_x-10, hand_y+14)])
                     # Trigger guard
                     pygame.draw.arc(screen, (60,60,60), (hand_x+8, hand_y+2, 8, 6), 3.14, 2*3.14, 2)
                 else:
                     hand_x = player1.centerx-20
                     hand_y = gun_offset_y1
-                    pygame.draw.rect(screen, (80,80,80), (hand_x-36, hand_y-5, 36, 8))
-                    pygame.draw.rect(screen, (139,69,19), (hand_x, hand_y-8, 16, 14))
+                    pygame.draw.rect(screen, (160,160,160), (hand_x-52, hand_y-5, 44, 7))
+                    pygame.draw.ellipse(screen, (200,200,200), (hand_x-60, hand_y-7, 8, 11))
+                    pygame.draw.rect(screen, (100,100,100), (hand_x-40, hand_y-7, 12, 11))
+                    pygame.draw.polygon(screen, (139,69,19), [(hand_x, hand_y-8), (hand_x-16, hand_y-8), (hand_x-16, hand_y+6), (hand_x-6, hand_y+14)])
                     pygame.draw.arc(screen, (60,60,60), (hand_x-16, hand_y+2, 8, 6), 0, 3.14, 2)
             else:
                 # AK-47 for other mafia
@@ -593,18 +599,22 @@ def run_game(mode, player1_name, player2_name, char_choices):
                     pygame.draw.arc(screen, (60,60,60), (hand_x-28, hand_y+2, 18, 14), 0, 3.14, 4)
                     pygame.draw.rect(screen, (60,60,60), (hand_x-36, hand_y+2, 6, 12))
             # Draw Player 2 gun
-            if char_choices[1] == 2:  # Mafia Hitman with shotgun
+            if char_choices[1] == 2:  # Mafia Hitman with enhanced shotgun
                 if p2_right:
                     hand_x = player2.centerx+20
                     hand_y = gun_offset_y2
-                    pygame.draw.rect(screen, (80,80,80), (hand_x, hand_y-5, 36, 8))
-                    pygame.draw.rect(screen, (139,69,19), (hand_x-16, hand_y-8, 16, 14))
+                    pygame.draw.rect(screen, (160,160,160), (hand_x, hand_y-5, 44, 7))
+                    pygame.draw.ellipse(screen, (200,200,200), (hand_x+44, hand_y-7, 8, 11))
+                    pygame.draw.rect(screen, (100,100,100), (hand_x+18, hand_y-7, 12, 11))
+                    pygame.draw.polygon(screen, (139,69,19), [(hand_x-16, hand_y-8), (hand_x, hand_y-8), (hand_x, hand_y+6), (hand_x-10, hand_y+14)])
                     pygame.draw.arc(screen, (60,60,60), (hand_x+8, hand_y+2, 8, 6), 3.14, 2*3.14, 2)
                 else:
                     hand_x = player2.centerx-20
                     hand_y = gun_offset_y2
-                    pygame.draw.rect(screen, (80,80,80), (hand_x-36, hand_y-5, 36, 8))
-                    pygame.draw.rect(screen, (139,69,19), (hand_x, hand_y-8, 16, 14))
+                    pygame.draw.rect(screen, (160,160,160), (hand_x-52, hand_y-5, 44, 7))
+                    pygame.draw.ellipse(screen, (200,200,200), (hand_x-60, hand_y-7, 8, 11))
+                    pygame.draw.rect(screen, (100,100,100), (hand_x-40, hand_y-7, 12, 11))
+                    pygame.draw.polygon(screen, (139,69,19), [(hand_x, hand_y-8), (hand_x-16, hand_y-8), (hand_x-16, hand_y+6), (hand_x-6, hand_y+14)])
                     pygame.draw.arc(screen, (60,60,60), (hand_x-16, hand_y+2, 8, 6), 0, 3.14, 2)
             else:
                 # AK-47 for other mafia
