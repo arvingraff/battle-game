@@ -1232,6 +1232,7 @@ def run_survival_mode(player_name, char_choice):
     RELOAD_LIMIT = 3
     RELOAD_DURATION = 2
     font_big = pygame.font.SysFont(None, 72)
+    health = 5  # Player starts with 5 health
     running = True
     start_countdown()
     while running:
@@ -1279,9 +1280,12 @@ def run_survival_mode(player_name, char_choice):
                         bullets.remove(bullet)
                     break
         # Monster-player collision
-        for m in monsters:
+        for m in monsters[:]:
             if m['rect'].colliderect(player):
-                running = False
+                health -= 1
+                monsters.remove(m)
+        if health <= 0:
+            running = False
         # Draw everything
         screen.fill((20,20,30))
         draw_mafia_character(screen, player.centerx, player.centery, char_choice)
@@ -1295,6 +1299,8 @@ def run_survival_mode(player_name, char_choice):
         screen.blit(score_text, (40, 20))
         level_text = font.render(f"Level: {level}", True, (0,255,0))
         screen.blit(level_text, (WIDTH-200, 20))
+        health_text = font.render(f"Health: {health}", True, (255,0,0))
+        screen.blit(health_text, (WIDTH//2-health_text.get_width()//2, 20))
         if not monsters:
             # Level up
             level += 1
