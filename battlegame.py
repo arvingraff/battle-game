@@ -191,6 +191,11 @@ def draw_mafia_character(screen, x, y, style):
         pygame.draw.rect(screen, (40,40,40), (x-22, y-55, 44, 14))
         pygame.draw.rect(screen, (80,80,80), (x-10, y-65, 24, 12))
         pygame.draw.polygon(screen, (255,255,0), [(x+10, y-55), (x+18, y-70), (x+14, y-55)])  # feather
+        # Expressive eyes
+        pygame.draw.ellipse(screen, (255,255,255), (x-8, y-22, 10, 8))
+        pygame.draw.ellipse(screen, (255,255,255), (x+8, y-22, 10, 8))
+        pygame.draw.ellipse(screen, (0,0,0), (x-4, y-19, 4, 5))
+        pygame.draw.ellipse(screen, (0,0,0), (x+12, y-19, 4, 5))
         # Monocle
         pygame.draw.circle(screen, (255,215,0), (x+12, y-18), 7, 2)
         pygame.draw.line(screen, (255,215,0), (x+12, y-11), (x+12, y-5), 2)
@@ -199,6 +204,8 @@ def draw_mafia_character(screen, x, y, style):
         pygame.draw.circle(screen, (255,0,0), (x+10, y-5), 4)
         # Gold chain
         pygame.draw.arc(screen, (255,215,0), (x-10, y+20, 28, 18), 3.14, 2*3.14, 3)
+        # Gold ring
+        pygame.draw.circle(screen, (255,215,0), (x+18, y+30), 5)
         # Pinstripe suit
         pygame.draw.rect(screen, (30,30,30), (x-18, y+3, 36, 48))
         for i in range(-16, 18, 8):
@@ -210,15 +217,19 @@ def draw_mafia_character(screen, x, y, style):
         pygame.draw.ellipse(screen, (224, 172, 105), (x-15, y-35, 30, 38))
         # Slicked-back hair
         pygame.draw.arc(screen, (0,0,0), (x-15, y-40, 30, 18), 3.8, 5.5, 6)
-        # Intense eyes
-        pygame.draw.ellipse(screen, (255,255,255), (x-8, y-25, 7, 8))
-        pygame.draw.ellipse(screen, (255,255,255), (x+1, y-25, 7, 8))
-        pygame.draw.ellipse(screen, (0,0,0), (x-5, y-22, 3, 4))
-        pygame.draw.ellipse(screen, (0,0,0), (x+4, y-22, 3, 4))
+        # Intense, narrowed eyes
+        pygame.draw.ellipse(screen, (255,255,255), (x-8, y-25, 7, 6))
+        pygame.draw.ellipse(screen, (255,255,255), (x+1, y-25, 7, 6))
+        pygame.draw.ellipse(screen, (0,0,0), (x-5, y-23, 3, 3))
+        pygame.draw.ellipse(screen, (0,0,0), (x+4, y-23, 3, 3))
         # Scar
         pygame.draw.line(screen, (200,0,0), (x-10, y-18), (x+10, y-10), 2)
-        # Frown
-        pygame.draw.arc(screen, (0,0,0), (x-7, y-4, 14, 6), 3.14, 2*3.14, 2)
+        # Sharper frown
+        pygame.draw.arc(screen, (0,0,0), (x-7, y-2, 14, 6), 3.5, 2*3.14, 2)
+        # Sunglasses (cooler look)
+        pygame.draw.rect(screen, (0,0,0), (x-10, y-25, 10, 6))
+        pygame.draw.rect(screen, (0,0,0), (x+2, y-25, 10, 6))
+        pygame.draw.line(screen, (0,0,0), (x, y-22), (x+2, y-22), 2)
         # Trench coat
         pygame.draw.rect(screen, (10,10,10), (x-16, y+3, 32, 44))
         pygame.draw.rect(screen, (255,0,0), (x-4, y+3, 8, 44))
