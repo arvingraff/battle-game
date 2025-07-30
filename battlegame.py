@@ -40,7 +40,7 @@ coin_rects = []  # For coin collection mode
 
 def mode_lobby():
     selected = 0
-    options = ["Battle Mode", "Coin Collection Mode", "Play Music", "Stop Music", "Watch Cute Video", "Exit"]
+    options = ["Battle Mode", "Coin Collection Mode", "Survival Mode", "Play Music", "Stop Music", "Watch Cute Video", "Exit"]
     music_playing = False
     pygame.mixer.music.stop()  # Ensure no music plays automatically
     while True:
@@ -1217,16 +1217,117 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
         pygame.display.flip()
         clock.tick(60)
 
+def run_survival_mode(player_name, char_choice):
+    # Survival mode: defeat waves of monsters, levels get harder
+    level = 1
+    score = 0
+    player = pygame.Rect(WIDTH//2, HEIGHT-120, 50, 50)
+    speed = 8
+    monsters = []
+    monster_speed = 3
+    monster_size = 40
+    bullets = []
+    shots = 0
+    reload_time = 0
+    RELOAD_LIMIT = 3
+    RELOAD_DURATION = 2
+    font_big = pygame.font.SysFont(None, 72)
+    running = True
+    start_countdown()
+    while running:
+        # Spawn monsters for current level
+        if not monsters:
+            for _ in range(level * 3):
+                x = random.randint(60, WIDTH-60)
+                y = random.randint(-300, -40)
+                monsters.append({'rect': pygame.Rect(x, y, monster_size, monster_size), 'hp': 2+level//2})
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    if shots < RELOAD_LIMIT and pygame.time.get_ticks() > reload_time:
+                        bullets.append({'rect': pygame.Rect(player.centerx-5, player.top-10, 10, 20), 'dir': -1})
+                        shots += 1
+                        if shots == RELOAD_LIMIT:
+                            reload_time = pygame.time.get_ticks() + RELOAD_DURATION*1000
+        # Reset shots after reload
+        if shots == RELOAD_LIMIT and pygame.time.get_ticks() > reload_time:
+            shots = 0
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_a]: player.x -= speed
+        if keys[pygame.K_d]: player.x += speed
+        player.clamp_ip(pygame.Rect(0,0,WIDTH,HEIGHT))
+        # Move monsters
+        for m in monsters:
+            m['rect'].y += monster_speed + level
+        # Move bullets
+        for bullet in bullets[:]:
+            bullet['rect'].y += bullet['dir'] * 16
+            if bullet['rect'].bottom < 0:
+                bullets.remove(bullet)
+        # Bullet-monster collision
+        for bullet in bullets[:]:
+            for m in monsters:
+                if bullet['rect'].colliderect(m['rect']):
+                    m['hp'] -= 1
+                    if m['hp'] <= 0:
+                        monsters.remove(m)
+                        score += 1
+                    if bullet in bullets:
+                        bullets.remove(bullet)
+                    break
+        # Monster-player collision
+        for m in monsters:
+            if m['rect'].colliderect(player):
+                running = False
+        # Draw everything
+        screen.fill((20,20,30))
+        draw_mafia_character(screen, player.centerx, player.centery, char_choice)
+        for m in monsters:
+            pygame.draw.rect(screen, (200,0,0), m['rect'])
+            hp_text = font.render(str(m['hp']), True, (255,255,255))
+            screen.blit(hp_text, (m['rect'].centerx-hp_text.get_width()//2, m['rect'].centery-hp_text.get_height()//2))
+        for bullet in bullets:
+            pygame.draw.rect(screen, (255,255,0), bullet['rect'])
+        score_text = font.render(f"Score: {score}", True, (255,255,255))
+        screen.blit(score_text, (40, 20))
+        level_text = font.render(f"Level: {level}", True, (0,255,0))
+        screen.blit(level_text, (WIDTH-200, 20))
+        if not monsters:
+            # Level up
+            level += 1
+            monster_speed += 1
+            monster_size = max(30, monster_size-2)
+            pygame.time.wait(1000)
+        if not running:
+            gameover_text = font_big.render("Game Over!", True, (255,0,0))
+            screen.blit(gameover_text, (WIDTH//2-gameover_text.get_width()//2, HEIGHT//2))
+            pygame.display.flip()
+            pygame.time.wait(2500)
+            pygame.mixer.music.stop()
+            return
+        pygame.display.flip()
+        clock.tick(60)
+
 # Main program loop
 while True:
     mode = mode_lobby()
-    player1_name = get_player_name("Player 1, enter your name:", HEIGHT//2 - 120)
-    player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
-    char_choices = character_select(mode)
     if mode == 0:
+        player1_name = get_player_name("Player 1, enter your name:", HEIGHT//2 - 120)
+        player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
+        char_choices = character_select(mode)
         run_game(0, player1_name, player2_name, char_choices)  # Battle Mode
     elif mode == 1:
+        player1_name = get_player_name("Player 1, enter your name:", HEIGHT//2 - 120)
+        player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
+        char_choices = character_select(mode)
         run_coin_collection_and_shop(player1_name, player2_name, char_choices)  # Coin Collection + Shop + Battle Mode
+    elif mode == 2:
+        player_name = get_player_name("Enter your name for Survival Mode:", HEIGHT//2)
+        char_choice = character_select(0)[0]
+        run_survival_mode(player_name, char_choice)
 
 
 
