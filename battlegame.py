@@ -1363,8 +1363,9 @@ def run_survival_mode(player1_name, player2_name, char_choices):
             hit = False
             for m in monsters:
                 poly = draw_monster(screen, m['rect'], m['color'], m['hp'])
-                bx, by = bullet['rect'].center
-                if point_in_polygon(bx, by, poly):
+                # Check all four corners of bullet
+                corners = [bullet['rect'].topleft, bullet['rect'].topright, bullet['rect'].bottomleft, bullet['rect'].bottomright]
+                if any(point_in_polygon(x, y, poly) for (x, y) in corners):
                     m['hp'] -= 1
                     if m['hp'] <= 0:
                         monsters.remove(m)
