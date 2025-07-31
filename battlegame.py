@@ -1234,9 +1234,9 @@ def draw_monster(screen, rect, color, hp):
     # Even more realistic and menacing monster
     import pygame.gfxdraw
     import math
-    # Body: jagged polygon, rough edges, animated breathing
     t = pygame.time.get_ticks() // 100 % 6
     breath = 4 + math.sin(t) * 2
+    # Body polygon
     body_points = [
         (rect.left+8, rect.top+10+breath),
         (rect.left+rect.width//4, rect.top),
@@ -1250,6 +1250,19 @@ def draw_monster(screen, rect, color, hp):
         (rect.left, rect.centery-10)
     ]
     pygame.gfxdraw.filled_polygon(screen, body_points, color)
+    # Arms (left/right): rectangles
+    left_arm_rect = pygame.Rect(rect.left-18, rect.centery+8, 18, 18)
+    right_arm_rect = pygame.Rect(rect.right, rect.centery+8, 18, 18)
+    pygame.draw.rect(screen, color, left_arm_rect)
+    pygame.draw.rect(screen, color, right_arm_rect)
+    # Legs (left/right): rectangles
+    left_leg_rect = pygame.Rect(rect.left+8, rect.bottom-4, 12, 24)
+    right_leg_rect = pygame.Rect(rect.right-20, rect.bottom-4, 12, 24)
+    pygame.draw.rect(screen, color, left_leg_rect)
+    pygame.draw.rect(screen, color, right_leg_rect)
+    # Head: ellipse
+    head_rect = pygame.Rect(rect.centerx-18, rect.top-18, 36, 28)
+    pygame.draw.ellipse(screen, color, head_rect)
     # Scales/bumpy skin
     for i in range(8):
         scale_x = rect.left+random.randint(10,rect.width-20)
@@ -1305,7 +1318,15 @@ def draw_monster(screen, rect, color, hp):
     # Health above head
     hp_text = font.render(f"HP: {hp}", True, (255,255,0))
     screen.blit(hp_text, (rect.centerx-hp_text.get_width()//2, rect.top-24))
-    return body_points
+    # Return all body part polygons/rects for collision
+    return {
+        'body': body_points,
+        'left_arm': left_arm_rect,
+        'right_arm': right_arm_rect,
+        'left_leg': left_leg_rect,
+        'right_leg': right_leg_rect,
+        'head': head_rect
+    }
 
 def run_survival_mode(player1_name, player2_name, char_choices):
     # 2-player survival mode with realistic monsters, easier levels
@@ -1362,10 +1383,15 @@ def run_survival_mode(player1_name, player2_name, char_choices):
         for bullet in bullets[:]:
             hit = False
             for m in monsters:
-                poly = draw_monster(screen, m['rect'], m['color'], m['hp'])
-                # Check all four corners of bullet
+                parts = draw_monster(screen, m['rect'], m['color'], m['hp'])
                 corners = [bullet['rect'].topleft, bullet['rect'].topright, bullet['rect'].bottomleft, bullet['rect'].bottomright]
-                if any(point_in_polygon(x, y, poly) for (x, y) in corners):
+                # Check collision with each body part
+                if any(point_in_polygon(x, y, parts['body']) for (x, y) in corners) or \
+                   any(parts['left_arm'].collidepoint(x, y) for (x, y) in corners) or \
+                   any(parts['right_arm'].collidepoint(x, y) for (x, y) in corners) or \
+                   any(parts['left_leg'].collidepoint(x, y) for (x, y) in corners) or \
+                   any(parts['right_leg'].collidepoint(x, y) for (x, y) in corners) or \
+                   any(parts['head'].collidepoint(x, y) for (x, y) in corners):
                     m['hp'] -= 1
                     if m['hp'] <= 0:
                         monsters.remove(m)
