@@ -1346,11 +1346,11 @@ def run_survival_mode(player1_name, player2_name, char_choices):
     while running:
         # Spawn fewer monsters per level, slower scaling
         if not monsters:
-            for _ in range(2 + level):  # 2 + level monsters per wave
+            for _ in range(2 + level//2):  # 2 + level//2 monsters per wave (slower increase)
                 x = random.randint(60, WIDTH-60)
                 y = random.randint(-300, -40)
                 color = (random.randint(80,200), random.randint(80,200), random.randint(80,200))
-                monsters.append({'rect': pygame.Rect(x, y, monster_size, monster_size), 'hp': 2 + level//3, 'color': color})
+                monsters.append({'rect': pygame.Rect(x, y, monster_size, monster_size), 'hp': 2 + level//4, 'color': color})
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -1373,7 +1373,7 @@ def run_survival_mode(player1_name, player2_name, char_choices):
         player2.clamp_ip(pygame.Rect(0,0,WIDTH,HEIGHT))
         # Move monsters
         for m in monsters:
-            m['rect'].y += monster_speed + level//4  # slower speed increase
+            m['rect'].y += monster_speed + level//6  # even slower speed increase
         # Move bullets
         for bullet in bullets[:]:
             bullet['rect'].y += bullet['dir'] * 16
@@ -1430,8 +1430,8 @@ def run_survival_mode(player1_name, player2_name, char_choices):
         if not monsters:
             # Level up
             level += 1
-            monster_speed += 1
-            monster_size = max(30, monster_size-2)
+            monster_speed += 0.5  # slower speed increase per level
+            monster_size = max(30, monster_size-1)  # slower size reduction
             pygame.time.wait(1000)
         if not running:
             gameover_text = font_big.render("Game Over!", True, (255,0,0))
