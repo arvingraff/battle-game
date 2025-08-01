@@ -464,7 +464,7 @@ def run_game(mode, player1_name, player2_name, char_choices):
     # Start original background music
     try:
         pygame.mixer.music.stop()
-        pygame.mixer.music.load('fart.MP4')
+        pygame.mixer.music.load('fart.mp3')
         pygame.mixer.music.play(-1)
     except Exception as e:
         print(f"Error playing background music: {e}")
@@ -1049,7 +1049,7 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
     # Battle mode with upgrades: bazooka/kannon = 2 shots each, then normal
     try:
         pygame.mixer.music.stop()
-        pygame.mixer.music.load('fart.MP4')
+        pygame.mixer.music.load('fart.mp3')
         pygame.mixer.music.play(-1)
     except Exception as e:
         print(f"Error playing background music: {e}")
@@ -1160,7 +1160,7 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
         # Hitboxes
         player1_hitbox = pygame.Rect(player1.centerx-20, player1.centery-35, 40, 110)
         player2_hitbox = pygame.Rect(player2.centerx-20, player2.centery-35, 40, 110)
-        # Move bullets
+               # Move bullets
         for bullet in bullets[:]:
             bullet['rect'].x += bullet['dir'] * 12
             if bullet['rect'].right < 0 or bullet['rect'].left > WIDTH:
