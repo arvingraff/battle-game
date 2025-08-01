@@ -144,25 +144,36 @@ def watch_grandma():
         pygame.display.flip()
         time.sleep(2)
         return
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        frame = cv2.resize(frame, (WIDTH, HEIGHT))
-        pygame_frame = pygame.surfarray.make_surface(frame.swapaxes(0,1))
-        screen.blit(pygame_frame, (0,0))
-        pygame.display.flip()
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                cap.release()
-                pygame.quit()
-                sys.exit()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
+    exit_button_rect = pygame.Rect(WIDTH//2-100, HEIGHT-120, 200, 60)
+    running = True
+    while running:
+        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)  # Restart video
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret:
+                break
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame = cv2.resize(frame, (WIDTH, HEIGHT))
+            pygame_frame = pygame.surfarray.make_surface(frame.swapaxes(0,1))
+            screen.blit(pygame_frame, (0,0))
+            pygame.draw.rect(screen, (255,0,0), exit_button_rect)
+            exit_text = lobby_font.render("Exit", True, (255,255,255))
+            screen.blit(exit_text, (exit_button_rect.centerx-exit_text.get_width()//2, exit_button_rect.centery-exit_text.get_height()//2))
+            pygame.display.flip()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
                     cap.release()
-                    pygame.mixer.music.stop()
-                    return
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if exit_button_rect.collidepoint(event.pos):
+                        running = False
+                        break
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        running = False
+                        break
+        # Loop video and music automatically
     cap.release()
     pygame.mixer.music.stop()
 
