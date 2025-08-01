@@ -40,7 +40,7 @@ coin_rects = []  # For coin collection mode
 
 def mode_lobby():
     selected = 0
-    options = ["Battle Mode", "Coin Collection Mode", "Survival Mode", "Play Music", "Stop Music", "Watch Cute Video", "Exit"]
+    options = ["Battle Mode", "Coin Collection Mode", "Survival Mode", "Play Music", "Stop Music", "Watch Cute Video", "Watch Grandma", "Exit"]
     music_playing = False
     pygame.mixer.music.stop()  # Ensure no music plays automatically
     while True:
@@ -78,9 +78,11 @@ def mode_lobby():
                         music_playing = False
                     elif options[selected] == "Watch Cute Video":
                         watch_cute_video()
+                    elif options[selected] == "Watch Grandma":
+                        watch_grandma()
                     else:
                         pygame.mixer.music.stop()
-                        return selected if options[selected] not in ["Play Music", "Stop Music", "Watch Cute Video"] else None
+                        return selected if options[selected] not in ["Play Music", "Stop Music", "Watch Cute Video", "Watch Grandma"] else None
 
 def watch_cute_video():
     import cv2
@@ -125,6 +127,44 @@ def watch_cute_video():
                     cap.release()
                     return
     cap.release()
+
+def watch_grandma():
+    import cv2
+    try:
+        pygame.mixer.music.stop()
+        pygame.mixer.music.load('lala.mp3')
+        pygame.mixer.music.play(-1)
+    except Exception as e:
+        print(f"Error playing grandma music: {e}")
+    cap = cv2.VideoCapture('grandma.mp4')
+    if not cap.isOpened():
+        screen.fill((30,30,30))
+        error_text = lobby_font.render("Error: Could not open grandma.mp4", True, (255,0,0))
+        screen.blit(error_text, (WIDTH//2-error_text.get_width()//2, HEIGHT//2))
+        pygame.display.flip()
+        time.sleep(2)
+        return
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if not ret:
+            break
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame = cv2.resize(frame, (WIDTH, HEIGHT))
+        pygame_frame = pygame.surfarray.make_surface(frame.swapaxes(0,1))
+        screen.blit(pygame_frame, (0,0))
+        pygame.display.flip()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                cap.release()
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    cap.release()
+                    pygame.mixer.music.stop()
+                    return
+    cap.release()
+    pygame.mixer.music.stop()
 
 # Countdown and player name input functions remain the same...
 
