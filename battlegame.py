@@ -189,7 +189,7 @@ def start_countdown():
     timings = [980, 960, 980, 910]  # ms for 3, 2, 1, GO!
     steps = [3,2,1,"GO!"]
     for idx, i in enumerate(steps):
-        screen.fill((30,30,30))
+        screen.fill((30, 30, 30))
         countdown_font = pygame.font.SysFont(None, 180)
         text = countdown_font.render(str(i), True, (255,255,0))
         screen.blit(text, (WIDTH//2-text.get_width()//2, HEIGHT//2-text.get_height()//2))
@@ -464,7 +464,7 @@ def run_game(mode, player1_name, player2_name, char_choices):
     # Start original background music
     try:
         pygame.mixer.music.stop()
-        pygame.mixer.music.load('coolwav.mp3')
+        pygame.mixer.music.load('fart.MP4')
         pygame.mixer.music.play(-1)
     except Exception as e:
         print(f"Error playing background music: {e}")
@@ -1049,7 +1049,7 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
     # Battle mode with upgrades: bazooka/kannon = 2 shots each, then normal
     try:
         pygame.mixer.music.stop()
-        pygame.mixer.music.load('coolwav.mp3')
+        pygame.mixer.music.load('fart.MP4')
         pygame.mixer.music.play(-1)
     except Exception as e:
         print(f"Error playing background music: {e}")
