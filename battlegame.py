@@ -1626,51 +1626,52 @@ while True:
                                             input_box = pygame.Rect(WIDTH//2-150, HEIGHT//2-20, 300, 50)
                                             pygame.draw.rect(screen, (255,255,255), input_box, 0)  # white background
                                             pygame.draw.rect(screen, (0,255,0), input_box, 4)      # thick green border
-                                            # Draw IP text in black for contrast
-                                            ip_text = font.render(ip, True, (0,0,0))
+                                            # Draw IP text in black for contrast, use a larger font
+                                            ip_font = pygame.font.SysFont(None, 48)
+                                            ip_text_surface = ip_font.render(ip, True, (0,0,0))
                                             screen.blit(prompt, (WIDTH//2-prompt.get_width()//2, HEIGHT//2-60))
                                             # Center text in input box
-                                            screen.blit(ip_text, (input_box.x+10, input_box.y+input_box.height//2-ip_text.get_height()//2))
+                                            screen.blit(ip_text_surface, (input_box.x+10, input_box.y+input_box.height//2-ip_text_surface.get_height()//2))
                                             info = font.render("Enter: Connect, Esc: Cancel", True, (0,0,0))
                                             screen.blit(info, (WIDTH//2-info.get_width()//2, HEIGHT-120))
                                             pygame.display.flip()
-                                            for event in pygame.event.get():
-                                                if event.type == pygame.QUIT:
-                                                    pygame.quit()
-                                                    sys.exit()
-                                                if event.type == pygame.KEYDOWN:
-                                                    if event.key == pygame.K_ESCAPE:
-                                                        entering = False
-                                                        break
-                                                    elif event.key == pygame.K_RETURN:
-                                                        # Try to connect
-                                                        try:
-                                                            client = NetworkClient(ip)
-                                                            client.send("hello from client")
-                                                            msg = client.recv()
-                                                            if msg == "hello from host":
-                                                                info = font.render("Connected! Starting game...", True, (0,255,0))
-                                                                screen.blit(info, (WIDTH//2-info.get_width()//2, HEIGHT-120))
-                                                                pygame.display.flip()
-                                                                pygame.time.wait(1500)
-                                                                # Start Battle Mode (client is player 2)
-                                                                player1_name = "Online Host"
-                                                                player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
-                                                                char_choices = character_select(mode)
-                                                                client.close()
-                                                                run_game(0, player1_name, player2_name, char_choices)
-                                                        except Exception as e:
-                                                            err = font.render(f"Failed: {e}", True, (255,0,0))
-                                                            screen.blit(err, (WIDTH//2-err.get_width()//2, HEIGHT-60))
+                                            event = pygame.event.wait()  # Wait for an event (ensures every key is processed)
+                                            if event.type == pygame.QUIT:
+                                                pygame.quit()
+                                                sys.exit()
+                                            if event.type == pygame.KEYDOWN:
+                                                if event.key == pygame.K_ESCAPE:
+                                                    entering = False
+                                                    break
+                                                elif event.key == pygame.K_RETURN:
+                                                    # Try to connect
+                                                    try:
+                                                        client = NetworkClient(ip)
+                                                        client.send("hello from client")
+                                                        msg = client.recv()
+                                                        if msg == "hello from host":
+                                                            info = font.render("Connected! Starting game...", True, (0,255,0))
+                                                            screen.blit(info, (WIDTH//2-info.get_width()//2, HEIGHT-120))
                                                             pygame.display.flip()
-                                                            pygame.time.wait(2000)
-                                                        entering = False
-                                                        break
-                                                    elif event.key == pygame.K_BACKSPACE:
-                                                        ip = ip[:-1]
-                                                    else:
-                                                        if len(event.unicode) == 1 and (event.unicode.isdigit() or event.unicode == "."):
-                                                            ip += event.unicode
+                                                            pygame.time.wait(1500)
+                                                            # Start Battle Mode (client is player 2)
+                                                            player1_name = "Online Host"
+                                                            player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
+                                                            char_choices = character_select(mode)
+                                                            client.close()
+                                                            run_game(0, player1_name, player2_name, char_choices)
+                                                    except Exception as e:
+                                                        err = font.render(f"Failed: {e}", True, (255,0,0))
+                                                        screen.blit(err, (WIDTH//2-err.get_width()//2, HEIGHT-60))
+                                                        pygame.display.flip()
+                                                        pygame.time.wait(2000)
+                                                    entering = False
+                                                    break
+                                                elif event.key == pygame.K_BACKSPACE:
+                                                    ip = ip[:-1]
+                                                else:
+                                                    if len(event.unicode) == 1 and (event.unicode.isdigit() or event.unicode == "."):
+                                                        ip += event.unicode
                                         break
                                     if back_rect2.collidepoint(event.pos):
                                         break
