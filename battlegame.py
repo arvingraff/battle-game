@@ -1160,7 +1160,8 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
         # Hitboxes
         player1_hitbox = pygame.Rect(player1.centerx-20, player1.centery-35, 40, 110)
         player2_hitbox = pygame.Rect(player2.centerx-20, player2.centery-35, 40, 110)
-               # Move bullets
+              
+        # Move bullets
         for bullet in bullets[:]:
             bullet['rect'].x += bullet['dir'] * 12
             if bullet['rect'].right < 0 or bullet['rect'].left > WIDTH:
@@ -1498,10 +1499,41 @@ def run_survival_mode(player1_name, player2_name, char_choices):
 while True:
     mode = mode_lobby()
     if mode == 0:
-        player1_name = get_player_name("Player 1, enter your name:", HEIGHT//2 - 120)
-        player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
-        char_choices = character_select(mode)
-        run_game(0, player1_name, player2_name, char_choices)  # Battle Mode
+        # Show Play Local / Play Online selection
+        selected = 0
+        options = ["Play Local", "Play Online"]
+        while True:
+            screen.fill((30, 30, 30))
+            title = lobby_font.render("Battle Mode", True, (255,255,255))
+            screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-120))
+            for i, opt in enumerate(options):
+                color = (255,255,0) if i==selected else (200,200,200)
+                opt_text = font.render(opt, True, color)
+                screen.blit(opt_text, (WIDTH//2-opt_text.get_width()//2, HEIGHT//2-40+i*80))
+            pygame.display.flip()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_UP:
+                        selected = (selected-1)%len(options)
+                    if event.key == pygame.K_DOWN:
+                        selected = (selected+1)%len(options)
+                    if event.key == pygame.K_RETURN:
+                        if selected == 0:
+                            player1_name = get_player_name("Player 1, enter your name:", HEIGHT//2 - 120)
+                            player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
+                            char_choices = character_select(mode)
+                            run_game(0, player1_name, player2_name, char_choices)  # Local Battle Mode
+                            break
+                        elif selected == 1:
+                            # Placeholder for online mode
+                            info_text = font.render("Online mode coming soon!", True, (255,0,0))
+                            screen.blit(info_text, (WIDTH//2-info_text.get_width()//2, HEIGHT-120))
+                            pygame.display.flip()
+                            pygame.time.wait(1500)
+                            break
     elif mode == 1:
         player1_name = get_player_name("Player 1, enter your name:", HEIGHT//2 - 120)
         player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
