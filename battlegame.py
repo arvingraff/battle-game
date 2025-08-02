@@ -1680,6 +1680,16 @@ while True:
                             break
                     if back_rect.collidepoint(event.pos):
                         break  # Go back to main mode_lobby
+    elif mode == 1:
+        player1_name = get_player_name("Player 1, enter your name:", HEIGHT//2 - 120)
+        player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
+        char_choices = character_select(mode)
+        run_coin_collection_and_shop(player1_name, player2_name, char_choices)
+    elif mode == 2:
+        player1_name = get_player_name("Player 1, enter your name for Survival Mode:", HEIGHT//2-60)
+        player2_name = get_player_name("Player 2, enter your name for Survival Mode:", HEIGHT//2+60)
+        char_choices = character_select(0)
+        run_survival_mode(player1_name, player2_name, char_choices)
 
 
 
