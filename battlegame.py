@@ -1622,8 +1622,8 @@ while True:
                                         while entering:
                                             screen.fill((30,30,30))
                                             prompt = font.render("Enter Host IP:", True, (255,255,255))
-                                            # Draw input box with white background and thick border
-                                            input_box = pygame.Rect(WIDTH//2-150, HEIGHT//2-20, 300, 50)
+                                            # Draw input box with white background and thick border, much longer
+                                            input_box = pygame.Rect(WIDTH//2-300, HEIGHT//2-20, 600, 50)
                                             pygame.draw.rect(screen, (255,255,255), input_box, 0)  # white background
                                             pygame.draw.rect(screen, (0,255,0), input_box, 4)      # thick green border
                                             # Draw IP text in black for contrast, use a larger font
