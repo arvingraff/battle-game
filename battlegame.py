@@ -1161,6 +1161,7 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
         player1_hitbox = pygame.Rect(player1.centerx-20, player1.centery-35, 40, 110)
         player2_hitbox = pygame.Rect(player2.centerx-20, player2.centery-35, 40, 110)
               
+              
         # Move bullets
         for bullet in bullets[:]:
             bullet['rect'].x += bullet['dir'] * 12
@@ -1528,12 +1529,49 @@ while True:
                             run_game(0, player1_name, player2_name, char_choices)  # Local Battle Mode
                             break
                         elif selected == 1:
-                            # Placeholder for online mode
-                            info_text = font.render("Online mode coming soon!", True, (255,0,0))
-                            screen.blit(info_text, (WIDTH//2-info_text.get_width()//2, HEIGHT-120))
-                            pygame.display.flip()
-                            pygame.time.wait(1500)
-                            break
+                            # Online waiting room
+                            try:
+                                pygame.mixer.music.stop()
+                                pygame.mixer.music.load('coolwav.mp3')
+                                pygame.mixer.music.play(-1)
+                            except Exception as e:
+                                print(f"Error playing coolwav.mp3: {e}")
+                            waiting = True
+                            exit_button_rect = pygame.Rect(WIDTH//2-100, HEIGHT-120, 200, 60)
+                            while waiting:
+                                screen.fill((30,30,30))
+                                wait_text = font.render("Waiting for another player to join...", True, (255,255,0))
+                                screen.blit(wait_text, (WIDTH//2-wait_text.get_width()//2, HEIGHT//2-40))
+                                pygame.draw.rect(screen, (255,0,0), exit_button_rect)
+                                exit_text = lobby_font.render("Exit", True, (255,255,255))
+                                screen.blit(exit_text, (exit_button_rect.centerx-exit_text.get_width()//2, exit_button_rect.centery-exit_text.get_height()//2))
+                                pygame.display.flip()
+                                for event in pygame.event.get():
+                                    if event.type == pygame.QUIT:
+                                        pygame.mixer.music.stop()
+                                        pygame.quit()
+                                        sys.exit()
+                                    if event.type == pygame.MOUSEBUTTONDOWN:
+                                        if exit_button_rect.collidepoint(event.pos):
+                                            pygame.mixer.music.stop()
+                                            waiting = False
+                                            break
+                                    if event.type == pygame.KEYDOWN:
+                                        if event.key == pygame.K_ESCAPE:
+                                            pygame.mixer.music.stop()
+                                            waiting = False
+                                            break
+                                # Simulate another player joining after 5 seconds
+                                pygame.time.wait(100)
+                                # In a real game, replace this with network code
+                                if random.random() < 0.01:  # ~5s average
+                                    waiting = False
+                                    pygame.mixer.music.stop()
+                                    player1_name = get_player_name("Player 1, enter your name:", HEIGHT//2 - 120)
+                                    player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
+                                    char_choices = character_select(mode)
+                                    run_game(0, player1_name, player2_name, char_choices)  # Start online game (local for now)
+                                    break
     elif mode == 1:
         player1_name = get_player_name("Player 1, enter your name:", HEIGHT//2 - 120)
         player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
