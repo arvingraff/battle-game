@@ -2,6 +2,8 @@ import pygame
 import sys
 import time
 import random
+import threading
+from network import NetworkHost, NetworkClient
 
 pygame.init()
 
@@ -1553,12 +1555,14 @@ while True:
                                             online_selected = (online_selected+1)%len(online_options)
                                         if event.key == pygame.K_RETURN:
                                             if online_selected == 0:
-                                                # Host Game: show IP, wait for connection (placeholder)
+                                                # Host Game: show IP, wait for connection
                                                 import socket
                                                 hostname = socket.gethostname()
                                                 ip_addr = socket.gethostbyname(hostname)
                                                 waiting = True
                                                 exit_button_rect = pygame.Rect(WIDTH//2-100, HEIGHT-120, 200, 60)
+                                                host = NetworkHost()
+                                                connected = False
                                                 while waiting:
                                                     screen.fill((30,30,30))
                                                     info = font.render(f"Your IP: {ip_addr}", True, (0,255,0))
@@ -1571,18 +1575,32 @@ while True:
                                                     pygame.display.flip()
                                                     for event in pygame.event.get():
                                                         if event.type == pygame.QUIT:
+                                                            host.close()
                                                             pygame.quit()
                                                             sys.exit()
                                                         if event.type == pygame.MOUSEBUTTONDOWN:
                                                             if exit_button_rect.collidepoint(event.pos):
+                                                                host.close()
                                                                 waiting = False
                                                                 break
                                                         if event.type == pygame.KEYDOWN:
                                                             if event.key == pygame.K_ESCAPE:
+                                                                host.close()
                                                                 waiting = False
                                                                 break
-                                                    # TODO: Add real socket server code here
-                                                    pygame.time.wait(100)
+                                                    if host.conn:
+                                                        connected = True
+                                                        waiting = False
+                                                if connected:
+                                                    # Simple handshake
+                                                    host.send("hello from host")
+                                                    msg = host.recv()
+                                                    if msg == "hello from client":
+                                                        info = font.render("Connected! Starting game...", True, (0,255,0))
+                                                        screen.blit(info, (WIDTH//2-info.get_width()//2, HEIGHT-120))
+                                                        pygame.display.flip()
+                                                        pygame.time.wait(1500)
+                                                        host.close()
                                                 break
                                             elif online_selected == 1:
                                                 # Join Game: enter IP
@@ -1606,7 +1624,22 @@ while True:
                                                                 entering = False
                                                                 break
                                                             elif event.key == pygame.K_RETURN:
-                                                                # TODO: Add real socket client code here
+                                                                # Try to connect
+                                                                try:
+                                                                    client = NetworkClient(ip)
+                                                                    client.send("hello from client")
+                                                                    msg = client.recv()
+                                                                    if msg == "hello from host":
+                                                                        info = font.render("Connected! Starting game...", True, (0,255,0))
+                                                                        screen.blit(info, (WIDTH//2-info.get_width()//2, HEIGHT-120))
+                                                                        pygame.display.flip()
+                                                                        pygame.time.wait(1500)
+                                                                        client.close()
+                                                                except Exception as e:
+                                                                    err = font.render(f"Failed: {e}", True, (255,0,0))
+                                                                    screen.blit(err, (WIDTH//2-err.get_width()//2, HEIGHT-60))
+                                                                    pygame.display.flip()
+                                                                    pygame.time.wait(2000)
                                                                 entering = False
                                                                 break
                                                             elif event.key == pygame.K_BACKSPACE:
