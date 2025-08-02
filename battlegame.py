@@ -1674,10 +1674,10 @@ while True:
                                                         ip += event.unicode
                                         break
                                     if back_rect2.collidepoint(event.pos):
-                                        break
+                                        break  # Exit Host/Join menu and return to Play Local/Online
                             else:
                                 continue
-                            break
+                            break  # Actually exit Host/Join menu
                     if back_rect.collidepoint(event.pos):
                         break  # Go back to main mode_lobby
     elif mode == 1:
@@ -1737,6 +1737,7 @@ while True:
                                     sys.exit()
                                 if event.type == pygame.MOUSEBUTTONDOWN:
                                     if host_rect.collidepoint(event.pos):
+                                        # Host Game: show IP, wait for connection
                                         import socket
                                         hostname = socket.gethostname()
                                         ip_addr = socket.gethostbyname(hostname)
@@ -1773,6 +1774,7 @@ while True:
                                                 connected = True
                                                 waiting = False
                                         if connected:
+                                            # Simple handshake
                                             host.send("hello from host")
                                             msg = host.recv()
                                             if msg == "hello from client":
@@ -1780,13 +1782,15 @@ while True:
                                                 screen.blit(info, (WIDTH//2-info.get_width()//2, HEIGHT-120))
                                                 pygame.display.flip()
                                                 pygame.time.wait(1500)
+                                                # Start Battle Mode (host is player 1)
                                                 player1_name = get_player_name("Player 1, enter your name:", HEIGHT//2 - 120)
                                                 player2_name = "Online Player"
                                                 char_choices = character_select(mode)
                                                 host.close()
-                                                run_coin_collection_and_shop(player1_name, player2_name, char_choices)
+                                                run_game(0, player1_name, player2_name, char_choices)
                                         break
                                     if join_rect.collidepoint(event.pos):
+                                        # Join Game: enter IP (immediately focused for typing)
                                         ip = ""
                                         entering = True
                                         while entering:
@@ -1824,11 +1828,12 @@ while True:
                                                             screen.blit(info, (WIDTH//2-info.get_width()//2, HEIGHT-120))
                                                             pygame.display.flip()
                                                             pygame.time.wait(1500)
+                                                            # Start Battle Mode (client is player 2)
                                                             player1_name = "Online Host"
                                                             player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
                                                             char_choices = character_select(mode)
                                                             client.close()
-                                                            run_coin_collection_and_shop(player1_name, player2_name, char_choices)
+                                                            run_game(0, player1_name, player2_name, char_choices)
                                                     except Exception as e:
                                                         err = font.render(f"Failed: {e}", True, (255,0,0))
                                                         screen.blit(err, (WIDTH//2-err.get_width()//2, HEIGHT-60))
@@ -1903,6 +1908,7 @@ while True:
                                     sys.exit()
                                 if event.type == pygame.MOUSEBUTTONDOWN:
                                     if host_rect.collidepoint(event.pos):
+                                        # Host Game: show IP, wait for connection
                                         import socket
                                         hostname = socket.gethostname()
                                         ip_addr = socket.gethostbyname(hostname)
@@ -1939,6 +1945,7 @@ while True:
                                                 connected = True
                                                 waiting = False
                                         if connected:
+                                            # Simple handshake
                                             host.send("hello from host")
                                             msg = host.recv()
                                             if msg == "hello from client":
