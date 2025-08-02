@@ -1616,7 +1616,7 @@ while True:
                                                 run_game(0, player1_name, player2_name, char_choices)
                                         break
                                     if join_rect.collidepoint(event.pos):
-                                        # Join Game: enter IP
+                                        # Join Game: enter IP (immediately focused for typing)
                                         ip = ""
                                         entering = True
                                         while entering:
