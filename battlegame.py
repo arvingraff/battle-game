@@ -1622,15 +1622,16 @@ while True:
                                         while entering:
                                             screen.fill((30,30,30))
                                             prompt = font.render("Enter Host IP:", True, (255,255,255))
-                                            # Draw input box
+                                            # Draw input box with white background and thick border
                                             input_box = pygame.Rect(WIDTH//2-150, HEIGHT//2-20, 300, 50)
-                                            pygame.draw.rect(screen, (40,40,40), input_box, 0)
-                                            pygame.draw.rect(screen, (0,255,0), input_box, 2)
-                                            ip_text = font.render(ip, True, (0,255,0))
+                                            pygame.draw.rect(screen, (255,255,255), input_box, 0)  # white background
+                                            pygame.draw.rect(screen, (0,255,0), input_box, 4)      # thick green border
+                                            # Draw IP text in black for contrast
+                                            ip_text = font.render(ip, True, (0,0,0))
                                             screen.blit(prompt, (WIDTH//2-prompt.get_width()//2, HEIGHT//2-60))
                                             # Center text in input box
                                             screen.blit(ip_text, (input_box.x+10, input_box.y+input_box.height//2-ip_text.get_height()//2))
-                                            info = font.render("Enter: Connect, Esc: Cancel", True, (200,200,200))
+                                            info = font.render("Enter: Connect, Esc: Cancel", True, (0,0,0))
                                             screen.blit(info, (WIDTH//2-info.get_width()//2, HEIGHT-120))
                                             pygame.display.flip()
                                             for event in pygame.event.get():
