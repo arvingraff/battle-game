@@ -1619,23 +1619,29 @@ while True:
                                         # Join Game: enter IP (immediately focused for typing)
                                         ip = ""
                                         entering = True
+                                        error_message = None
                                         while entering:
                                             screen.fill((30,30,30))
                                             prompt = font.render("Enter Host IP:", True, (255,255,255))
-                                            # Draw input box with white background and thick border, much longer
                                             input_box = pygame.Rect(WIDTH//2-300, HEIGHT//2-20, 600, 50)
-                                            pygame.draw.rect(screen, (255,255,255), input_box, 0)  # white background
-                                            pygame.draw.rect(screen, (0,255,0), input_box, 4)      # thick green border
-                                            # Draw IP text in black for contrast, use a larger font
+                                            pygame.draw.rect(screen, (255,255,255), input_box, 0)
+                                            pygame.draw.rect(screen, (0,255,0), input_box, 4)
                                             ip_font = pygame.font.SysFont(None, 48)
                                             ip_text_surface = ip_font.render(ip, True, (0,0,0))
                                             screen.blit(prompt, (WIDTH//2-prompt.get_width()//2, HEIGHT//2-60))
-                                            # Center text in input box
                                             screen.blit(ip_text_surface, (input_box.x+10, input_box.y+input_box.height//2-ip_text_surface.get_height()//2))
                                             info = font.render("Enter: Connect, Esc: Cancel", True, (0,0,0))
                                             screen.blit(info, (WIDTH//2-info.get_width()//2, HEIGHT-120))
+                                            # Draw Back button
+                                            back_rect = pygame.Rect(WIDTH//2-100, HEIGHT-100, 200, 60)
+                                            pygame.draw.rect(screen, (100,100,100), back_rect)
+                                            back_text = font.render("Back", True, (255,255,255))
+                                            screen.blit(back_text, (back_rect.centerx-back_text.get_width()//2, back_rect.centery-back_text.get_height()//2))
+                                            if error_message:
+                                                err = font.render(error_message, True, (255,0,0))
+                                                screen.blit(err, (WIDTH//2-err.get_width()//2, HEIGHT//2+60))
                                             pygame.display.flip()
-                                            event = pygame.event.wait()  # Wait for an event (ensures every key is processed)
+                                            event = pygame.event.wait()
                                             if event.type == pygame.QUIT:
                                                 pygame.quit()
                                                 sys.exit()
@@ -1644,7 +1650,6 @@ while True:
                                                     entering = False
                                                     break
                                                 elif event.key == pygame.K_RETURN:
-                                                    # Try to connect
                                                     try:
                                                         client = NetworkClient(ip)
                                                         client.send("hello from client")
@@ -1654,32 +1659,27 @@ while True:
                                                             screen.blit(info, (WIDTH//2-info.get_width()//2, HEIGHT-120))
                                                             pygame.display.flip()
                                                             pygame.time.wait(1500)
-                                                            # Start Battle Mode (client is player 2)
                                                             player1_name = "Online Host"
                                                             player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
                                                             char_choices = character_select(mode)
                                                             client.close()
                                                             run_game(0, player1_name, player2_name, char_choices)
+                                                            entering = False
+                                                            break
+                                                        else:
+                                                            error_message = "No host found at that IP. Try again."
+                                                            client.close()
                                                     except Exception as e:
-                                                        err = font.render(f"Failed: {e}", True, (255,0,0))
-                                                        screen.blit(err, (WIDTH//2-err.get_width()//2, HEIGHT-60))
-                                                        pygame.display.flip()
-                                                        pygame.time.wait(2000)
-                                                    entering = False
-                                                    break
+                                                        error_message = f"Failed: {e}"
                                                 elif event.key == pygame.K_BACKSPACE:
                                                     ip = ip[:-1]
                                                 else:
                                                     if len(event.unicode) == 1 and (event.unicode.isdigit() or event.unicode == "."):
                                                         ip += event.unicode
-                                        break
-                                    if back_rect2.collidepoint(event.pos):
-                                        break  # Exit Host/Join menu and return to Play Local/Online
-                            else:
-                                continue
-                            break  # Actually exit Host/Join menu
-                    if back_rect.collidepoint(event.pos):
-                        break  # Go back to main mode_lobby
+                                            if event.type == pygame.MOUSEBUTTONDOWN:
+                                                if back_rect.collidepoint(event.pos):
+                                                    entering = False
+                                                    break
     elif mode == 1:
         # Coin Collection Mode: Play Local / Play Online
         selected = 0
@@ -1793,23 +1793,29 @@ while True:
                                         # Join Game: enter IP (immediately focused for typing)
                                         ip = ""
                                         entering = True
+                                        error_message = None
                                         while entering:
                                             screen.fill((30,30,30))
                                             prompt = font.render("Enter Host IP:", True, (255,255,255))
-                                            # Draw input box with white background and thick border, much longer
                                             input_box = pygame.Rect(WIDTH//2-300, HEIGHT//2-20, 600, 50)
-                                            pygame.draw.rect(screen, (255,255,255), input_box, 0)  # white background
-                                            pygame.draw.rect(screen, (0,255,0), input_box, 4)      # thick green border
-                                            # Draw IP text in black for contrast, use a larger font
+                                            pygame.draw.rect(screen, (255,255,255), input_box, 0)
+                                            pygame.draw.rect(screen, (0,255,0), input_box, 4)
                                             ip_font = pygame.font.SysFont(None, 48)
                                             ip_text_surface = ip_font.render(ip, True, (0,0,0))
                                             screen.blit(prompt, (WIDTH//2-prompt.get_width()//2, HEIGHT//2-60))
-                                            # Center text in input box
                                             screen.blit(ip_text_surface, (input_box.x+10, input_box.y+input_box.height//2-ip_text_surface.get_height()//2))
                                             info = font.render("Enter: Connect, Esc: Cancel", True, (0,0,0))
                                             screen.blit(info, (WIDTH//2-info.get_width()//2, HEIGHT-120))
+                                            # Draw Back button
+                                            back_rect = pygame.Rect(WIDTH//2-100, HEIGHT-100, 200, 60)
+                                            pygame.draw.rect(screen, (100,100,100), back_rect)
+                                            back_text = font.render("Back", True, (255,255,255))
+                                            screen.blit(back_text, (back_rect.centerx-back_text.get_width()//2, back_rect.centery-back_text.get_height()//2))
+                                            if error_message:
+                                                err = font.render(error_message, True, (255,0,0))
+                                                screen.blit(err, (WIDTH//2-err.get_width()//2, HEIGHT//2+60))
                                             pygame.display.flip()
-                                            event = pygame.event.wait()  # Wait for an event (ensures every key is processed)
+                                            event = pygame.event.wait()
                                             if event.type == pygame.QUIT:
                                                 pygame.quit()
                                                 sys.exit()
@@ -1818,7 +1824,6 @@ while True:
                                                     entering = False
                                                     break
                                                 elif event.key == pygame.K_RETURN:
-                                                    # Try to connect
                                                     try:
                                                         client = NetworkClient(ip)
                                                         client.send("hello from client")
@@ -1828,29 +1833,27 @@ while True:
                                                             screen.blit(info, (WIDTH//2-info.get_width()//2, HEIGHT-120))
                                                             pygame.display.flip()
                                                             pygame.time.wait(1500)
-                                                            # Start Battle Mode (client is player 2)
                                                             player1_name = "Online Host"
                                                             player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
                                                             char_choices = character_select(mode)
                                                             client.close()
                                                             run_game(0, player1_name, player2_name, char_choices)
+                                                            entering = False
+                                                            break
+                                                        else:
+                                                            error_message = "No host found at that IP. Try again."
+                                                            client.close()
                                                     except Exception as e:
-                                                        err = font.render(f"Failed: {e}", True, (255,0,0))
-                                                        screen.blit(err, (WIDTH//2-err.get_width()//2, HEIGHT-60))
-                                                        pygame.display.flip()
-                                                        pygame.time.wait(2000)
-                                                    entering = False
-                                                    break
+                                                        error_message = f"Failed: {e}"
                                                 elif event.key == pygame.K_BACKSPACE:
                                                     ip = ip[:-1]
                                                 else:
                                                     if len(event.unicode) == 1 and (event.unicode.isdigit() or event.unicode == "."):
                                                         ip += event.unicode
-                                        break
-                                    if back_rect2.collidepoint(event.pos):
-                                        break
-                    if back_rect.collidepoint(event.pos):
-                        break
+                                            if event.type == pygame.MOUSEBUTTONDOWN:
+                                                if back_rect.collidepoint(event.pos):
+                                                    entering = False
+                                                    break
     elif mode == 2:
         # Survival Mode: Play Local / Play Online
         selected = 0
@@ -1953,32 +1956,40 @@ while True:
                                                 screen.blit(info, (WIDTH//2-info.get_width()//2, HEIGHT-120))
                                                 pygame.display.flip()
                                                 pygame.time.wait(1500)
-                                                player1_name = get_player_name("Player 1, enter your name for Survival Mode:", HEIGHT//2-60)
+                                                # Start Battle Mode (host is player 1)
+                                                player1_name = get_player_name("Player 1, enter your name:", HEIGHT//2 - 120)
                                                 player2_name = "Online Player"
-                                                char_choices = character_select(0)
+                                                char_choices = character_select(mode)
                                                 host.close()
-                                                run_survival_mode(player1_name, player2_name, char_choices)
+                                                run_game(0, player1_name, player2_name, char_choices)
                                         break
                                     if join_rect.collidepoint(event.pos):
+                                        # Join Game: enter IP (immediately focused for typing)
                                         ip = ""
                                         entering = True
+                                        error_message = None
                                         while entering:
                                             screen.fill((30,30,30))
                                             prompt = font.render("Enter Host IP:", True, (255,255,255))
-                                            # Draw input box with white background and thick border, much longer
                                             input_box = pygame.Rect(WIDTH//2-300, HEIGHT//2-20, 600, 50)
-                                            pygame.draw.rect(screen, (255,255,255), input_box, 0)  # white background
-                                            pygame.draw.rect(screen, (0,255,0), input_box, 4)      # thick green border
-                                            # Draw IP text in black for contrast, use a larger font
+                                            pygame.draw.rect(screen, (255,255,255), input_box, 0)
+                                            pygame.draw.rect(screen, (0,255,0), input_box, 4)
                                             ip_font = pygame.font.SysFont(None, 48)
                                             ip_text_surface = ip_font.render(ip, True, (0,0,0))
                                             screen.blit(prompt, (WIDTH//2-prompt.get_width()//2, HEIGHT//2-60))
-                                            # Center text in input box
                                             screen.blit(ip_text_surface, (input_box.x+10, input_box.y+input_box.height//2-ip_text_surface.get_height()//2))
                                             info = font.render("Enter: Connect, Esc: Cancel", True, (0,0,0))
                                             screen.blit(info, (WIDTH//2-info.get_width()//2, HEIGHT-120))
+                                            # Draw Back button
+                                            back_rect = pygame.Rect(WIDTH//2-100, HEIGHT-100, 200, 60)
+                                            pygame.draw.rect(screen, (100,100,100), back_rect)
+                                            back_text = font.render("Back", True, (255,255,255))
+                                            screen.blit(back_text, (back_rect.centerx-back_text.get_width()//2, back_rect.centery-back_text.get_height()//2))
+                                            if error_message:
+                                                err = font.render(error_message, True, (255,0,0))
+                                                screen.blit(err, (WIDTH//2-err.get_width()//2, HEIGHT//2+60))
                                             pygame.display.flip()
-                                            event = pygame.event.wait()  # Wait for an event (ensures every key is processed)
+                                            event = pygame.event.wait()
                                             if event.type == pygame.QUIT:
                                                 pygame.quit()
                                                 sys.exit()
@@ -1987,7 +1998,6 @@ while True:
                                                     entering = False
                                                     break
                                                 elif event.key == pygame.K_RETURN:
-                                                    # Try to connect
                                                     try:
                                                         client = NetworkClient(ip)
                                                         client.send("hello from client")
@@ -1998,27 +2008,26 @@ while True:
                                                             pygame.display.flip()
                                                             pygame.time.wait(1500)
                                                             player1_name = "Online Host"
-                                                            player2_name = get_player_name("Player 2, enter your name for Survival Mode:", HEIGHT//2+60)
-                                                            char_choices = character_select(0)
+                                                            player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
+                                                            char_choices = character_select(mode)
                                                             client.close()
-                                                            run_survival_mode(player1_name, player2_name, char_choices)
+                                                            run_game(0, player1_name, player2_name, char_choices)
+                                                            entering = False
+                                                            break
+                                                        else:
+                                                            error_message = "No host found at that IP. Try again."
+                                                            client.close()
                                                     except Exception as e:
-                                                        err = font.render(f"Failed: {e}", True, (255,0,0))
-                                                        screen.blit(err, (WIDTH//2-err.get_width()//2, HEIGHT-60))
-                                                        pygame.display.flip()
-                                                        pygame.time.wait(2000)
-                                                    entering = False
-                                                    break
+                                                        error_message = f"Failed: {e}"
                                                 elif event.key == pygame.K_BACKSPACE:
                                                     ip = ip[:-1]
                                                 else:
                                                     if len(event.unicode) == 1 and (event.unicode.isdigit() or event.unicode == "."):
                                                         ip += event.unicode
-                                        break
-                                    if back_rect2.collidepoint(event.pos):
-                                        break
-                    if back_rect.collidepoint(event.pos):
-                        break
+                                            if event.type == pygame.MOUSEBUTTONDOWN:
+                                                if back_rect.collidepoint(event.pos):
+                                                    entering = False
+                                                    break
 
 
 
