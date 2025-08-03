@@ -1148,8 +1148,6 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
                             player1_shots += 1
                             if player1_shots == RELOAD_LIMIT:
                                 player1_reload_time = now + RELOAD_DURATION
-                        else:
-                            pass  # Optionally show reload message
                     # Player 2 shoot (right shift)
                     if event.key == pygame.K_RSHIFT:
                         if player2_shots < RELOAD_LIMIT and now > player2_reload_time:
@@ -1787,10 +1785,12 @@ while True:
                                                 screen.blit(info, (WIDTH//2-info.get_width()//2, HEIGHT-120))
                                                 pygame.display.flip()
                                                 pygame.time.wait(1500)
-                                                player1_name = get_player_name("Player 1, enter your name:", HEIGHT//2 - 120)
-                                                player2_name = "Online Player"
-                                                char_choices = character_select(mode)
-                                                # Do NOT close host here! Only close after game ends.
+                                                # Host: get own name/char, receive joiner's
+                                                player1_name, char1 = online_get_name_and_character("Player 1", mode)
+                                                host.send(f"{player1_name},{char1}")
+                                                joiner_info = host.recv()
+                                                player2_name, char2 = joiner_info.split(",")
+                                                char_choices = [int(char1), int(char2)]
                                                 result = run_game(0, player1_name, player2_name, char_choices, network=host, is_host=True, online=True)
                                                 host.close()
                                                 if result == 'lobby':
@@ -1840,10 +1840,12 @@ while True:
                                                             screen.blit(info, (WIDTH//2-info.get_width()//2, HEIGHT-120))
                                                             pygame.display.flip()
                                                             pygame.time.wait(1500)
-                                                            player1_name = "Online Host"
-                                                            player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
-                                                            char_choices = character_select(mode)
-                                                            # Do NOT close client here! Only close after game ends.
+                                                            # Joiner: get own name/char, send to host, receive host's
+                                                            player2_name, char2 = online_get_name_and_character("Player 2", mode)
+                                                            client.send(f"{player2_name},{char2}")
+                                                            host_info = client.recv()
+                                                            player1_name, char1 = host_info.split(",")
+                                                            char_choices = [int(char1), int(char2)]
                                                             result = run_game(0, player1_name, player2_name, char_choices, network=client, is_host=False, online=True)
                                                             client.close()
                                                             if result == 'lobby':
@@ -1965,10 +1967,12 @@ while True:
                                                 screen.blit(info, (WIDTH//2-info.get_width()//2, HEIGHT-120))
                                                 pygame.display.flip()
                                                 pygame.time.wait(1500)
-                                                player1_name = get_player_name("Player 1, enter your name:", HEIGHT//2 - 120)
-                                                player2_name = "Online Player"
-                                                char_choices = character_select(mode)
-                                                # Do NOT close host here! Only close after game ends.
+                                                # Host: get own name/char, receive joiner's
+                                                player1_name, char1 = online_get_name_and_character("Player 1", mode)
+                                                host.send(f"{player1_name},{char1}")
+                                                joiner_info = host.recv()
+                                                player2_name, char2 = joiner_info.split(",")
+                                                char_choices = [int(char1), int(char2)]
                                                 result = run_game(0, player1_name, player2_name, char_choices, network=host, is_host=True, online=True)
                                                 host.close()
                                                 if result == 'lobby':
@@ -2018,10 +2022,12 @@ while True:
                                                             screen.blit(info, (WIDTH//2-info.get_width()//2, HEIGHT-120))
                                                             pygame.display.flip()
                                                             pygame.time.wait(1500)
-                                                            player1_name = "Online Host"
-                                                            player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
-                                                            char_choices = character_select(mode)
-                                                            # Do NOT close client here! Only close after game ends.
+                                                            # Joiner: get own name/char, send to host, receive host's
+                                                            player2_name, char2 = online_get_name_and_character("Player 2", mode)
+                                                            client.send(f"{player2_name},{char2}")
+                                                            host_info = client.recv()
+                                                            player1_name, char1 = host_info.split(",")
+                                                            char_choices = [int(char1), int(char2)]
                                                             result = run_game(0, player1_name, player2_name, char_choices, network=client, is_host=False, online=True)
                                                             client.close()
                                                             if result == 'lobby':
