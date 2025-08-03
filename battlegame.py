@@ -1751,10 +1751,9 @@ while True:
                         player1_name = get_player_name("Player 1, enter your name:", HEIGHT//2 - 120)
                         player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
                         char_choices = character_select(mode)
-                        # Local play (no network):
                         result = run_game(0, player1_name, player2_name, char_choices)
                         if result == 'lobby':
-                            break  # Return to lobby after game ends
+                            break  # Return to main menu
                     if online_rect.collidepoint(event.pos):
                         # Show Host/Join buttons
                         while True:
@@ -1942,7 +1941,7 @@ while True:
                         break
             else:
                 continue
-            break
+            break  # Always return to main menu after game ends
     elif mode == 2:
         # Survival Mode: Play Local only
         selected = 0
@@ -1974,7 +1973,7 @@ while True:
                         break
             else:
                 continue
-            break
+            break  # Always return to main menu after game ends
 
 
 
