@@ -1906,6 +1906,75 @@ while True:
                                                 if back_rect.collidepoint(event.pos):
                                                     entering = False
                                                     break
+    elif mode == 1:
+        # Coin Collection Mode: Play Local / Play Online
+        selected = 0
+        options = ["Play Local", "Play Online"]
+        while True:
+            screen.fill((30, 30, 30))
+            title = lobby_font.render("Coin Collection Mode", True, (255,255,255))
+            screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-120))
+            local_rect = pygame.Rect(WIDTH//2-220, HEIGHT//2, 200, 80)
+            online_rect = pygame.Rect(WIDTH//2+20, HEIGHT//2, 200, 80)
+            pygame.draw.rect(screen, (0,180,0), local_rect)
+            pygame.draw.rect(screen, (0,120,255), online_rect)
+            local_text = font.render("Play Local", True, (255,255,255))
+            online_text = font.render("Play Online", True, (255,255,255))
+            screen.blit(local_text, (local_rect.centerx-local_text.get_width()//2, local_rect.centery-local_text.get_height()//2))
+            screen.blit(online_text, (online_rect.centerx-online_text.get_width()//2, online_rect.centery-online_text.get_height()//2))
+            back_rect = pygame.Rect(WIDTH//2-100, HEIGHT-100, 200, 60)
+            pygame.draw.rect(screen, (100,100,100), back_rect)
+            back_text = font.render("Back", True, (255,255,255))
+            screen.blit(back_text, (back_rect.centerx-back_text.get_width()//2, back_rect.centery-back_text.get_height()//2))
+            pygame.display.flip()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if local_rect.collidepoint(event.pos):
+                        player1_name = get_player_name("Player 1, enter your name:", HEIGHT//2 - 120)
+                        player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
+                        char_choices = character_select(1)
+                        run_coin_collection(player1_name, player2_name, char_choices)
+                        break
+                    if back_rect.collidepoint(event.pos):
+                        break
+            else:
+                continue
+            break
+    elif mode == 2:
+        # Survival Mode: Play Local only
+        selected = 0
+        while True:
+            screen.fill((30, 30, 30))
+            title = lobby_font.render("Survival Mode", True, (255,255,255))
+            screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-120))
+            local_rect = pygame.Rect(WIDTH//2-100, HEIGHT//2, 200, 80)
+            pygame.draw.rect(screen, (0,180,0), local_rect)
+            local_text = font.render("Play Local", True, (255,255,255))
+            screen.blit(local_text, (local_rect.centerx-local_text.get_width()//2, local_rect.centery-local_text.get_height()//2))
+            back_rect = pygame.Rect(WIDTH//2-100, HEIGHT-100, 200, 60)
+            pygame.draw.rect(screen, (100,100,100), back_rect)
+            back_text = font.render("Back", True, (255,255,255))
+            screen.blit(back_text, (back_rect.centerx-back_text.get_width()//2, back_rect.centery-back_text.get_height()//2))
+            pygame.display.flip()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if local_rect.collidepoint(event.pos):
+                        player1_name = get_player_name("Player 1, enter your name for Survival Mode:", HEIGHT//2-60)
+                        player2_name = get_player_name("Player 2, enter your name for Survival Mode:", HEIGHT//2+60)
+                        char_choices = character_select(0)
+                        run_survival_mode(player1_name, player2_name, char_choices)
+                        break
+                    if back_rect.collidepoint(event.pos):
+                        break
+            else:
+                continue
+            break
 
 
 
