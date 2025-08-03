@@ -496,6 +496,15 @@ def run_game(mode, player1_name, player2_name, char_choices, network=None, is_ho
             y = random.randint(100, HEIGHT-60)
             coin_rects.append(pygame.Rect(x, y, 24, 24))
 
+    # --- SYNCHRONIZED COUNTDOWN FOR ONLINE ---
+    if online and network:
+        if is_host:
+            # Wait for client ready, then send 'start'
+            network.recv()  # Wait for client 'ready'
+            network.send('start')
+        else:
+            network.send('ready')
+            network.recv()  # Wait for host 'start'
     start_countdown()
     countdown_done = True
 
@@ -503,32 +512,50 @@ def run_game(mode, player1_name, player2_name, char_choices, network=None, is_ho
         now = time.time()
         # --- NETWORK SYNC (ONLINE BATTLE MODE) ---
         if online and network:
+            # Send local state: x,y,right,health,bullets
             if is_host:
-                my_state = f"{player1.x},{player1.y},{p1_right},{player1_health}"
+                my_bullets = '|'.join(f"{b['rect'].x},{b['rect'].y},{b['dir']},{b['owner']}" for b in bullets if b['owner']==1)
+                my_state = f"{player1.x},{player1.y},{p1_right},{player1_health};{my_bullets}"
                 network.send(my_state)
                 try:
                     data = network.recv()
                     if data:
-                        vals = data.split(",")
+                        parts = data.split(';')
+                        vals = parts[0].split(',')
                         if len(vals) >= 4:
                             player2.x = int(vals[0])
                             player2.y = int(vals[1])
                             p2_right = vals[2] == 'True'
                             player2_health = int(vals[3])
+                        # Bullets from client
+                        if len(parts) > 1 and parts[1]:
+                            for bstr in parts[1].split('|'):
+                                bx, by, bdir, bowner = bstr.split(',')
+                                # Only add if not already present
+                                if not any(abs(b['rect'].x-int(bx))<5 and abs(b['rect'].y-int(by))<5 and b['owner']==2 for b in bullets):
+                                    bullets.append({'rect': pygame.Rect(int(bx), int(by), 10, 10), 'dir': int(bdir), 'owner': int(bowner)})
                 except:
                     pass
             else:
-                my_state = f"{player2.x},{player2.y},{p2_right},{player2_health}"
+                my_bullets = '|'.join(f"{b['rect'].x},{b['rect'].y},{b['dir']},{b['owner']}" for b in bullets if b['owner']==2)
+                my_state = f"{player2.x},{player2.y},{p2_right},{player2_health};{my_bullets}"
                 network.send(my_state)
                 try:
                     data = network.recv()
                     if data:
-                        vals = data.split(",")
+                        parts = data.split(';')
+                        vals = parts[0].split(',')
                         if len(vals) >= 4:
                             player1.x = int(vals[0])
                             player1.y = int(vals[1])
                             p1_right = vals[2] == 'True'
                             player1_health = int(vals[3])
+                        # Bullets from host
+                        if len(parts) > 1 and parts[1]:
+                            for bstr in parts[1].split('|'):
+                                bx, by, bdir, bowner = bstr.split(',')
+                                if not any(abs(b['rect'].x-int(bx))<5 and abs(b['rect'].y-int(by))<5 and b['owner']==1 for b in bullets):
+                                    bullets.append({'rect': pygame.Rect(int(bx), int(by), 10, 10), 'dir': int(bdir), 'owner': int(bowner)})
                 except:
                     pass
         for event in pygame.event.get():
