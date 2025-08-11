@@ -931,69 +931,6 @@ def run_game(mode, player1_name, player2_name, char_choices, network=None, is_ho
 
 # Re-add Coin Collection mode
 
-def run_coin_collection(player1_name, player2_name, char_choices):
-    player1_score = 0
-    player2_score = 0
-    coin_rects = []
-    coin_timer = time.time() + 30
-    player1 = pygame.Rect(100, HEIGHT//2, 50, 50)
-    player2 = pygame.Rect(WIDTH-150, HEIGHT//2, 50, 50)
-    speed = 6
-    for _ in range(10):
-        x = random.randint(60, WIDTH-60)
-        y = random.randint(100, HEIGHT-60)
-        coin_rects.append(pygame.Rect(x, y, 24, 24))
-    start_countdown()
-    while time.time() < coin_timer:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_a]: player1.x -= speed
-        if keys[pygame.K_d]: player1.x += speed
-        if keys[pygame.K_w]: player1.y -= speed
-        if keys[pygame.K_s]: player1.y += speed
-        if keys[pygame.K_LEFT]: player2.x -= speed
-        if keys[pygame.K_RIGHT]: player2.x += speed
-        if keys[pygame.K_UP]: player2.y -= speed
-        if keys[pygame.K_DOWN]: player2.y += speed
-        player1.clamp_ip(pygame.Rect(0,0,WIDTH,HEIGHT))
-        player2.clamp_ip(pygame.Rect(0,0,WIDTH,HEIGHT))
-        p1_body = pygame.Rect(player1.centerx-20, player1.centery-35, 40, 110)
-        p2_body = pygame.Rect(player2.centerx-20, player2.centery-35, 40, 110)
-        for coin in coin_rects[:]:
-            if p1_body.colliderect(coin):
-                player1_score += 1
-                coin_rects.remove(coin)
-            elif p2_body.colliderect(coin):
-                player2_score += 1
-                coin_rects.remove(coin)
-        while len(coin_rects) < 10:
-            x = random.randint(60, WIDTH-60)
-            y = random.randint(100, HEIGHT-60)
-            coin_rects.append(pygame.Rect(x, y, 24, 24))
-        screen.fill((30,30,30))
-        for coin in coin_rects:
-            pygame.draw.circle(screen, (255,215,0), coin.center, 12)
-        draw_explorer_character(screen, player1.centerx, player1.centery, char_choices[0])
-        draw_explorer_character(screen, player2.centerx, player2.centery, char_choices[1])
-        score_text = font.render(f"{player1_name}: {player1_score}   {player2_name}: {player2_score}", True, (255,255,255))
-        screen.blit(score_text, (WIDTH//2-score_text.get_width()//2, 20))
-        timer_text = font.render(f"Time left: {int(coin_timer-time.time())}", True, (255,255,255))
-        screen.blit(timer_text, (WIDTH//2-timer_text.get_width()//2, 60))
-        pygame.display.flip()
-        clock.tick(60)
-    winner = player1_name if player1_score > player2_score else player2_name if player2_score > player1_score else "Tie!"
-    win_text = font.render(f"Winner: {winner}", True, (0,255,0))
-    screen.blit(win_text, (WIDTH//2-win_text.get_width()//2, HEIGHT//2))
-    pygame.display.flip()
-    pygame.time.wait(2000)
-    pygame.mixer.music.stop()
-    # Go to shop, then battle mode
-    run_coin_collection_and_shop(player1_name, player2_name, char_choices)
-    return
-
 def run_coin_collection_and_shop(player1_name, player2_name, char_choices):
     # Coin collection phase
     player1_score = 0
@@ -1145,7 +1082,7 @@ def draw_weapon(screen, x, y, right, weapon):
             pygame.draw.rect(screen, (139,69,19), (x+2, y-7, 16, 8))
             pygame.draw.rect(screen, (80,80,80), (x-38, y-7, 38, 8))
             pygame.draw.arc(screen, (60,60,60), (x-28, y+2, 18, 14), 0, 3.14, 4)
-            pygame.draw.rect(screen, (60,60,60), (x-36, y+2, 6,12))
+            pygame.draw.rect(screen, (60,60,60), (x-36, y+2, 6, 12))
 
 # Main game with upgrades
 
@@ -1939,7 +1876,7 @@ while True:
                         player1_name = get_player_name("Player 1, enter your name:", HEIGHT//2 - 120)
                         player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
                         char_choices = character_select(1)
-                        run_coin_collection(player1_name, player2_name, char_choices)
+                        run_coin_collection_and_shop(player1_name, player2_name, char_choices)
                         break
                     if back_rect.collidepoint(event.pos):
                         break
