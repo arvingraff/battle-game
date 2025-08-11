@@ -922,6 +922,8 @@ def run_game(mode, player1_name, player2_name, char_choices, network=None, is_ho
                 pygame.display.flip()
                 pygame.time.wait(3000)
                 pygame.mixer.music.stop()
+                # Go to shop, then battle mode
+                run_coin_collection_and_shop(player1_name, player2_name, char_choices)
                 return
 
         pygame.display.flip()
@@ -986,8 +988,10 @@ def run_coin_collection(player1_name, player2_name, char_choices):
     win_text = font.render(f"Winner: {winner}", True, (0,255,0))
     screen.blit(win_text, (WIDTH//2-win_text.get_width()//2, HEIGHT//2))
     pygame.display.flip()
-    pygame.time.wait(3000)
+    pygame.time.wait(2000)
     pygame.mixer.music.stop()
+    # Go to shop, then battle mode
+    run_coin_collection_and_shop(player1_name, player2_name, char_choices)
     return
 
 def run_coin_collection_and_shop(player1_name, player2_name, char_choices):
@@ -1141,7 +1145,7 @@ def draw_weapon(screen, x, y, right, weapon):
             pygame.draw.rect(screen, (139,69,19), (x+2, y-7, 16, 8))
             pygame.draw.rect(screen, (80,80,80), (x-38, y-7, 38, 8))
             pygame.draw.arc(screen, (60,60,60), (x-28, y+2, 18, 14), 0, 3.14, 4)
-            pygame.draw.rect(screen, (60,60,60), (x-36, y+2, 6, 12))
+            pygame.draw.rect(screen, (60,60,60), (x-36, y+2, 6,12))
 
 # Main game with upgrades
 
