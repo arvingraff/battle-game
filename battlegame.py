@@ -1044,7 +1044,7 @@ def run_coin_collection_and_shop(player1_name, player2_name, char_choices):
     # After shop, let players choose mafia character for battle
     mafia_choices = character_select(0)  # 0 = mafia mode
     # Start battle mode with upgrades and selected mafia
-    result = run_game_with_upgrades(player1_name, player2_name, mafia_choices, 0, 0, 0, 0, 0, 0, mode=0)
+    result = run_game_with_upgrades(player1_name, player2_name, mafia_choices, p1_bazooka, p2_bazooka, p1_kannon, p2_kannon, p1_life, p2_life, mode=0)
     return
 
 def draw_weapon(screen, x, y, right, weapon):
@@ -1162,8 +1162,6 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
             player1.y -= speed
         if keys[pygame.K_s]:
             player1.y += speed
-       
-
         # Player 2 controls (Arrow keys)
         if keys[pygame.K_LEFT]:
             player2.x -= speed
