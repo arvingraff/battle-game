@@ -1044,7 +1044,7 @@ def run_coin_collection_and_shop(player1_name, player2_name, char_choices):
     # After shop, let players choose mafia character for battle
     mafia_choices = character_select(0)  # 0 = mafia mode
     # Start battle mode with upgrades and selected mafia
-    run_game_with_upgrades(player1_name, player2_name, mafia_choices, p1_bazooka, p2_bazooka, p1_kannon, p2_kannon, p1_life, p2_life)
+    result = run_game_with_upgrades(player1_name, player2_name, mafia_choices, 0, 0, 0, 0, 0, 0, mode=0)
     return
 
 def draw_weapon(screen, x, y, right, weapon):
@@ -1086,7 +1086,7 @@ def draw_weapon(screen, x, y, right, weapon):
 
 # Main game with upgrades
 
-def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka, p2_bazooka, p1_kannon, p2_kannon, p1_life, p2_life):
+def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka, p2_bazooka, p1_kannon, p2_kannon, p1_life, p2_life, mode=0):
     # Battle mode with upgrades: bazooka/kannon = 2 shots each, then normal
     try:
         pygame.mixer.music.stop()
@@ -1162,6 +1162,8 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
             player1.y -= speed
         if keys[pygame.K_s]:
             player1.y += speed
+       
+
         # Player 2 controls (Arrow keys)
         if keys[pygame.K_LEFT]:
             player2.x -= speed
@@ -1667,17 +1669,14 @@ while True:
             screen.fill((30, 30, 30))
             title = lobby_font.render("Battle Mode", True, (255,255,255))
             screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-120))
-            # Draw Play Local button
             local_rect = pygame.Rect(WIDTH//2-220, HEIGHT//2, 200, 80)
             pygame.draw.rect(screen, (0,180,0), local_rect)
             local_text = font.render("Play Local", True, (255,255,255))
             screen.blit(local_text, (local_rect.centerx-local_text.get_width()//2, local_rect.centery-local_text.get_height()//2))
-            # Draw Play Online button
             online_rect = pygame.Rect(WIDTH//2+20, HEIGHT//2, 200, 80)
             pygame.draw.rect(screen, (0,120,255), online_rect)
             online_text = font.render("Play Online", True, (255,255,255))
             screen.blit(online_text, (online_rect.centerx-online_text.get_width()//2, online_rect.centery-online_text.get_height()//2))
-            # Draw Back button
             back_rect = pygame.Rect(WIDTH//2-100, HEIGHT-100, 200, 60)
             pygame.draw.rect(screen, (100,100,100), back_rect)
             back_text = font.render("Back", True, (255,255,255))
@@ -1691,8 +1690,9 @@ while True:
                     if local_rect.collidepoint(event.pos):
                         player1_name = get_player_name("Player 1, enter your name:", HEIGHT//2 - 120)
                         player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
-                        char_choices = character_select(mode)
-                        result = run_game(0, player1_name, player2_name, char_choices)
+                        char_choices = character_select(0)  # Mafia mode
+                        # Go straight to battle, no shop, no upgrades
+                        result = run_game_with_upgrades(player1_name, player2_name, char_choices, 0, 0, 0, 0, 0, 0, mode=0)
                         if result == 'lobby':
                             break  # Return to main menu
                     if online_rect.collidepoint(event.pos):
@@ -1772,7 +1772,7 @@ while True:
                                                 joiner_info = host.recv()
                                                 player2_name, char2 = joiner_info.split(",")
                                                 char_choices = [int(char1), int(char2)]
-                                                result = run_game(0, player1_name, player2_name, char_choices, network=host, is_host=True, online=True)
+                                                result = run_game_with_upgrades(player1_name, player2_name, char_choices, 0, 0, 0, 0, 0, 0, mode=0, network=host, is_host=True, online=True)
                                                 host.close()
                                                 if result == 'lobby':
                                                     break
@@ -1827,7 +1827,7 @@ while True:
                                                             host_info = client.recv()
                                                             player1_name, char1 = host_info.split(",")
                                                             char_choices = [int(char1), int(char2)]
-                                                            result = run_game(0, player1_name, player2_name, char_choices, network=client, is_host=False, online=True)
+                                                            result = run_game_with_upgrades(0, player1_name, player2_name, char_choices, network=client, is_host=False, online=True)
                                                             client.close()
                                                             if result == 'lobby':
                                                                 entering = False
