@@ -271,10 +271,14 @@ def character_select(mode):
         options = [0, 1, 2]  # Mafia styles
         names = ["Classic Mafia", "Mafia Boss", "Mafia Hitman"]
         draw_func = draw_mafia_character
-    else:
+    elif mode == 1:
         options = [0, 1, 2]  # Explorer styles
         names = ["Jungle Explorer", "Desert Adventurer", "Arctic Explorer"]
         draw_func = draw_explorer_character
+    else:  # mode == 2 (Survival mode)
+        options = [0, 1, 2]  # Survivor styles
+        names = ["Military Survivor", "Scientist Survivor", "Post-Apocalyptic Survivor"]
+        draw_func = draw_survivor_character
     selected1 = 0
     selected2 = 0
     p1_done = False
@@ -500,6 +504,107 @@ def draw_explorer_character(screen, x, y, style):
         pygame.draw.ellipse(screen, (135,206,250), (x-12, y+38, 12, 8))
         pygame.draw.ellipse(screen, (135,206,250), (x+0, y+38, 12, 8))
     # ...add arms, legs, shoes as needed...
+
+# Drawing functions for realistic survivor characters
+
+def draw_survivor_character(screen, x, y, style):
+    if style == 0:  # Military Survivor
+        # Head with helmet
+        pygame.draw.ellipse(screen, (224, 172, 105), (x-15, y-35, 30, 38))
+        # Military helmet (olive green)
+        pygame.draw.ellipse(screen, (85, 107, 47), (x-16, y-45, 32, 20))
+        pygame.draw.rect(screen, (85, 107, 47), (x-12, y-50, 24, 8))
+        # Eyes
+        pygame.draw.circle(screen, (0,0,0), (x-6, y-25), 2)
+        pygame.draw.circle(screen, (0,0,0), (x+6, y-25), 2)
+        # Mouth (serious expression)
+        pygame.draw.line(screen, (0,0,0), (x-4, y-15), (x+4, y-15), 2)
+        # Military uniform (camouflage colors)
+        pygame.draw.rect(screen, (85, 107, 47), (x-14, y+3, 28, 38))
+        pygame.draw.rect(screen, (60, 80, 40), (x-10, y+8, 8, 20))
+        pygame.draw.rect(screen, (60, 80, 40), (x+2, y+8, 8, 20))
+        # Belt with pouches
+        pygame.draw.rect(screen, (139, 69, 19), (x-14, y+20, 28, 4))
+        pygame.draw.rect(screen, (80, 40, 20), (x-8, y+18, 6, 8))
+        pygame.draw.rect(screen, (80, 40, 20), (x+2, y+18, 6, 8))
+        # Arms (holding rifle)
+        pygame.draw.line(screen, (224, 172, 105), (x-20, y+10), (x-25, y+20), 8)
+        pygame.draw.line(screen, (224, 172, 105), (x+20, y+10), (x+25, y+20), 8)
+        # Legs (military pants)
+        pygame.draw.line(screen, (85, 107, 47), (x-5, y+41), (x-5, y+70), 8)
+        pygame.draw.line(screen, (85, 107, 47), (x+5, y+41), (x+5, y+70), 8)
+        # Military boots
+        pygame.draw.ellipse(screen, (0,0,0), (x-12, y+68, 14, 8))
+        pygame.draw.ellipse(screen, (0,0,0), (x-2, y+68, 14, 8))
+        
+    elif style == 1:  # Scientist Survivor
+        # Head with glasses
+        pygame.draw.ellipse(screen, (224, 172, 105), (x-15, y-35, 30, 38))
+        # Glasses
+        pygame.draw.circle(screen, (255,255,255), (x-8, y-25), 6, 2)
+        pygame.draw.circle(screen, (255,255,255), (x+8, y-25), 6, 2)
+        pygame.draw.line(screen, (0,0,0), (x-2, y-25), (x+2, y-25), 2)
+        # Eyes behind glasses
+        pygame.draw.circle(screen, (0,0,0), (x-8, y-25), 2)
+        pygame.draw.circle(screen, (0,0,0), (x+8, y-25), 2)
+        # Worried expression
+        pygame.draw.arc(screen, (0,0,0), (x-6, y-18, 12, 8), 0, 3.14, 2)
+        # Lab coat (white with stains)
+        pygame.draw.rect(screen, (240, 240, 240), (x-14, y+3, 28, 38))
+        pygame.draw.rect(screen, (200, 200, 200), (x-6, y+3, 12, 38))  # Front opening
+        # Blood stains
+        pygame.draw.circle(screen, (139, 0, 0), (x-8, y+15), 3)
+        pygame.draw.circle(screen, (139, 0, 0), (x+6, y+25), 2)
+        # Shirt underneath
+        pygame.draw.rect(screen, (100, 150, 200), (x-8, y+8, 16, 15))
+        # Arms (shaking)
+        pygame.draw.line(screen, (224, 172, 105), (x-20, y+10), (x-22, y+25), 8)
+        pygame.draw.line(screen, (224, 172, 105), (x+20, y+10), (x+22, y+25), 8)
+        # Legs (dress pants)
+        pygame.draw.line(screen, (50, 50, 50), (x-5, y+41), (x-5, y+70), 8)
+        pygame.draw.line(screen, (50, 50, 50), (x+5, y+41), (x+5, y+70), 8)
+        # Dress shoes
+        pygame.draw.ellipse(screen, (0,0,0), (x-12, y+68, 14, 8))
+        pygame.draw.ellipse(screen, (0,0,0), (x-2, y+68, 14, 8))
+        
+    elif style == 2:  # Post-Apocalyptic Survivor
+        # Head with bandana
+        pygame.draw.ellipse(screen, (224, 172, 105), (x-15, y-35, 30, 38))
+        # Bandana (red)
+        pygame.draw.polygon(screen, (139, 0, 0), [(x-16, y-42), (x+16, y-42), (x+12, y-35), (x-12, y-35)])
+        # Scars and dirt
+        pygame.draw.line(screen, (139, 0, 0), (x-10, y-28), (x-5, y-20), 2)
+        pygame.draw.circle(screen, (101, 67, 33), (x+8, y-22), 3)
+        # Eyes (determined)
+        pygame.draw.circle(screen, (0,0,0), (x-6, y-25), 2)
+        pygame.draw.circle(screen, (0,0,0), (x+6, y-25), 2)
+        # Grim mouth
+        pygame.draw.line(screen, (0,0,0), (x-3, y-15), (x+3, y-13), 2)
+        # Leather jacket (worn)
+        pygame.draw.rect(screen, (101, 67, 33), (x-14, y+3, 28, 38))
+        # Metal studs
+        pygame.draw.circle(screen, (192, 192, 192), (x-8, y+8), 2)
+        pygame.draw.circle(screen, (192, 192, 192), (x+8, y+8), 2)
+        # Torn shirt underneath
+        pygame.draw.rect(screen, (139, 0, 0), (x-8, y+15, 16, 15))
+        pygame.draw.line(screen, (0,0,0), (x-3, y+20), (x+3, y+25), 3)  # Tear
+        # Arms (muscular, with tattoos)
+        pygame.draw.line(screen, (224, 172, 105), (x-20, y+10), (x-25, y+25), 10)
+        pygame.draw.line(screen, (224, 172, 105), (x+20, y+10), (x+25, y+25), 10)
+        # Tattoo (skull)
+        pygame.draw.circle(screen, (0,0,0), (x-22, y+15), 3)
+        # Legs (ripped jeans)
+        pygame.draw.line(screen, (72, 61, 139), (x-5, y+41), (x-5, y+70), 8)
+        pygame.draw.line(screen, (72, 61, 139), (x+5, y+41), (x+5, y+70), 8)
+        # Rips in jeans
+        pygame.draw.line(screen, (224, 172, 105), (x-5, y+50), (x-5, y+55), 3)
+        pygame.draw.line(screen, (224, 172, 105), (x+5, y+60), (x+5, y+65), 3)
+        # Combat boots
+        pygame.draw.ellipse(screen, (0,0,0), (x-12, y+68, 14, 10))
+        pygame.draw.ellipse(screen, (0,0,0), (x-2, y+68, 14, 10))
+        # Boot laces
+        pygame.draw.line(screen, (139, 69, 19), (x-8, y+70), (x-4, y+70), 1)
+        pygame.draw.line(screen, (139, 69, 19), (x+2, y+70), (x+6, y+70), 1)
 
 # Main game loop refactored into a function
 
@@ -1324,17 +1429,18 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
             gun_offset_y1 = player1.centery+10
             gun_offset_y2 = player2.centery+10
             
-            # Use selected weapon if player has ammo, otherwise default
-            if p1_selected_weapon == "bazooka" and p1_bazooka_left > 0:
+            # Determine Player 1's current weapon based on upgrades
+            if p1_bazooka_left > 0:
                 p1_weapon = "bazooka"
-            elif p1_selected_weapon == "kannon" and p1_kannon_left > 0:
+            elif p1_kannon_left > 0:
                 p1_weapon = "kannon"
             else:
                 p1_weapon = "default"
             
-            if p2_selected_weapon == "bazooka" and p2_bazooka_left > 0:
+            # Determine Player 2's current weapon based on upgrades
+            if p2_bazooka_left > 0:
                 p2_weapon = "bazooka"
-            elif p2_selected_weapon == "kannon" and p2_kannon_left > 0:
+            elif p2_kannon_left > 0:
                 p2_weapon = "kannon"
             else:
                 p2_weapon = "default"
@@ -1604,8 +1710,8 @@ def run_survival_mode(player1_name, player2_name, char_choices):
             running = False
         # Draw everything
         screen.fill((20,20,30))
-        draw_mafia_character(screen, player1.centerx, player1.centery, char_choices[0])
-        draw_mafia_character(screen, player2.centerx, player2.centery, char_choices[1])
+        draw_survivor_character(screen, player1.centerx, player1.centery, char_choices[0])
+        draw_survivor_character(screen, player2.centerx, player2.centery, char_choices[1])
         pygame.draw.rect(screen, (100,100,255), barrier['rect'])
         barrier_hp = font.render(f"Barrier HP: {barrier['hp']}", True, (255,255,255))
         screen.blit(barrier_hp, (barrier['rect'].centerx-barrier_hp.get_width()//2, barrier['rect'].top-30))
@@ -1882,7 +1988,7 @@ while True:
                     if local_rect.collidepoint(event.pos):
                         player1_name = get_player_name("Player 1, enter your name for Survival Mode:", HEIGHT//2-60)
                         player2_name = get_player_name("Player 2, enter your name for Survival Mode:", HEIGHT//2+60)
-                        char_choices = character_select(0)
+                        char_choices = character_select(2)  # 2 = survivor mode
                         run_survival_mode(player1_name, player2_name, char_choices)
                         break
                     if back_rect.collidepoint(event.pos):
