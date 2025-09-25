@@ -623,22 +623,42 @@ def run_game(mode, player1_name, player2_name, char_choices, network=None, is_ho
                     elif event.key == pygame.K_SPACE:
                         if player1_shots < RELOAD_LIMIT and now > player1_reload_time:
                             bx = player1.right if p1_right else player1.left - 10
-                            bullets.append({'rect': pygame.Rect(bx, player1.centery-5, 10, 10), 'dir': 1 if p1_right else -1, 'owner': 1})
+                            # Determine weapon type and damage based on selected weapon
+                            weapon_type = "default"
+                            damage = 1
+                            if p1_selected_weapon == "bazooka" and p1_bazooka_left > 0:
+                                weapon_type = "bazooka"
+                                damage = 2
+                                p1_bazooka_left -= 1
+                            elif p1_selected_weapon == "kannon" and p1_kannon_left > 0:
+                                weapon_type = "kannon"
+                                damage = 3
+                                p1_kannon_left -= 1
+                            bullets.append({'rect': pygame.Rect(bx, player1.centery-5, 10, 10), 'dir': 1 if p1_right else -1, 'owner': 1, 'weapon': weapon_type, 'damage': damage})
                             player1_shots += 1
                             if player1_shots == RELOAD_LIMIT:
                                 player1_reload_time = now + RELOAD_DURATION
-                        else:
-                            pass  # Optionally show reload message
                     # Player 2 shoot (right shift)
                     if event.key == pygame.K_RSHIFT:
                         if player2_shots < RELOAD_LIMIT and now > player2_reload_time:
                             bx = player2.right if p2_right else player2.left - 10
-                            bullets.append({'rect': pygame.Rect(bx, player2.centery-5, 10, 10), 'dir': 1 if p2_right else -1, 'owner': 2})
+                            # Determine weapon type and damage based on selected weapon
+                            weapon_type = "default"
+                            damage = 1
+                            if p2_selected_weapon == "bazooka" and p2_bazooka_left > 0:
+                                weapon_type = "bazooka"
+                                damage = 2
+                                p2_bazooka_left -= 1
+                            elif p2_selected_weapon == "kannon" and p2_kannon_left > 0:
+                                weapon_type = "kannon"
+                                damage = 3
+                                p2_kannon_left -= 1
+                            bullets.append({'rect': pygame.Rect(bx, player2.centery-5, 10, 10), 'dir': 1 if p2_right else -1, 'owner': 2, 'weapon': weapon_type, 'damage': damage})
                             player2_shots += 1
                             if player2_shots == RELOAD_LIMIT:
                                 player2_reload_time = now + RELOAD_DURATION
-                        else:
-                            pass  # Optionally show reload message
+                    else:
+                        pass  # Optionally show reload message
 
             else:
                 # No shooting in coin mode
@@ -685,10 +705,12 @@ def run_game(mode, player1_name, player2_name, char_choices, network=None, is_ho
                 bullets.remove(bullet)
             # Collision with players (use full body hitbox)
             elif bullet['owner'] == 1 and bullet['rect'].colliderect(player2_hitbox):
-                player2_health -= 1
+                damage = bullet.get('damage', 1)  # Use weapon damage: bazooka=2, kannon=3, default=1
+                player2_health -= damage
                 bullets.remove(bullet)
             elif bullet['owner'] == 2 and bullet['rect'].colliderect(player1_hitbox):
-                player1_health -= 1
+                damage = bullet.get('damage', 1)  # Use weapon damage: bazooka=2, kannon=3, default=1
+                player1_health -= damage
                 bullets.remove(bullet)
 
         # Collision: if players touch, reduce health (battle mode only)
@@ -1104,22 +1126,42 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
                     elif event.key == pygame.K_SPACE:
                         if player1_shots < RELOAD_LIMIT and now > player1_reload_time:
                             bx = player1.right if p1_right else player1.left - 10
-                            bullets.append({'rect': pygame.Rect(bx, player1.centery-5, 10, 10), 'dir': 1 if p1_right else -1, 'owner': 1})
+                            # Determine weapon type and damage based on selected weapon
+                            weapon_type = "default"
+                            damage = 1
+                            if p1_selected_weapon == "bazooka" and p1_bazooka_left > 0:
+                                weapon_type = "bazooka"
+                                damage = 2
+                                p1_bazooka_left -= 1
+                            elif p1_selected_weapon == "kannon" and p1_kannon_left > 0:
+                                weapon_type = "kannon"
+                                damage = 3
+                                p1_kannon_left -= 1
+                            bullets.append({'rect': pygame.Rect(bx, player1.centery-5, 10, 10), 'dir': 1 if p1_right else -1, 'owner': 1, 'weapon': weapon_type, 'damage': damage})
                             player1_shots += 1
                             if player1_shots == RELOAD_LIMIT:
                                 player1_reload_time = now + RELOAD_DURATION
-                        else:
-                            pass  # Optionally show reload message
                     # Player 2 shoot (right shift)
                     if event.key == pygame.K_RSHIFT:
                         if player2_shots < RELOAD_LIMIT and now > player2_reload_time:
                             bx = player2.right if p2_right else player2.left - 10
-                            bullets.append({'rect': pygame.Rect(bx, player2.centery-5, 10, 10), 'dir': 1 if p2_right else -1, 'owner': 2})
+                            # Determine weapon type and damage based on selected weapon
+                            weapon_type = "default"
+                            damage = 1
+                            if p2_selected_weapon == "bazooka" and p2_bazooka_left > 0:
+                                weapon_type = "bazooka"
+                                damage = 2
+                                p2_bazooka_left -= 1
+                            elif p2_selected_weapon == "kannon" and p2_kannon_left > 0:
+                                weapon_type = "kannon"
+                                damage = 3
+                                p2_kannon_left -= 1
+                            bullets.append({'rect': pygame.Rect(bx, player2.centery-5, 10, 10), 'dir': 1 if p2_right else -1, 'owner': 2, 'weapon': weapon_type, 'damage': damage})
                             player2_shots += 1
                             if player2_shots == RELOAD_LIMIT:
                                 player2_reload_time = now + RELOAD_DURATION
-                        else:
-                            pass  # Optionally show reload message
+                    else:
+                        pass  # Optionally show reload message
 
             else:
                 # No shooting in coin mode
@@ -1166,10 +1208,12 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
                 bullets.remove(bullet)
             # Collision with players (use full body hitbox)
             elif bullet['owner'] == 1 and bullet['rect'].colliderect(player2_hitbox):
-                player2_health -= 1
+                damage = bullet.get('damage', 1)  # Use weapon damage: bazooka=2, kannon=3, default=1
+                player2_health -= damage
                 bullets.remove(bullet)
             elif bullet['owner'] == 2 and bullet['rect'].colliderect(player1_hitbox):
-                player1_health -= 1
+                damage = bullet.get('damage', 1)  # Use weapon damage: bazooka=2, kannon=3, default=1
+                player1_health -= damage
                 bullets.remove(bullet)
 
         # Collision: if players touch, reduce health (battle mode only)
@@ -1280,18 +1324,17 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
             gun_offset_y1 = player1.centery+10
             gun_offset_y2 = player2.centery+10
             
-            # Determine Player 1's current weapon based on upgrades
-            if p1_bazooka_left > 0:
+            # Use selected weapon if player has ammo, otherwise default
+            if p1_selected_weapon == "bazooka" and p1_bazooka_left > 0:
                 p1_weapon = "bazooka"
-            elif p1_kannon_left > 0:
+            elif p1_selected_weapon == "kannon" and p1_kannon_left > 0:
                 p1_weapon = "kannon"
             else:
                 p1_weapon = "default"
             
-            # Determine Player 2's current weapon based on upgrades
-            if p2_bazooka_left > 0:
+            if p2_selected_weapon == "bazooka" and p2_bazooka_left > 0:
                 p2_weapon = "bazooka"
-            elif p2_kannon_left > 0:
+            elif p2_selected_weapon == "kannon" and p2_kannon_left > 0:
                 p2_weapon = "kannon"
             else:
                 p2_weapon = "default"
@@ -1332,6 +1375,11 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
         instructions2 = font.render("P2: O=Default, P=Bazooka, L=Kannon", True, (255,255,0))
         screen.blit(instructions1, (40, HEIGHT-80))
         screen.blit(instructions2, (WIDTH-40-instructions2.get_width(), HEIGHT-80))
+        # Show current selected weapons
+        current_weapon1 = font.render(f"P1 Weapon: {p1_selected_weapon.upper()}", True, (0,255,255))
+        current_weapon2 = font.render(f"P2 Weapon: {p2_selected_weapon.upper()}", True, (255,0,255))
+        screen.blit(current_weapon1, (40, HEIGHT-40))
+        screen.blit(current_weapon2, (WIDTH-40-current_weapon2.get_width(), HEIGHT-40))
         # Win logic
         if player1_health <= 0 and player2_health <= 0:
             win_text = font.render("Tie!", True, (0,255,0))
