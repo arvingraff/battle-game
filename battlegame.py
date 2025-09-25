@@ -277,14 +277,14 @@ def character_select(mode):
         draw_func = draw_explorer_character
     else:  # mode == 2 (Survival mode)
         options = [0, 1, 2]  # Survivor styles
-        names = ["Military Survivor", "Scientist Survivor", "Post-Apocalyptic Survivor"]
+        names = ["Military", "Scientist", "Apocalypse"]  # Shorter names to prevent overlap
         draw_func = draw_survivor_character
     selected1 = 0
     selected2 = 0
     p1_done = False
     p2_done = False
     preview_y = HEIGHT//2+20
-    preview_xs = [WIDTH//2-180, WIDTH//2, WIDTH//2+180]
+    preview_xs = [WIDTH//2-220, WIDTH//2, WIDTH//2+220]  # Wider spacing to prevent text overlap
     name_y_offset = 120  # Move names further down
     while not p1_done:
         screen.fill((30,30,30))
