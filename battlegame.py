@@ -1361,25 +1361,27 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
             p2_status = f"P2 Shots: {RELOAD_LIMIT - player2_shots}"
         else:
             p2_status = "P2 Reloading..."
-        # Show bazooka/kannon shots left
-        upgrade_text1 = font.render(f"Bazooka:{p1_bazooka_left} Kannon:{p1_kannon_left}", True, (0,255,0))
-        upgrade_text2 = font.render(f"Bazooka:{p2_bazooka_left} Kannon:{p2_kannon_left}", True, (255,255,0))
-        screen.blit(upgrade_text1, (40, 60))
-        screen.blit(upgrade_text2, (WIDTH-40-upgrade_text2.get_width(), 60))
+        # Show bazooka/kannon shots left (only if player has upgrades)
+        if p1_bazooka + p1_kannon > 0 or p2_bazooka + p2_kannon > 0:
+            upgrade_text1 = font.render(f"Bazooka:{p1_bazooka_left} Kannon:{p1_kannon_left}", True, (0,255,0))
+            upgrade_text2 = font.render(f"Bazooka:{p2_bazooka_left} Kannon:{p2_kannon_left}", True, (255,255,0))
+            screen.blit(upgrade_text1, (40, 60))
+            screen.blit(upgrade_text2, (WIDTH-40-upgrade_text2.get_width(), 60))
         p1_status_text = font.render(p1_status, True, (0,0,255))
         p2_status_text = font.render(p2_status, True, (255,0,0))
         screen.blit(p1_status_text, (40, 20))
         screen.blit(p2_status_text, (WIDTH-40-p2_status_text.get_width(), 20))
-        # Show weapon switch instructions
-        instructions1 = font.render("P1: Q=Default, E=Bazooka, R=Kannon", True, (0,255,0))
-        instructions2 = font.render("P2: O=Default, P=Bazooka, L=Kannon", True, (255,255,0))
-        screen.blit(instructions1, (40, HEIGHT-80))
-        screen.blit(instructions2, (WIDTH-40-instructions2.get_width(), HEIGHT-80))
-        # Show current selected weapons
-        current_weapon1 = font.render(f"P1 Weapon: {p1_selected_weapon.upper()}", True, (0,255,255))
-        current_weapon2 = font.render(f"P2 Weapon: {p2_selected_weapon.upper()}", True, (255,0,255))
-        screen.blit(current_weapon1, (40, HEIGHT-40))
-        screen.blit(current_weapon2, (WIDTH-40-current_weapon2.get_width(), HEIGHT-40))
+        # Show weapon switch instructions (only if player has upgrades)
+        if p1_bazooka + p1_kannon > 0 or p2_bazooka + p2_kannon > 0:
+            instructions1 = font.render("P1: Q=Default, E=Bazooka, R=Kannon", True, (0,255,0))
+            instructions2 = font.render("P2: O=Default, P=Bazooka, L=Kannon", True, (255,255,0))
+            screen.blit(instructions1, (40, HEIGHT-80))
+            screen.blit(instructions2, (WIDTH-40-instructions2.get_width(), HEIGHT-80))
+            # Show current selected weapons (only if upgrades available)
+            current_weapon1 = font.render(f"P1 Weapon: {p1_selected_weapon.upper()}", True, (0,255,255))
+            current_weapon2 = font.render(f"P2 Weapon: {p2_selected_weapon.upper()}", True, (255,0,255))
+            screen.blit(current_weapon1, (40, HEIGHT-40))
+            screen.blit(current_weapon2, (WIDTH-40-current_weapon2.get_width(), HEIGHT-40))
         # Win logic
         if player1_health <= 0 and player2_health <= 0:
             win_text = font.render("Tie!", True, (0,255,0))
