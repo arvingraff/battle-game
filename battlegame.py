@@ -605,8 +605,22 @@ def run_game(mode, player1_name, player2_name, char_choices, network=None, is_ho
                 sys.exit()
             if mode == 0:
                 if event.type == pygame.KEYDOWN:
+                    # Player 1 weapon switching
+                    if event.key == pygame.K_q:
+                        p1_selected_weapon = "default"
+                    elif event.key == pygame.K_e and p1_bazooka_left > 0:
+                        p1_selected_weapon = "bazooka"
+                    elif event.key == pygame.K_r and p1_kannon_left > 0:
+                        p1_selected_weapon = "kannon"
+                    # Player 2 weapon switching
+                    elif event.key == pygame.K_o:
+                        p2_selected_weapon = "default"
+                    elif event.key == pygame.K_p and p2_bazooka_left > 0:
+                        p2_selected_weapon = "bazooka"
+                    elif event.key == pygame.K_l and p2_kannon_left > 0:
+                        p2_selected_weapon = "kannon"
                     # Player 1 shoot (space only)
-                    if event.key == pygame.K_SPACE:
+                    elif event.key == pygame.K_SPACE:
                         if player1_shots < RELOAD_LIMIT and now > player1_reload_time:
                             bx = player1.right if p1_right else player1.left - 10
                             bullets.append({'rect': pygame.Rect(bx, player1.centery-5, 10, 10), 'dir': 1 if p1_right else -1, 'owner': 1})
@@ -750,7 +764,7 @@ def run_game(mode, player1_name, player2_name, char_choices, network=None, is_ho
         # Draw Player 2 (Cool, stylish)
         # Head (skin tone, sunglasses)
         pygame.draw.ellipse(screen, (224, 172, 105), (player2.centerx-15, player2.centery-35, 30, 38))
-        pygame.draw.rect(screen, (0,0,0), (player2.centerx-12, player2.centery-28, 24, 8))
+        pygame.draw.rect(screen, (0,0,0), (player2.centerx-12, player2.centery-28,  24, 8))
         pygame.draw.rect(screen, (255,0,0), (player2.centerx-12, player2.centery-28, 24, 8), 2)
         pygame.draw.arc(screen, (255,255,255), (player2.centerx-7, player2.centery-10, 14, 8), 3.14, 2*3.14, 2)
         pygame.draw.rect(screen, (255,255,0), (player2.centerx-15, player2.centery-35, 30, 8))
@@ -784,83 +798,30 @@ def run_game(mode, player1_name, player2_name, char_choices, network=None, is_ho
             # Gun follows hand (up/down movement)
             gun_offset_y1 = player1.centery+10
             gun_offset_y2 = player2.centery+10
-            # Draw Player 1 gun
-            if char_choices[0] == 2:  # Mafia Hitman with enhanced shotgun
-                if p1_right:
-                    hand_x = player1.centerx+20
-                    hand_y = gun_offset_y1
-                    # Barrel (long, metallic)
-                    pygame.draw.rect(screen, (160,160,160), (hand_x, hand_y-5, 44, 7))
-                    # Muzzle
-                    pygame.draw.ellipse(screen, (200,200,200), (hand_x+44, hand_y-7, 8, 11))
-                    # Pump
-                    pygame.draw.rect(screen, (100,100,100), (hand_x+18, hand_y-7, 12, 11))
-                    # Stock (wood)
-                    pygame.draw.polygon(screen, (139,69,19), [(hand_x-16, hand_y-8), (hand_x, hand_y-8), (hand_x, hand_y+6), (hand_x-10, hand_y+14)])
-                    # Trigger guard
-                    pygame.draw.arc(screen, (60,60,60), (hand_x+8, hand_y+2, 8, 6), 3.14, 2*3.14, 2)
-                else:
-                    hand_x = player1.centerx-20
-                    hand_y = gun_offset_y1
-                    pygame.draw.rect(screen, (160,160,160), (hand_x-52, hand_y-5, 44, 7))
-                    pygame.draw.ellipse(screen, (200,200,200), (hand_x-60, hand_y-7, 8, 11))
-                    pygame.draw.rect(screen, (100,100,100), (hand_x-40, hand_y-7, 12, 11))
-                    pygame.draw.polygon(screen, (139,69,19), [(hand_x, hand_y-8), (hand_x-16, hand_y-8), (hand_x-16, hand_y+6), (hand_x-6, hand_y+14)])
-                    pygame.draw.arc(screen, (60,60,60), (hand_x-16, hand_y+2, 8, 6), 0, 3.14, 2)
+            
+            # Determine Player 1's current weapon based on upgrades
+            if p1_bazooka_left > 0:
+                p1_weapon = "bazooka"
+            elif p1_kannon_left > 0:
+                p1_weapon = "kannon"
             else:
-                # AK-47 for other mafia
-                if p1_right:
-                    hand_x = player1.centerx+20
-                    hand_y = gun_offset_y1
-                    pygame.draw.rect(screen, (80,80,80), (hand_x+20, hand_y-4, 22, 4))
-                    pygame.draw.rect(screen, (139,69,19), (hand_x-18, hand_y-7, 16, 8))
-                    pygame.draw.rect(screen, (80,80,80), (hand_x, hand_y-7, 38, 8))
-                    pygame.draw.arc(screen, (60,60,60), (hand_x+10, hand_y+2, 18, 14), 3.14, 2*3.14, 4)
-                    pygame.draw.rect(screen, (60,60,60), (hand_x+30, hand_y+2, 6, 12))
-                else:
-                    hand_x = player1.centerx-20
-                    hand_y = gun_offset_y1
-                    pygame.draw.rect(screen, (80,80,80), (hand_x-42, hand_y-4, 22, 4))
-                    pygame.draw.rect(screen, (139,69,19), (hand_x+2, hand_y-7, 16, 8))
-                    pygame.draw.rect(screen, (80,80,80), (hand_x-38, hand_y-7, 38, 8))
-                    pygame.draw.arc(screen, (60,60,60), (hand_x-28, hand_y+2, 18, 14), 0, 3.14, 4)
-                    pygame.draw.rect(screen, (60,60,60), (hand_x-36, hand_y+2, 6, 12))
-            # Draw Player 2 gun
-            if char_choices[1] == 2:  # Mafia Hitman with enhanced shotgun
-                if p2_right:
-                    hand_x = player2.centerx+20
-                    hand_y = gun_offset_y2
-                    pygame.draw.rect(screen, (160,160,160), (hand_x, hand_y-5, 44, 7))
-                    pygame.draw.ellipse(screen, (200,200,200), (hand_x+44, hand_y-7, 8, 11))
-                    pygame.draw.rect(screen, (100,100,100), (hand_x+18, hand_y-7, 12, 11))
-                    pygame.draw.polygon(screen, (139,69,19), [(hand_x-16, hand_y-8), (hand_x, hand_y-8), (hand_x, hand_y+6), (hand_x-10, hand_y+14)])
-                    pygame.draw.arc(screen, (60,60,60), (hand_x+8, hand_y+2, 8, 6), 3.14, 2*3.14, 2)
-                else:
-                    hand_x = player2.centerx-20
-                    hand_y = gun_offset_y2
-                    pygame.draw.rect(screen, (160,160,160), (hand_x-52, hand_y-5, 44, 7))
-                    pygame.draw.ellipse(screen, (200,200,200), (hand_x-60, hand_y-7, 8, 11))
-                    pygame.draw.rect(screen, (100,100,100), (hand_x-40, hand_y-7, 12, 11))
-                    pygame.draw.polygon(screen, (139,69,19), [(hand_x, hand_y-8), (hand_x-16, hand_y-8), (hand_x-16, hand_y+6), (hand_x-6, hand_y+14)])
-                    pygame.draw.arc(screen, (60,60,60), (hand_x-16, hand_y+2, 8, 6), 0, 3.14, 2)
+                p1_weapon = "default"
+            
+            # Determine Player 2's current weapon based on upgrades
+            if p2_bazooka_left > 0:
+                p2_weapon = "bazooka"
+            elif p2_kannon_left > 0:
+                p2_weapon = "kannon"
             else:
-                # AK-47 for other mafia
-                if p2_right:
-                    hand_x = player2.centerx+20
-                    hand_y = gun_offset_y2
-                    pygame.draw.rect(screen, (80,80,80), (hand_x+20, hand_y-4, 22, 4))
-                    pygame.draw.rect(screen, (139,69,19), (hand_x-18, hand_y-7, 16, 8))
-                    pygame.draw.rect(screen, (80,80,80), (hand_x, hand_y-7, 38, 8))
-                    pygame.draw.arc(screen, (60,60,60), (hand_x+10, hand_y+2, 18, 14), 3.14, 2*3.14, 4)
-                    pygame.draw.rect(screen, (60,60,60), (hand_x+30, hand_y+2, 6, 12))
-                else:
-                    hand_x = player2.centerx-20
-                    hand_y = gun_offset_y2
-                    pygame.draw.rect(screen, (80,80,80), (hand_x-42, hand_y-4, 22, 4))
-                    pygame.draw.rect(screen, (139,69,19), (hand_x+2, hand_y-7, 16, 8))
-                    pygame.draw.rect(screen, (80,80,80), (hand_x-38, hand_y-7, 38, 8))
-                    pygame.draw.arc(screen, (60,60,60), (hand_x-28, hand_y+2, 18, 14), 0, 3.14, 4)
-                    pygame.draw.rect(screen, (60,60,60), (hand_x-36, hand_y+2, 6, 12))
+                p2_weapon = "default"
+            
+            # Draw Player 1 weapon
+            hand_x1 = player1.centerx + (20 if p1_right else -20)
+            draw_weapon(screen, hand_x1, gun_offset_y1, p1_right, p1_weapon)
+            
+            # Draw Player 2 weapon
+            hand_x2 = player2.centerx + (20 if p2_right else -20)
+            draw_weapon(screen, hand_x2, gun_offset_y2, p2_right, p2_weapon)
 
         # Draw bullets
         for bullet in bullets:
@@ -1112,6 +1073,9 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
     p2_bazooka_left = 2 * p2_bazooka
     p1_kannon_left = 2 * p1_kannon
     p2_kannon_left = 2 * p2_kannon
+    # Add weapon selection tracking
+    p1_selected_weapon = "default"
+    p2_selected_weapon = "default"
     start_countdown()
     while True:
         now = time.time()
@@ -1122,14 +1086,30 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
                 sys.exit()
             if mode == 0:
                 if event.type == pygame.KEYDOWN:
+                    # Player 1 weapon switching
+                    if event.key == pygame.K_q:
+                        p1_selected_weapon = "default"
+                    elif event.key == pygame.K_e and p1_bazooka_left > 0:
+                        p1_selected_weapon = "bazooka"
+                    elif event.key == pygame.K_r and p1_kannon_left > 0:
+                        p1_selected_weapon = "kannon"
+                    # Player 2 weapon switching
+                    elif event.key == pygame.K_o:
+                        p2_selected_weapon = "default"
+                    elif event.key == pygame.K_p and p2_bazooka_left > 0:
+                        p2_selected_weapon = "bazooka"
+                    elif event.key == pygame.K_l and p2_kannon_left > 0:
+                        p2_selected_weapon = "kannon"
                     # Player 1 shoot (space only)
-                    if event.key == pygame.K_SPACE:
+                    elif event.key == pygame.K_SPACE:
                         if player1_shots < RELOAD_LIMIT and now > player1_reload_time:
                             bx = player1.right if p1_right else player1.left - 10
                             bullets.append({'rect': pygame.Rect(bx, player1.centery-5, 10, 10), 'dir': 1 if p1_right else -1, 'owner': 1})
                             player1_shots += 1
                             if player1_shots == RELOAD_LIMIT:
                                 player1_reload_time = now + RELOAD_DURATION
+                        else:
+                            pass  # Optionally show reload message
                     # Player 2 shoot (right shift)
                     if event.key == pygame.K_RSHIFT:
                         if player2_shots < RELOAD_LIMIT and now > player2_reload_time:
@@ -1265,7 +1245,7 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
         # Draw Player 2 (Cool, stylish)
         # Head (skin tone, sunglasses)
         pygame.draw.ellipse(screen, (224, 172, 105), (player2.centerx-15, player2.centery-35, 30, 38))
-        pygame.draw.rect(screen, (0,0,0), (player2.centerx-12, player2.centery-28, 24, 8))
+        pygame.draw.rect(screen, (0,0,0), (player2.centerx-12, player2.centery-28,  24, 8))
         pygame.draw.rect(screen, (255,0,0), (player2.centerx-12, player2.centery-28, 24, 8), 2)
         pygame.draw.arc(screen, (255,255,255), (player2.centerx-7, player2.centery-10, 14, 8), 3.14, 2*3.14, 2)
         pygame.draw.rect(screen, (255,255,0), (player2.centerx-15, player2.centery-35, 30, 8))
@@ -1299,83 +1279,30 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
             # Gun follows hand (up/down movement)
             gun_offset_y1 = player1.centery+10
             gun_offset_y2 = player2.centery+10
-            # Draw Player 1 gun
-            if char_choices[0] == 2:  # Mafia Hitman with enhanced shotgun
-                if p1_right:
-                    hand_x = player1.centerx+20
-                    hand_y = gun_offset_y1
-                    # Barrel (long, metallic)
-                    pygame.draw.rect(screen, (160,160,160), (hand_x, hand_y-5, 44, 7))
-                    # Muzzle
-                    pygame.draw.ellipse(screen, (200,200,200), (hand_x+44, hand_y-7, 8, 11))
-                    # Pump
-                    pygame.draw.rect(screen, (100,100,100), (hand_x+18, hand_y-7, 12, 11))
-                    # Stock (wood)
-                    pygame.draw.polygon(screen, (139,69,19), [(hand_x-16, hand_y-8), (hand_x, hand_y-8), (hand_x, hand_y+6), (hand_x-10, hand_y+14)])
-                    # Trigger guard
-                    pygame.draw.arc(screen, (60,60,60), (hand_x+8, hand_y+2, 8, 6), 3.14, 2*3.14, 2)
-                else:
-                    hand_x = player1.centerx-20
-                    hand_y = gun_offset_y1
-                    pygame.draw.rect(screen, (160,160,160), (hand_x-52, hand_y-5, 44, 7))
-                    pygame.draw.ellipse(screen, (200,200,200), (hand_x-60, hand_y-7, 8, 11))
-                    pygame.draw.rect(screen, (100,100,100), (hand_x-40, hand_y-7, 12, 11))
-                    pygame.draw.polygon(screen, (139,69,19), [(hand_x, hand_y-8), (hand_x-16, hand_y-8), (hand_x-16, hand_y+6), (hand_x-6, hand_y+14)])
-                    pygame.draw.arc(screen, (60,60,60), (hand_x-16, hand_y+2, 8, 6), 0, 3.14, 2)
+            
+            # Determine Player 1's current weapon based on upgrades
+            if p1_bazooka_left > 0:
+                p1_weapon = "bazooka"
+            elif p1_kannon_left > 0:
+                p1_weapon = "kannon"
             else:
-                # AK-47 for other mafia
-                if p1_right:
-                    hand_x = player1.centerx+20
-                    hand_y = gun_offset_y1
-                    pygame.draw.rect(screen, (80,80,80), (hand_x+20, hand_y-4, 22, 4))
-                    pygame.draw.rect(screen, (139,69,19), (hand_x-18, hand_y-7, 16, 8))
-                    pygame.draw.rect(screen, (80,80,80), (hand_x, hand_y-7, 38, 8))
-                    pygame.draw.arc(screen, (60,60,60), (hand_x+10, hand_y+2, 18, 14), 3.14, 2*3.14, 4)
-                    pygame.draw.rect(screen, (60,60,60), (hand_x+30, hand_y+2, 6, 12))
-                else:
-                    hand_x = player1.centerx-20
-                    hand_y = gun_offset_y1
-                    pygame.draw.rect(screen, (80,80,80), (hand_x-42, hand_y-4, 22, 4))
-                    pygame.draw.rect(screen, (139,69,19), (hand_x+2, hand_y-7, 16, 8))
-                    pygame.draw.rect(screen, (80,80,80), (hand_x-38, hand_y-7, 38, 8))
-                    pygame.draw.arc(screen, (60,60,60), (hand_x-28, hand_y+2, 18, 14), 0, 3.14, 4)
-                    pygame.draw.rect(screen, (60,60,60), (hand_x-36, hand_y+2, 6, 12))
-            # Draw Player 2 gun
-            if char_choices[1] == 2:  # Mafia Hitman with enhanced shotgun
-                if p2_right:
-                    hand_x = player2.centerx+20
-                    hand_y = gun_offset_y2
-                    pygame.draw.rect(screen, (160,160,160), (hand_x, hand_y-5, 44, 7))
-                    pygame.draw.ellipse(screen, (200,200,200), (hand_x+44, hand_y-7, 8, 11))
-                    pygame.draw.rect(screen, (100,100,100), (hand_x+18, hand_y-7, 12, 11))
-                    pygame.draw.polygon(screen, (139,69,19), [(hand_x-16, hand_y-8), (hand_x, hand_y-8), (hand_x, hand_y+6), (hand_x-10, hand_y+14)])
-                    pygame.draw.arc(screen, (60,60,60), (hand_x+8, hand_y+2, 8, 6), 3.14, 2*3.14, 2)
-                else:
-                    hand_x = player2.centerx-20
-                    hand_y = gun_offset_y2
-                    pygame.draw.rect(screen, (160,160,160), (hand_x-52, hand_y-5, 44, 7))
-                    pygame.draw.ellipse(screen, (200,200,200), (hand_x-60, hand_y-7, 8, 11))
-                    pygame.draw.rect(screen, (100,100,100), (hand_x-40, hand_y-7, 12, 11))
-                    pygame.draw.polygon(screen, (139,69,19), [(hand_x, hand_y-8), (hand_x-16, hand_y-8), (hand_x-16, hand_y+6), (hand_x-6, hand_y+14)])
-                    pygame.draw.arc(screen, (60,60,60), (hand_x-16, hand_y+2, 8, 6), 0, 3.14, 2)
+                p1_weapon = "default"
+            
+            # Determine Player 2's current weapon based on upgrades
+            if p2_bazooka_left > 0:
+                p2_weapon = "bazooka"
+            elif p2_kannon_left > 0:
+                p2_weapon = "kannon"
             else:
-                # AK-47 for other mafia
-                if p2_right:
-                    hand_x = player2.centerx+20
-                    hand_y = gun_offset_y2
-                    pygame.draw.rect(screen, (80,80,80), (hand_x+20, hand_y-4, 22, 4))
-                    pygame.draw.rect(screen, (139,69,19), (hand_x-18, hand_y-7, 16, 8))
-                    pygame.draw.rect(screen, (80,80,80), (hand_x, hand_y-7, 38, 8))
-                    pygame.draw.arc(screen, (60,60,60), (hand_x+10, hand_y+2, 18, 14), 3.14, 2*3.14, 4)
-                    pygame.draw.rect(screen, (60,60,60), (hand_x+30, hand_y+2, 6, 12))
-                else:
-                    hand_x = player2.centerx-20
-                    hand_y = gun_offset_y2
-                    pygame.draw.rect(screen, (80,80,80), (hand_x-42, hand_y-4, 22, 4))
-                    pygame.draw.rect(screen, (139,69,19), (hand_x+2, hand_y-7, 16, 8))
-                    pygame.draw.rect(screen, (80,80,80), (hand_x-38, hand_y-7, 38, 8))
-                    pygame.draw.arc(screen, (60,60,60), (hand_x-28, hand_y+2, 18, 14), 0, 3.14, 4)
-                    pygame.draw.rect(screen, (60,60,60), (hand_x-36, hand_y+2, 6, 12))
+                p2_weapon = "default"
+            
+            # Draw Player 1 weapon
+            hand_x1 = player1.centerx + (20 if p1_right else -20)
+            draw_weapon(screen, hand_x1, gun_offset_y1, p1_right, p1_weapon)
+            
+            # Draw Player 2 weapon
+            hand_x2 = player2.centerx + (20 if p2_right else -20)
+            draw_weapon(screen, hand_x2, gun_offset_y2, p2_right, p2_weapon)
 
         # Draw bullets
         for bullet in bullets:
