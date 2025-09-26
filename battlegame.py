@@ -1931,12 +1931,37 @@ def run_survival_mode(num_players, player1_name, player2_name, player3_name, cha
             pygame.time.wait(1000)
         
         if not running:
-            gameover_text = font_big.render("Game Over!", True, (255,0,0))
-            screen.blit(gameover_text, (WIDTH//2-gameover_text.get_width()//2, HEIGHT//2))
-            pygame.display.flip()
-            pygame.time.wait(2500)
-            pygame.mixer.music.stop()
-            return
+            # Game over screen with back to menu button
+            while True:
+                screen.fill((20,20,30))
+                gameover_text = font_big.render("Game Over!", True, (255,0,0))
+                screen.blit(gameover_text, (WIDTH//2-gameover_text.get_width()//2, HEIGHT//2-60))
+                
+                final_score_text = lobby_font.render(f"Final Score: {score}", True, (255,255,255))
+                screen.blit(final_score_text, (WIDTH//2-final_score_text.get_width()//2, HEIGHT//2-10))
+                
+                final_level_text = lobby_font.render(f"Reached Level: {level}", True, (0,255,0))
+                screen.blit(final_level_text, (WIDTH//2-final_level_text.get_width()//2, HEIGHT//2+20))
+                
+                back_rect = pygame.Rect(WIDTH//2-80, HEIGHT//2+60, 160, 40)
+                pygame.draw.rect(screen, (100,100,100), back_rect)
+                back_text = font.render("Back to Menu", True, (255,255,255))
+                screen.blit(back_text, (back_rect.centerx-back_text.get_width()//2, back_rect.centery-back_text.get_height()//2))
+                
+                pygame.display.flip()
+                
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        if back_rect.collidepoint(event.pos):
+                            pygame.mixer.music.stop()
+                            return
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
+                            pygame.mixer.music.stop()
+                            return
         
         pygame.display.flip()
         clock.tick(60)
