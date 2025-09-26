@@ -2192,32 +2192,21 @@ while True:
                 continue
             break  # Always return to main menu after game ends
     elif mode == 2:
-        # Survival Mode: Player count selection
+        # Show Play Local / Play Online selection for Survival Mode
         selected = 0
+        options = ["Play Local", "Play Online (Coming Soon)"]
         while True:
             screen.fill((30, 30, 30))
             title = lobby_font.render("Survival Mode", True, (255,255,255))
-            screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-180))
+            screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-120))
             
-            subtitle = font.render("Select Number of Players:", True, (200,200,200))
-            screen.blit(subtitle, (WIDTH//2-subtitle.get_width()//2, HEIGHT//2-120))
-            
-            # Player count buttons
-            one_player_rect = pygame.Rect(WIDTH//2-300, HEIGHT//2-30, 180, 60)
-            two_player_rect = pygame.Rect(WIDTH//2-90, HEIGHT//2-30, 180, 60)
-            three_player_rect = pygame.Rect(WIDTH//2+120, HEIGHT//2-30, 180, 60)
-            
-            pygame.draw.rect(screen, (0,120,180), one_player_rect)
-            pygame.draw.rect(screen, (0,180,0), two_player_rect)
-            pygame.draw.rect(screen, (180,120,0), three_player_rect)
-            
-            one_text = font.render("1 Player", True, (255,255,255))
-            two_text = font.render("2 Players", True, (255,255,255))
-            three_text = font.render("3 Players", True, (255,255,255))
-            
-            screen.blit(one_text, (one_player_rect.centerx-one_text.get_width()//2, one_player_rect.centery-one_text.get_height()//2))
-            screen.blit(two_text, (two_player_rect.centerx-two_text.get_width()//2, two_player_rect.centery-two_text.get_height()//2))
-            screen.blit(three_text, (three_player_rect.centerx-three_text.get_width()//2, three_player_rect.centery-three_text.get_height()//2))
+            for i, option in enumerate(options):
+                y_pos = HEIGHT//2-20 + i*60
+                rect = pygame.Rect(WIDTH//2-120, y_pos, 240, 50)
+                color = (0,100,200) if option == "Play Local" else (100,100,100)
+                pygame.draw.rect(screen, color, rect)
+                option_text = font.render(option, True, (255,255,255))
+                screen.blit(option_text, (rect.centerx-option_text.get_width()//2, rect.centery-option_text.get_height()//2))
             
             back_rect = pygame.Rect(WIDTH//2-100, HEIGHT-100, 200, 60)
             pygame.draw.rect(screen, (100,100,100), back_rect)
@@ -2230,27 +2219,105 @@ while True:
                     pygame.quit()
                     sys.exit()
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    if one_player_rect.collidepoint(event.pos):
-                        # 1 Player mode
-                        player1_name = get_player_name("Enter your name for Survival Mode:", HEIGHT//2)
-                        char_choices = character_select_single_player(2)  # 2 = survivor mode
-                        run_survival_mode(1, player1_name, "", "", char_choices, [], [])
+                    if options[0] == "Play Local" and HEIGHT//2-20 <= event.pos[1] <= HEIGHT//2+30 and WIDTH//2-120 <= event.pos[0] <= WIDTH//2+120:
+                        # Go to local player count selection
+                        while True:
+                            screen.fill((30, 30, 30))
+                            title = lobby_font.render("Survival Mode - Local Play", True, (255,255,255))
+                            screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-180))
+                            
+                            subtitle = font.render("Select Number of Players:", True, (200,200,200))
+                            screen.blit(subtitle, (WIDTH//2-subtitle.get_width()//2, HEIGHT//2-120))
+                            
+                            # Player count buttons
+                            one_player_rect = pygame.Rect(WIDTH//2-300, HEIGHT//2-30, 180, 60)
+                            two_player_rect = pygame.Rect(WIDTH//2-90, HEIGHT//2-30, 180, 60)
+                            three_player_rect = pygame.Rect(WIDTH//2+120, HEIGHT//2-30, 180, 60)
+                            
+                            pygame.draw.rect(screen, (0,120,180), one_player_rect)
+                            pygame.draw.rect(screen, (0,180,0), two_player_rect)
+                            pygame.draw.rect(screen, (180,120,0), three_player_rect)
+                            
+                            one_text = font.render("1 Player", True, (255,255,255))
+                            two_text = font.render("2 Players", True, (255,255,255))
+                            three_text = font.render("3 Players", True, (255,255,255))
+                            
+                            screen.blit(one_text, (one_player_rect.centerx-one_text.get_width()//2, one_player_rect.centery-one_text.get_height()//2))
+                            screen.blit(two_text, (two_player_rect.centerx-two_text.get_width()//2, two_player_rect.centery-two_text.get_height()//2))
+                            screen.blit(three_text, (three_player_rect.centerx-three_text.get_width()//2, three_player_rect.centery-three_text.get_height()//2))
+                            
+                            local_back_rect = pygame.Rect(WIDTH//2-100, HEIGHT-100, 200, 60)
+                            pygame.draw.rect(screen, (100,100,100), local_back_rect)
+                            local_back_text = font.render("Back", True, (255,255,255))
+                            screen.blit(local_back_text, (local_back_rect.centerx-local_back_text.get_width()//2, local_back_rect.centery-local_back_text.get_height()//2))
+                            
+                            pygame.display.flip()
+                            for local_event in pygame.event.get():
+                                if local_event.type == pygame.QUIT:
+                                    pygame.quit()
+                                    sys.exit()
+                                if local_event.type == pygame.MOUSEBUTTONDOWN:
+                                    if one_player_rect.collidepoint(local_event.pos):
+                                        # 1 Player mode
+                                        player1_name = get_player_name("Enter your name for Survival Mode:", HEIGHT//2)
+                                        char_choices = character_select_single_player(2)  # 2 = survivor mode
+                                        run_survival_mode(1, player1_name, "", "", char_choices, [], [])
+                                        break
+                                    if two_player_rect.collidepoint(local_event.pos):
+                                        # 2 Player mode
+                                        player1_name = get_player_name("Player 1, enter your name for Survival Mode:", HEIGHT//2-60)
+                                        player2_name = get_player_name("Player 2, enter your name for Survival Mode:", HEIGHT//2+60)
+                                        char_choices = character_select(2)  # 2 = survivor mode
+                                        run_survival_mode(2, player1_name, player2_name, "", char_choices, [], [])
+                                        break
+                                    if three_player_rect.collidepoint(local_event.pos):
+                                        # 3 Player mode
+                                        player1_name = get_player_name("Player 1, enter your name for Survival Mode:", HEIGHT//2-90)
+                                        player2_name = get_player_name("Player 2, enter your name for Survival Mode:", HEIGHT//2-30)
+                                        player3_name = get_player_name("Player 3, enter your name for Survival Mode:", HEIGHT//2+30)
+                                        char_choices = character_select_three_player(2)  # 2 = survivor mode
+                                        run_survival_mode(3, player1_name, player2_name, player3_name, char_choices, [], [])
+                                        break
+                                    if local_back_rect.collidepoint(local_event.pos):
+                                        break
+                            else:
+                                continue
+                            break  # Return to local/online selection
                         break
-                    if two_player_rect.collidepoint(event.pos):
-                        # 2 Player mode
-                        player1_name = get_player_name("Player 1, enter your name for Survival Mode:", HEIGHT//2-60)
-                        player2_name = get_player_name("Player 2, enter your name for Survival Mode:", HEIGHT//2+60)
-                        char_choices = character_select(2)  # 2 = survivor mode
-                        run_survival_mode(2, player1_name, player2_name, "", char_choices, [], [])
-                        break
-                    if three_player_rect.collidepoint(event.pos):
-                        # 3 Player mode
-                        player1_name = get_player_name("Player 1, enter your name for Survival Mode:", HEIGHT//2-90)
-                        player2_name = get_player_name("Player 2, enter your name for Survival Mode:", HEIGHT//2-30)
-                        player3_name = get_player_name("Player 3, enter your name for Survival Mode:", HEIGHT//2+30)
-                        char_choices = character_select_three_player(2)  # 2 = survivor mode
-                        run_survival_mode(3, player1_name, player2_name, player3_name, char_choices, [], [])
-                        break
+                    elif options[1] == "Play Online (Coming Soon)" and HEIGHT//2+40 <= event.pos[1] <= HEIGHT//2+90 and WIDTH//2-120 <= event.pos[0] <= WIDTH//2+120:
+                        # Show coming soon message
+                        while True:
+                            screen.fill((30, 30, 30))
+                            title = lobby_font.render("Online Survival Mode", True, (255,255,255))
+                            screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-100))
+                            
+                            msg1 = font.render("Online multiplayer for Survival Mode", True, (200,200,200))
+                            screen.blit(msg1, (WIDTH//2-msg1.get_width()//2, HEIGHT//2-40))
+                            
+                            msg2 = font.render("is coming in a future update!", True, (200,200,200))
+                            screen.blit(msg2, (WIDTH//2-msg2.get_width()//2, HEIGHT//2-10))
+                            
+                            msg3 = font.render("For now, enjoy local co-op play.", True, (150,150,150))
+                            screen.blit(msg3, (WIDTH//2-msg3.get_width()//2, HEIGHT//2+30))
+                            
+                            ok_rect = pygame.Rect(WIDTH//2-60, HEIGHT//2+80, 120, 40)
+                            pygame.draw.rect(screen, (0,120,180), ok_rect)
+                            ok_text = font.render("OK", True, (255,255,255))
+                            screen.blit(ok_text, (ok_rect.centerx-ok_text.get_width()//2, ok_rect.centery-ok_text.get_height()//2))
+                            
+                            pygame.display.flip()
+                            for msg_event in pygame.event.get():
+                                if msg_event.type == pygame.QUIT:
+                                    pygame.quit()
+                                    sys.exit()
+                                if msg_event.type == pygame.MOUSEBUTTONDOWN:
+                                    if ok_rect.collidepoint(msg_event.pos):
+                                        break
+                                if msg_event.type == pygame.KEYDOWN:
+                                    break
+                            else:
+                                continue
+                            break
                     if back_rect.collidepoint(event.pos):
                         break
             else:
