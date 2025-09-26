@@ -334,6 +334,154 @@ def character_select(mode):
                     p2_done = True
     return [selected1, selected2]
 
+def character_select_single_player(mode):
+    # Character selection for single player mode
+    if mode == 0:
+        options = [0, 1, 2]  # Mafia styles
+        names = ["Classic Mafia", "Mafia Boss", "Mafia Hitman"]
+        draw_func = draw_mafia_character
+    elif mode == 1:
+        options = [0, 1, 2]  # Explorer styles
+        names = ["Jungle Explorer", "Desert Adventurer", "Arctic Explorer"]
+        draw_func = draw_explorer_character
+    else:  # mode == 2 (Survival mode)
+        options = [0, 1, 2]  # Survivor styles
+        names = ["Military", "Scientist", "Apocalypse"]
+        draw_func = draw_survivor_character
+    
+    selected = 0
+    done = False
+    preview_y = HEIGHT//2+20
+    preview_xs = [WIDTH//2-220, WIDTH//2, WIDTH//2+220]
+    name_y_offset = 120
+    
+    while not done:
+        screen.fill((30,30,30))
+        title = lobby_font.render("Choose Your Character (Enter to confirm)", True, (255,255,255))
+        screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-160))
+        
+        for i, style in enumerate(options):
+            highlight = (255,255,0) if i==selected else (80,80,80)
+            pygame.draw.rect(screen, highlight, (preview_xs[i]-50, preview_y-70, 100, 140), 4)
+            draw_func(screen, preview_xs[i], preview_y, style)
+            name_text = name_font.render(names[i], True, highlight)
+            screen.blit(name_text, (preview_xs[i]-name_text.get_width()//2, preview_y+name_y_offset))
+        
+        pygame.display.flip()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    selected = (selected-1)%len(options)
+                if event.key == pygame.K_RIGHT:
+                    selected = (selected+1)%len(options)
+                if event.key == pygame.K_RETURN:
+                    done = True
+    
+    return [selected]
+
+def character_select_three_player(mode):
+    # Character selection for three players
+    if mode == 0:
+        options = [0, 1, 2]  # Mafia styles
+        names = ["Classic Mafia", "Mafia Boss", "Mafia Hitman"]
+        draw_func = draw_mafia_character
+    elif mode == 1:
+        options = [0, 1, 2]  # Explorer styles
+        names = ["Jungle Explorer", "Desert Adventurer", "Arctic Explorer"]
+        draw_func = draw_explorer_character
+    else:  # mode == 2 (Survival mode)
+        options = [0, 1, 2]  # Survivor styles
+        names = ["Military", "Scientist", "Apocalypse"]
+        draw_func = draw_survivor_character
+    
+    selected1, selected2, selected3 = 0, 0, 0
+    p1_done, p2_done, p3_done = False, False, False
+    preview_y = HEIGHT//2+20
+    preview_xs = [WIDTH//2-220, WIDTH//2, WIDTH//2+220]
+    name_y_offset = 120
+    
+    # Player 1 selection
+    while not p1_done:
+        screen.fill((30,30,30))
+        title = lobby_font.render("Player 1: Choose Your Character (Enter to confirm)", True, (255,255,255))
+        screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-160))
+        
+        for i, style in enumerate(options):
+            highlight = (255,255,0) if i==selected1 else (80,80,80)
+            pygame.draw.rect(screen, highlight, (preview_xs[i]-50, preview_y-70, 100, 140), 4)
+            draw_func(screen, preview_xs[i], preview_y, style)
+            # Draw name below preview, spaced further down, smaller font
+            name_text = name_font.render(names[i], True, highlight)
+            screen.blit(name_text, (preview_xs[i]-name_text.get_width()//2, preview_y+name_y_offset))
+        pygame.display.flip()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    selected1 = (selected1-1)%len(options)
+                if event.key == pygame.K_RIGHT:
+                    selected1 = (selected1+1)%len(options)
+                if event.key == pygame.K_RETURN:
+                    p1_done = True
+    
+    # Player 2 selection
+    while not p2_done:
+        screen.fill((30,30,30))
+        title = lobby_font.render("Player 2: Choose Your Character (Enter to confirm)", True, (255,255,255))
+        screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-160))
+        
+        for i, style in enumerate(options):
+            highlight = (255,0,0) if i==selected2 else (80,80,80)
+            pygame.draw.rect(screen, highlight, (preview_xs[i]-50, preview_y-70, 100, 140), 4)
+            draw_func(screen, preview_xs[i], preview_y, style)
+            # Draw name below preview, spaced further down, smaller font
+            name_text = name_font.render(names[i], True, highlight)
+            screen.blit(name_text, (preview_xs[i]-name_text.get_width()//2, preview_y+name_y_offset))
+        pygame.display.flip()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    selected2 = (selected2-1)%len(options)
+                if event.key == pygame.K_RIGHT:
+                    selected2 = (selected2+1)%len(options)
+                if event.key == pygame.K_RETURN:
+                    p2_done = True
+    
+    # Player 3 selection
+    while not p3_done:
+        screen.fill((30,30,30))
+        title = lobby_font.render("Player 3: Choose Your Character (Enter to confirm)", True, (255,255,255))
+        screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-160))
+        
+        for i, style in enumerate(options):
+            highlight = (0,255,0) if i==selected3 else (80,80,80)
+            pygame.draw.rect(screen, highlight, (preview_xs[i]-50, preview_y-70, 100, 140), 4)
+            draw_func(screen, preview_xs[i], preview_y, style)
+            # Draw name below preview, spaced further down, smaller font
+            name_text = name_font.render(names[i], True, highlight)
+            screen.blit(name_text, (preview_xs[i]-name_text.get_width()//2, preview_y+name_y_offset))
+        pygame.display.flip()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    selected3 = (selected3-1)%len(options)
+                if event.key == pygame.K_RIGHT:
+                    selected3 = (selected3+1)%len(options)
+                if event.key == pygame.K_RETURN:
+                    p3_done = True
+    
+    return [selected1, selected2, selected3]
 # Drawing functions for each character
 
 def draw_mafia_character(screen, x, y, style):
@@ -1624,12 +1772,10 @@ def draw_monster(screen, rect, color, hp):
         'head': head_rect
     }
 
-def run_survival_mode(player1_name, player2_name, char_choices):
-    # 2-player survival mode with realistic monsters, easier levels
+def run_survival_mode(num_players, player1_name, player2_name, player3_name, char_choices, upgrades1, upgrades2):
+    # Survival mode supporting 1, 2, or 3 players
     level = 1
     score = 0
-    player1 = pygame.Rect(WIDTH//3, HEIGHT-120, 50, 50)
-    player2 = pygame.Rect(2*WIDTH//3, HEIGHT-120, 50, 50)
     speed = 8
     monsters = []
     monster_speed = 1
@@ -1637,6 +1783,19 @@ def run_survival_mode(player1_name, player2_name, char_choices):
     bullets = []
     font_big = pygame.font.SysFont(None, 72)
     barrier = {'rect': pygame.Rect(60, HEIGHT-200, WIDTH-120, 24), 'hp': 50}
+    
+    # Initialize player positions based on player count
+    players = []
+    if num_players == 1:
+        players.append(pygame.Rect(WIDTH//2, HEIGHT-120, 50, 50))
+    elif num_players == 2:
+        players.append(pygame.Rect(WIDTH//3, HEIGHT-120, 50, 50))
+        players.append(pygame.Rect(2*WIDTH//3, HEIGHT-120, 50, 50))
+    elif num_players == 3:
+        players.append(pygame.Rect(WIDTH//4, HEIGHT-120, 50, 50))
+        players.append(pygame.Rect(WIDTH//2, HEIGHT-120, 50, 50))
+        players.append(pygame.Rect(3*WIDTH//4, HEIGHT-120, 50, 50))
+    
     running = True
     start_countdown()
     while running:
@@ -1647,34 +1806,52 @@ def run_survival_mode(player1_name, player2_name, char_choices):
                 y = random.randint(-300, -40)
                 color = (random.randint(80,200), random.randint(80,200), random.randint(80,200))
                 monsters.append({'rect': pygame.Rect(x, y, monster_size, monster_size), 'hp': 2 + level//4, 'color': color})
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.KEYDOWN:
                 # Player 1 shoot (space)
-                if event.key == pygame.K_SPACE:
-                    bullets.append({'rect': pygame.Rect(player1.centerx-5, player1.top-10, 10, 20), 'dir': -1, 'owner': 1})
+                if event.key == pygame.K_SPACE and len(players) >= 1:
+                    bullets.append({'rect': pygame.Rect(players[0].centerx-5, players[0].top-10, 10, 20), 'dir': -1, 'owner': 1})
                 # Player 2 shoot (right shift)
-                if event.key == pygame.K_RSHIFT:
-                    bullets.append({'rect': pygame.Rect(player2.centerx-5, player2.top-10, 10, 20), 'dir': -1, 'owner': 2})
+                if event.key == pygame.K_RSHIFT and len(players) >= 2:
+                    bullets.append({'rect': pygame.Rect(players[1].centerx-5, players[1].top-10, 10, 20), 'dir': -1, 'owner': 2})
+                # Player 3 shoot (enter)
+                if event.key == pygame.K_RETURN and len(players) >= 3:
+                    bullets.append({'rect': pygame.Rect(players[2].centerx-5, players[2].top-10, 10, 20), 'dir': -1, 'owner': 3})
+        
         keys = pygame.key.get_pressed()
+        
         # Player 1 controls (WASD)
-        if keys[pygame.K_a]: player1.x -= speed
-        if keys[pygame.K_d]: player1.x += speed
-        player1.clamp_ip(pygame.Rect(0,0,WIDTH,HEIGHT))
+        if len(players) >= 1:
+            if keys[pygame.K_a]: players[0].x -= speed
+            if keys[pygame.K_d]: players[0].x += speed
+            players[0].clamp_ip(pygame.Rect(0,0,WIDTH,HEIGHT))
+        
         # Player 2 controls (Arrow keys)
-        if keys[pygame.K_LEFT]: player2.x -= speed
-        if keys[pygame.K_RIGHT]: player2.x += speed
-        player2.clamp_ip(pygame.Rect(0,0,WIDTH,HEIGHT))
+        if len(players) >= 2:
+            if keys[pygame.K_LEFT]: players[1].x -= speed
+            if keys[pygame.K_RIGHT]: players[1].x += speed
+            players[1].clamp_ip(pygame.Rect(0,0,WIDTH,HEIGHT))
+        
+        # Player 3 controls (IJKL)
+        if len(players) >= 3:
+            if keys[pygame.K_j]: players[2].x -= speed
+            if keys[pygame.K_l]: players[2].x += speed
+            players[2].clamp_ip(pygame.Rect(0,0,WIDTH,HEIGHT))
+        
         # Move monsters
         for m in monsters:
             m['rect'].y += monster_speed + level//6  # even slower speed increase
+        
         # Move bullets
         for bullet in bullets[:]:
             bullet['rect'].y += bullet['dir'] * 16
             if bullet['rect'].bottom < 0:
                 bullets.remove(bullet)
+        
         # Bullet-monster collision
         for bullet in bullets[:]:
             hit = False
@@ -1696,39 +1873,63 @@ def run_survival_mode(player1_name, player2_name, char_choices):
                     break
             if hit and bullet in bullets:
                 bullets.remove(bullet)
+        
         # Monster-barrier collision
         for m in monsters[:]:
             if m['rect'].colliderect(barrier['rect']):
                 barrier['hp'] -= 1
                 monsters.remove(m)
+        
         # Monster-base collision
         for m in monsters[:]:
             if m['rect'].bottom >= HEIGHT-10:
                 barrier['hp'] -= 1
                 monsters.remove(m)
+        
         if barrier['hp'] <= 0:
             running = False
+        
         # Draw everything
         screen.fill((20,20,30))
-        draw_survivor_character(screen, player1.centerx, player1.centery, char_choices[0])
-        draw_survivor_character(screen, player2.centerx, player2.centery, char_choices[1])
+        
+        # Draw all players based on number of players
+        for i, player in enumerate(players):
+            if i < len(char_choices):
+                draw_survivor_character(screen, player.centerx, player.centery, char_choices[i])
+        
         pygame.draw.rect(screen, (100,100,255), barrier['rect'])
         barrier_hp = font.render(f"Barrier HP: {barrier['hp']}", True, (255,255,255))
         screen.blit(barrier_hp, (barrier['rect'].centerx-barrier_hp.get_width()//2, barrier['rect'].top-30))
+        
         for m in monsters:
             draw_monster(screen, m['rect'], m['color'], m['hp'])
+        
         for bullet in bullets:
             pygame.draw.rect(screen, (255,255,0), bullet['rect'])
+        
         score_text = font.render(f"Score: {score}", True, (255,255,255))
         screen.blit(score_text, (40, 20))
         level_text = font.render(f"Level: {level}", True, (0,255,0))
         screen.blit(level_text, (WIDTH-200, 20))
+        
+        # Show player names and controls
+        if num_players >= 1:
+            p1_text = font.render(f"{player1_name}: WASD + Space", True, (255,255,255))
+            screen.blit(p1_text, (20, HEIGHT-40))
+        if num_players >= 2:
+            p2_text = font.render(f"{player2_name}: Arrows + RShift", True, (255,255,255))
+            screen.blit(p2_text, (20, HEIGHT-60))
+        if num_players >= 3:
+            p3_text = font.render(f"{player3_name}: IJKL + Enter", True, (255,255,255))
+            screen.blit(p3_text, (20, HEIGHT-80))
+        
         if not monsters:
             # Level up
             level += 1
             monster_speed += 0.5  # slower speed increase per level
             monster_size = max(30, monster_size-1)  # slower size reduction
             pygame.time.wait(1000)
+        
         if not running:
             gameover_text = font_big.render("Game Over!", True, (255,0,0))
             screen.blit(gameover_text, (WIDTH//2-gameover_text.get_width()//2, HEIGHT//2))
@@ -1736,6 +1937,7 @@ def run_survival_mode(player1_name, player2_name, char_choices):
             pygame.time.wait(2500)
             pygame.mixer.music.stop()
             return
+        
         pygame.display.flip()
         clock.tick(60)
 
@@ -1965,31 +2167,64 @@ while True:
                 continue
             break  # Always return to main menu after game ends
     elif mode == 2:
-        # Survival Mode: Play Local only
+        # Survival Mode: Player count selection
         selected = 0
         while True:
             screen.fill((30, 30, 30))
             title = lobby_font.render("Survival Mode", True, (255,255,255))
-            screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-120))
-            local_rect = pygame.Rect(WIDTH//2-100, HEIGHT//2, 200, 80)
-            pygame.draw.rect(screen, (0,180,0), local_rect)
-            local_text = font.render("Play Local", True, (255,255,255))
-            screen.blit(local_text, (local_rect.centerx-local_text.get_width()//2, local_rect.centery-local_text.get_height()//2))
+            screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-180))
+            
+            subtitle = font.render("Select Number of Players:", True, (200,200,200))
+            screen.blit(subtitle, (WIDTH//2-subtitle.get_width()//2, HEIGHT//2-120))
+            
+            # Player count buttons
+            one_player_rect = pygame.Rect(WIDTH//2-300, HEIGHT//2-30, 180, 60)
+            two_player_rect = pygame.Rect(WIDTH//2-90, HEIGHT//2-30, 180, 60)
+            three_player_rect = pygame.Rect(WIDTH//2+120, HEIGHT//2-30, 180, 60)
+            
+            pygame.draw.rect(screen, (0,120,180), one_player_rect)
+            pygame.draw.rect(screen, (0,180,0), two_player_rect)
+            pygame.draw.rect(screen, (180,120,0), three_player_rect)
+            
+            one_text = font.render("1 Player", True, (255,255,255))
+            two_text = font.render("2 Players", True, (255,255,255))
+            three_text = font.render("3 Players", True, (255,255,255))
+            
+            screen.blit(one_text, (one_player_rect.centerx-one_text.get_width()//2, one_player_rect.centery-one_text.get_height()//2))
+            screen.blit(two_text, (two_player_rect.centerx-two_text.get_width()//2, two_player_rect.centery-two_text.get_height()//2))
+            screen.blit(three_text, (three_player_rect.centerx-three_text.get_width()//2, three_player_rect.centery-three_text.get_height()//2))
+            
             back_rect = pygame.Rect(WIDTH//2-100, HEIGHT-100, 200, 60)
             pygame.draw.rect(screen, (100,100,100), back_rect)
             back_text = font.render("Back", True, (255,255,255))
             screen.blit(back_text, (back_rect.centerx-back_text.get_width()//2, back_rect.centery-back_text.get_height()//2))
+            
             pygame.display.flip()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    if local_rect.collidepoint(event.pos):
+                    if one_player_rect.collidepoint(event.pos):
+                        # 1 Player mode
+                        player1_name = get_player_name("Enter your name for Survival Mode:", HEIGHT//2)
+                        char_choices = character_select_single_player(2)  # 2 = survivor mode
+                        run_survival_mode(1, player1_name, "", "", char_choices, [], [])
+                        break
+                    if two_player_rect.collidepoint(event.pos):
+                        # 2 Player mode
                         player1_name = get_player_name("Player 1, enter your name for Survival Mode:", HEIGHT//2-60)
                         player2_name = get_player_name("Player 2, enter your name for Survival Mode:", HEIGHT//2+60)
                         char_choices = character_select(2)  # 2 = survivor mode
-                        run_survival_mode(player1_name, player2_name, char_choices)
+                        run_survival_mode(2, player1_name, player2_name, "", char_choices, [], [])
+                        break
+                    if three_player_rect.collidepoint(event.pos):
+                        # 3 Player mode
+                        player1_name = get_player_name("Player 1, enter your name for Survival Mode:", HEIGHT//2-90)
+                        player2_name = get_player_name("Player 2, enter your name for Survival Mode:", HEIGHT//2-30)
+                        player3_name = get_player_name("Player 3, enter your name for Survival Mode:", HEIGHT//2+30)
+                        char_choices = character_select_three_player(2)  # 2 = survivor mode
+                        run_survival_mode(3, player1_name, player2_name, player3_name, char_choices, [], [])
                         break
                     if back_rect.collidepoint(event.pos):
                         break
