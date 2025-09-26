@@ -3,6 +3,7 @@ import sys
 import time
 import random
 import threading
+import math
 from network import NetworkHost, NetworkClient
 
 pygame.init()
@@ -758,6 +759,190 @@ def draw_survivor_character(screen, x, y, style):
         # Boot laces
         pygame.draw.line(screen, (139, 69, 19), (x-8, y+70), (x-4, y+70), 1)
         pygame.draw.line(screen, (139, 69, 19), (x+2, y+70), (x+6, y+70), 1)
+
+# Realistic and Creepy Monster Drawing Functions for Survival Mode
+
+def draw_zombie_monster(screen, x, y, size, damage_flash=False):
+    """Draw a terrifying zombie monster"""
+    flash_color = (255, 100, 100) if damage_flash else (60, 80, 40)
+    
+    # Body (decaying flesh)
+    pygame.draw.ellipse(screen, flash_color, (x-size//3, y-size//3, size//1.5, size))
+    
+    # Head (grotesque)
+    head_color = (80, 100, 60) if not damage_flash else (120, 140, 100)
+    pygame.draw.ellipse(screen, head_color, (x-size//4, y-size//2, size//2, size//3))
+    
+    # Glowing red eyes
+    pygame.draw.circle(screen, (255, 0, 0), (x-size//8, y-size//3), 3)
+    pygame.draw.circle(screen, (255, 0, 0), (x+size//8, y-size//3), 3)
+    pygame.draw.circle(screen, (255, 255, 255), (x-size//8, y-size//3), 1)
+    pygame.draw.circle(screen, (255, 255, 255), (x+size//8, y-size//3), 1)
+    
+    # Gaping mouth with teeth
+    pygame.draw.ellipse(screen, (0, 0, 0), (x-size//6, y-size//6, size//3, size//8))
+    # Sharp teeth
+    for i in range(3):
+        tooth_x = x - size//8 + i * (size//12)
+        pygame.draw.polygon(screen, (255, 255, 200), [(tooth_x, y-size//6), 
+                           (tooth_x+2, y-size//6+6), (tooth_x-2, y-size//6+6)])
+    
+    # Decaying arms reaching out
+    pygame.draw.line(screen, (60, 80, 40), (x-size//3, y-size//6), (x-size//2, y), 6)
+    pygame.draw.line(screen, (60, 80, 40), (x+size//3, y-size//6), (x+size//2, y), 6)
+    
+    # Clawed hands
+    pygame.draw.circle(screen, (40, 60, 20), (x-size//2, y), 4)
+    pygame.draw.circle(screen, (40, 60, 20), (x+size//2, y), 4)
+    
+    # Blood drips
+    if not damage_flash:
+        for i in range(2):
+            drip_x = x + random.randint(-size//4, size//4)
+            pygame.draw.line(screen, (139, 0, 0), (drip_x, y+size//3), (drip_x, y+size//2), 2)
+
+def draw_demon_monster(screen, x, y, size, damage_flash=False):
+    """Draw a demonic creature with horns and flames"""
+    flash_color = (255, 100, 100) if damage_flash else (120, 20, 20)
+    
+    # Body (dark red/black)
+    pygame.draw.ellipse(screen, flash_color, (x-size//3, y-size//3, size//1.5, size))
+    
+    # Head with horns
+    head_color = (100, 0, 0) if not damage_flash else (150, 50, 50)
+    pygame.draw.ellipse(screen, head_color, (x-size//4, y-size//2, size//2, size//3))
+    
+    # Demonic horns
+    pygame.draw.polygon(screen, (40, 40, 40), [(x-size//6, y-size//2), 
+                       (x-size//4, y-size//1.5), (x-size//8, y-size//2.2)])
+    pygame.draw.polygon(screen, (40, 40, 40), [(x+size//6, y-size//2), 
+                       (x+size//4, y-size//1.5), (x+size//8, y-size//2.2)])
+    
+    # Burning eyes
+    pygame.draw.circle(screen, (255, 100, 0), (x-size//8, y-size//3), 4)
+    pygame.draw.circle(screen, (255, 100, 0), (x+size//8, y-size//3), 4)
+    pygame.draw.circle(screen, (255, 255, 0), (x-size//8, y-size//3), 2)
+    pygame.draw.circle(screen, (255, 255, 0), (x+size//8, y-size//3), 2)
+    
+    # Fanged mouth
+    pygame.draw.ellipse(screen, (0, 0, 0), (x-size//5, y-size//8, size//2.5, size//6))
+    # Large fangs
+    pygame.draw.polygon(screen, (255, 255, 255), [(x-size//10, y-size//8), 
+                       (x-size//12, y-size//20), (x-size//15, y-size//8)])
+    pygame.draw.polygon(screen, (255, 255, 255), [(x+size//10, y-size//8), 
+                       (x+size//12, y-size//20), (x+size//15, y-size//8)])
+    
+    # Clawed arms
+    pygame.draw.line(screen, (80, 20, 20), (x-size//3, y-size//6), (x-size//1.8, y+size//6), 8)
+    pygame.draw.line(screen, (80, 20, 20), (x+size//3, y-size//6), (x+size//1.8, y+size//6), 8)
+    
+    # Sharp claws
+    for claw_offset in [-2, 0, 2]:
+        pygame.draw.line(screen, (200, 200, 200), (x-size//1.8, y+size//6), 
+                        (x-size//1.6, y+size//4+claw_offset), 2)
+        pygame.draw.line(screen, (200, 200, 200), (x+size//1.8, y+size//6), 
+                        (x+size//1.6, y+size//4+claw_offset), 2)
+
+def draw_spider_monster(screen, x, y, size, damage_flash=False):
+    """Draw a giant spider creature"""
+    flash_color = (255, 100, 100) if damage_flash else (40, 40, 40)
+    
+    # Main body (abdomen)
+    pygame.draw.ellipse(screen, flash_color, (x-size//4, y-size//6, size//2, size//2))
+    
+    # Head section
+    head_color = (60, 60, 60) if not damage_flash else (100, 100, 100)
+    pygame.draw.ellipse(screen, head_color, (x-size//6, y-size//3, size//3, size//4))
+    
+    # Multiple eyes (8 eyes like a real spider)
+    eye_positions = [(x-size//12, y-size//4), (x+size//12, y-size//4),
+                    (x-size//8, y-size//3.5), (x+size//8, y-size//3.5),
+                    (x-size//15, y-size//5), (x+size//15, y-size//5),
+                    (x-size//20, y-size//6), (x+size//20, y-size//6)]
+    
+    for eye_x, eye_y in eye_positions:
+        pygame.draw.circle(screen, (255, 0, 0), (eye_x, eye_y), 2)
+        pygame.draw.circle(screen, (255, 255, 255), (eye_x, eye_y), 1)
+    
+    # Eight hairy legs
+    leg_color = (30, 30, 30) if not damage_flash else (70, 70, 70)
+    for i in range(4):
+        # Left legs
+        leg_angle = i * 0.3 - 0.5
+        leg_end_x = x - size//2 - int(size//3 * (1 + leg_angle))
+        leg_end_y = y + int(size//4 * leg_angle)
+        pygame.draw.line(screen, leg_color, (x-size//4, y), (leg_end_x, leg_end_y), 4)
+        
+        # Right legs
+        leg_end_x = x + size//2 + int(size//3 * (1 + leg_angle))
+        pygame.draw.line(screen, leg_color, (x+size//4, y), (leg_end_x, leg_end_y), 4)
+        
+        # Leg segments (joints)
+        mid_x = x + int((leg_end_x - x) * 0.6)
+        mid_y = y + int((leg_end_y - y) * 0.6)
+        pygame.draw.circle(screen, leg_color, (mid_x, mid_y), 2)
+    
+    # Fangs/chelicerae
+    pygame.draw.line(screen, (200, 200, 200), (x-size//12, y-size//6), (x-size//20, y-size//12), 3)
+    pygame.draw.line(screen, (200, 200, 200), (x+size//12, y-size//6), (x+size//20, y-size//12), 3)
+
+def draw_ghost_monster(screen, x, y, size, damage_flash=False):
+    """Draw a translucent ghostly apparition"""
+    alpha = 180 if not damage_flash else 255
+    
+    # Create a surface for transparency effects
+    ghost_surface = pygame.Surface((size, size))
+    ghost_surface.set_alpha(alpha)
+    
+    # Ghostly body (wispy and ethereal)
+    body_color = (200, 200, 255) if not damage_flash else (255, 200, 200)
+    pygame.draw.ellipse(ghost_surface, body_color, (size//4, size//3, size//2, size//1.5))
+    
+    # Wispy tail
+    for i in range(3):
+        tail_y = size//1.5 + i * (size//8)
+        tail_width = size//2 - i * (size//8)
+        if tail_width > 0:
+            pygame.draw.ellipse(ghost_surface, body_color, 
+                              (size//2 - tail_width//2, tail_y, tail_width, size//6))
+    
+    # Hollow, dark eye sockets
+    pygame.draw.circle(ghost_surface, (0, 0, 0), (size//2 - size//8, size//2), 6)
+    pygame.draw.circle(ghost_surface, (0, 0, 0), (size//2 + size//8, size//2), 6)
+    
+    # Glowing eyes inside sockets
+    pygame.draw.circle(ghost_surface, (0, 255, 255), (size//2 - size//8, size//2), 3)
+    pygame.draw.circle(ghost_surface, (0, 255, 255), (size//2 + size//8, size//2), 3)
+    
+    # Gaping mouth
+    pygame.draw.ellipse(ghost_surface, (0, 0, 0), (size//2 - size//12, size//1.8, size//6, size//8))
+    
+    screen.blit(ghost_surface, (x - size//2, y - size//2))
+    
+    # Add floating particles around the ghost
+    if not damage_flash:
+        for i in range(4):
+            particle_x = x + random.randint(-size//2, size//2)
+            particle_y = y + random.randint(-size//2, size//2)
+            pygame.draw.circle(screen, (150, 150, 255), (particle_x, particle_y), 1)
+
+def draw_monster_by_type(screen, monster, damage_flash=False):
+    """Draw a monster based on its type"""
+    x, y = monster['rect'].center
+    size = monster['rect'].width
+    monster_type = monster.get('type', 'zombie')
+    
+    if monster_type == 'zombie':
+        draw_zombie_monster(screen, x, y, size, damage_flash)
+    elif monster_type == 'demon':
+        draw_demon_monster(screen, x, y, size, damage_flash)
+    elif monster_type == 'spider':
+        draw_spider_monster(screen, x, y, size, damage_flash)
+    elif monster_type == 'ghost':
+        draw_ghost_monster(screen, x, y, size, damage_flash)
+    else:
+        # Fallback to zombie if type is unknown
+        draw_zombie_monster(screen, x, y, size, damage_flash)
 
 # Main game loop refactored into a function
 
@@ -1809,8 +1994,45 @@ def run_survival_mode(num_players, player1_name, player2_name, player3_name, cha
             for _ in range(2 + level//2):  # 2 + level//2 monsters per wave (slower increase)
                 x = random.randint(60, WIDTH-60)
                 y = random.randint(-300, -40)
-                color = (random.randint(80,200), random.randint(80,200), random.randint(80,200))
-                monsters.append({'rect': pygame.Rect(x, y, monster_size, monster_size), 'hp': 2 + level//4, 'color': color})
+                
+                # Choose monster type based on level and randomness
+                monster_types = ['zombie', 'demon', 'spider', 'ghost']
+                if level < 3:
+                    # Early levels: mostly zombies and spiders
+                    monster_type = random.choice(['zombie', 'zombie', 'spider'])
+                elif level < 6:
+                    # Mid levels: add demons
+                    monster_type = random.choice(['zombie', 'spider', 'demon'])
+                else:
+                    # Higher levels: all types including ghosts
+                    monster_type = random.choice(monster_types)
+                
+                # Different monster types have different stats
+                if monster_type == 'zombie':
+                    hp = 2 + level//4
+                    size = monster_size
+                    speed_mult = 1.0
+                elif monster_type == 'demon':
+                    hp = 3 + level//3  # Tougher
+                    size = int(monster_size * 1.2)  # Bigger
+                    speed_mult = 1.3  # Faster
+                elif monster_type == 'spider':
+                    hp = 1 + level//5  # Weaker but fast
+                    size = int(monster_size * 0.8)  # Smaller
+                    speed_mult = 1.5  # Much faster
+                elif monster_type == 'ghost':
+                    hp = 1 + level//6  # Very weak but hard to hit
+                    size = monster_size
+                    speed_mult = 0.8  # Slower but phases
+                
+                monsters.append({
+                    'rect': pygame.Rect(x, y, size, size), 
+                    'hp': hp, 
+                    'max_hp': hp,
+                    'type': monster_type,
+                    'speed_mult': speed_mult,
+                    'damage_flash': 0  # For damage visual effects
+                })
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -1847,9 +2069,35 @@ def run_survival_mode(num_players, player1_name, player2_name, player3_name, cha
             if keys[pygame.K_l]: players[2].x += speed
             players[2].clamp_ip(pygame.Rect(0,0,WIDTH,HEIGHT))
         
-        # Move monsters
+        # Move monsters with different behaviors
         for m in monsters:
-            m['rect'].y += monster_speed + level//6  # even slower speed increase
+            base_speed = monster_speed + level//6
+            actual_speed = base_speed * m['speed_mult']
+            
+            if m['type'] == 'zombie':
+                # Zombies move straight down, simple and relentless
+                m['rect'].y += actual_speed
+            elif m['type'] == 'demon':
+                # Demons move toward the nearest player
+                nearest_player = min(players, key=lambda p: abs(p.centerx - m['rect'].centerx))
+                if m['rect'].centerx < nearest_player.centerx:
+                    m['rect'].x += actual_speed * 0.5
+                elif m['rect'].centerx > nearest_player.centerx:
+                    m['rect'].x -= actual_speed * 0.5
+                m['rect'].y += actual_speed
+            elif m['type'] == 'spider':
+                # Spiders move in zigzag pattern
+                m['rect'].y += actual_speed
+                m['rect'].x += int(10 * math.sin(m['rect'].y * 0.1))  # Zigzag movement
+            elif m['type'] == 'ghost':
+                # Ghosts phase through some attacks and move erratically
+                m['rect'].y += actual_speed
+                if random.random() < 0.1:  # 10% chance to phase sideways
+                    m['rect'].x += random.randint(-30, 30)
+            
+            # Reduce damage flash timer
+            if m['damage_flash'] > 0:
+                m['damage_flash'] -= 1
         
         # Move bullets
         for bullet in bullets[:]:
@@ -1860,20 +2108,28 @@ def run_survival_mode(num_players, player1_name, player2_name, player3_name, cha
         # Bullet-monster collision
         for bullet in bullets[:]:
             hit = False
-            for m in monsters:
-                parts = draw_monster(screen, m['rect'], m['color'], m['hp'])
-                corners = [bullet['rect'].topleft, bullet['rect'].topright, bullet['rect'].bottomleft, bullet['rect'].bottomright]
-                # Check collision with each body part
-                if any(point_in_polygon(x, y, parts['body']) for (x, y) in corners) or \
-                   any(parts['left_arm'].collidepoint(x, y) for (x, y) in corners) or \
-                   any(parts['right_arm'].collidepoint(x, y) for (x, y) in corners) or \
-                   any(parts['left_leg'].collidepoint(x, y) for (x, y) in corners) or \
-                   any(parts['right_leg'].collidepoint(x, y) for (x, y) in corners) or \
-                   any(parts['head'].collidepoint(x, y) for (x, y) in corners):
+            for m in monsters[:]:
+                # Simple rectangular collision detection (faster than complex body parts)
+                if bullet['rect'].colliderect(m['rect']):
+                    # Special ghost behavior - 30% chance to phase through bullets
+                    if m['type'] == 'ghost' and random.random() < 0.3:
+                        continue  # Bullet phases through ghost
+                    
                     m['hp'] -= 1
+                    m['damage_flash'] = 5  # Flash red for 5 frames
+                    
                     if m['hp'] <= 0:
                         monsters.remove(m)
-                        score += 1
+                        # Different score values for different monsters
+                        if m['type'] == 'zombie':
+                            score += 1
+                        elif m['type'] == 'demon':
+                            score += 3  # Tougher monsters give more points
+                        elif m['type'] == 'spider':
+                            score += 2  # Fast monsters give good points
+                        elif m['type'] == 'ghost':
+                            score += 5  # Hardest to hit, most points
+                    
                     hit = True
                     break
             if hit and bullet in bullets:
@@ -1895,7 +2151,23 @@ def run_survival_mode(num_players, player1_name, player2_name, player3_name, cha
             running = False
         
         # Draw everything
-        screen.fill((20,20,30))
+        screen.fill((15,15,25))  # Even darker, more ominous background
+        
+        # Add creepy atmospheric effects
+        # Flickering fog effect
+        if random.random() < 0.3:
+            fog_alpha = random.randint(20, 50)
+            fog_surface = pygame.Surface((WIDTH, HEIGHT))
+            fog_surface.set_alpha(fog_alpha)
+            fog_surface.fill((40, 40, 60))
+            screen.blit(fog_surface, (0, 0))
+        
+        # Random lightning flashes
+        if random.random() < 0.02:  # 2% chance per frame
+            lightning_surface = pygame.Surface((WIDTH, HEIGHT))
+            lightning_surface.set_alpha(100)
+            lightning_surface.fill((200, 200, 255))
+            screen.blit(lightning_surface, (0, 0))
         
         # Draw all players based on number of players
         for i, player in enumerate(players):
@@ -1907,7 +2179,9 @@ def run_survival_mode(num_players, player1_name, player2_name, player3_name, cha
         screen.blit(barrier_hp, (barrier['rect'].centerx-barrier_hp.get_width()//2, barrier['rect'].top-30))
         
         for m in monsters:
-            draw_monster(screen, m['rect'], m['color'], m['hp'])
+            # Draw realistic creepy monsters with damage flash effects
+            damage_flash = m['damage_flash'] > 0
+            draw_monster_by_type(screen, m, damage_flash)
         
         for bullet in bullets:
             pygame.draw.rect(screen, (255,255,0), bullet['rect'])
@@ -2159,8 +2433,12 @@ while True:
                                                 if back_rect.collidepoint(event.pos):
                                                     entering = False
                                                     break
+            else:
+                continue
+            break  # Always return to main menu after game ends
     elif mode == 1:
         # Coin Collection Mode: Play Local / Play Online
+       
         selected = 0
         options = ["Play Local", "Play Online"]
         while True:
