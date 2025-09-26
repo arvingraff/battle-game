@@ -3,6 +3,8 @@ import sys
 import time
 import random
 import threading
+import json
+import os
 from network import NetworkHost, NetworkClient
 
 pygame.init()
@@ -1661,668 +1663,422 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
         pygame.display.flip()
         clock.tick(60)
 
-def point_in_polygon(x, y, poly):
-    # Ray casting algorithm for point-in-polygon
-    n = len(poly)
-    inside = False
-    px, py = x, y
-    for i in range(n):
-        j = (i-1)%n
-        xi, yi = poly[i]
-        xj, yj = poly[j]
-        if ((yi > py) != (yj > py)) and (px < (xj-xi)*(py-yi)/(yj-yi)+xi):
-            inside = not inside
-    return inside
-
-def draw_monster(screen, rect, color, hp):
-    # Even more realistic and menacing monster
-    import pygame.gfxdraw
-    import math
-    t = pygame.time.get_ticks() // 100 % 6
-    breath = 4 + math.sin(t) * 2
-    # Body polygon
-    body_points = [
-        (rect.left+8, rect.top+10+breath),
-        (rect.left+rect.width//4, rect.top),
-        (rect.centerx, rect.top+random.randint(0,8)),
-        (rect.right-rect.width//4, rect.top),
-        (rect.right-8, rect.top+10+breath),
-        (rect.right, rect.centery-10),
-        (rect.right-8, rect.bottom-18),
-        (rect.centerx+random.randint(-8,8), rect.bottom-8-breath),
-        (rect.left+8, rect.bottom-18),
-        (rect.left, rect.centery-10)
-    ]
-    pygame.gfxdraw.filled_polygon(screen, body_points, color)
-    # Arms (left/right): rectangles
-    left_arm_rect = pygame.Rect(rect.left-18, rect.centery+8, 18, 18)
-    right_arm_rect = pygame.Rect(rect.right, rect.centery+8, 18, 18)
-    pygame.draw.rect(screen, color, left_arm_rect)
-    pygame.draw.rect(screen, color, right_arm_rect)
-    # Legs (left/right): rectangles
-    left_leg_rect = pygame.Rect(rect.left+8, rect.bottom-4, 12, 24)
-    right_leg_rect = pygame.Rect(rect.right-20, rect.bottom-4, 12, 24)
-    pygame.draw.rect(screen, color, left_leg_rect)
-    pygame.draw.rect(screen, color, right_leg_rect)
-    # Head: ellipse
-    head_rect = pygame.Rect(rect.centerx-18, rect.top-18, 36, 28)
-    pygame.draw.ellipse(screen, color, head_rect)
-    # Scales/bumpy skin
-    for i in range(8):
-        scale_x = rect.left+random.randint(10,rect.width-20)
-        scale_y = rect.top+random.randint(10,rect.height-20)
-        pygame.draw.ellipse(screen, (max(color[0]-30,0), max(color[1]-30,0), max(color[2]-30,0)), (scale_x, scale_y, 8, 5))
-    # Spikes on back
-    for i in range(5):
-        spike_x = rect.left+20+i*rect.width//6
-        pygame.draw.polygon(screen, (60,60,60), [(spike_x, rect.top+8), (spike_x+8, rect.top-12), (spike_x+16, rect.top+8)])
-    # Asymmetrical horns
-    pygame.draw.polygon(screen, (120,120,120), [(rect.left+18, rect.top+10), (rect.left+8, rect.top-18), (rect.left+28, rect.top+10)])
-    pygame.draw.polygon(screen, (120,120,120), [(rect.right-18, rect.top+10), (rect.right-8, rect.top-28), (rect.right-28, rect.top+10)])
-    # Arms (clawed)
-    arm_y = rect.centery+8
-    pygame.draw.line(screen, color, (rect.left, arm_y), (rect.left-18, arm_y+18), 10)
-    pygame.draw.line(screen, color, (rect.right, arm_y), (rect.right+18, arm_y+18), 10)
-    pygame.draw.line(screen, (80,80,80), (rect.left-18, arm_y+18), (rect.left-28, arm_y+28), 5)
-    pygame.draw.line(screen, (80,80,80), (rect.right+18, arm_y+18), (rect.right+28, arm_y+28), 5)
-    # Veins/muscle lines
-    pygame.draw.arc(screen, (120,60,60), (rect.left+20, rect.centery, 18, 8), 0, math.pi, 2)
-    pygame.draw.arc(screen, (120,60,60), (rect.right-38, rect.centery, 18, 8), 0, math.pi, 2)
-    # Legs (clawed)
-    leg_y = rect.bottom-4
-    pygame.draw.line(screen, color, (rect.left+14, leg_y), (rect.left+14, leg_y+18), 8)
-    pygame.draw.line(screen, color, (rect.right-14, leg_y), (rect.right+14, leg_y+18), 8)
-    pygame.draw.line(screen, (80,80,80), (rect.left+14, leg_y+18), (rect.left+8, leg_y+28), 4)
-    pygame.draw.line(screen, (80,80,80), (rect.right-14, leg_y+18), (rect.right-8, leg_y+28), 4)
-    # Face: angry eyes, jagged mouth, scars
-    eye_y = rect.top + rect.height//3
-    # Bloodshot/glowing eyes
-    pygame.draw.ellipse(screen, (200,0,0), (rect.left+rect.width//4-8, eye_y-8, 16, 12))
-    pygame.draw.ellipse(screen, (255,255,0), (rect.left+rect.width//4-2, eye_y-2, 8, 6))
-    pygame.draw.ellipse(screen, (200,0,0), (rect.right-rect.width//4-8, eye_y-8, 16, 12))
-    pygame.draw.ellipse(screen, (255,255,0), (rect.right-rect.width//4-2, eye_y-2, 8, 6))
-    pygame.draw.line(screen, (120,0,0), (rect.left+rect.width//4-8, eye_y-8), (rect.left+rect.width//4+8, eye_y-12), 3)
-    pygame.draw.line(screen, (120,0,0), (rect.right-rect.width//4-8, eye_y-12), (rect.right-rect.width//4+8, eye_y-8), 3)
-    # Slitted pupils
-    pygame.draw.line(screen, (0,0,0), (rect.left+rect.width//4+2, eye_y), (rect.left+rect.width//4+2, eye_y+6), 2)
-    pygame.draw.line(screen, (0,0,0), (rect.right-rect.width//4+2, eye_y), (rect.right-rect.width//4+2, eye_y+6), 2)
-    # Scars
-    pygame.draw.line(screen, (120,60,60), (rect.centerx-10, rect.centery-8), (rect.centerx+10, rect.centery-2), 2)
-    pygame.draw.line(screen, (120,60,60), (rect.centerx-8, rect.centery+8), (rect.centerx+12, rect.centery+12), 2)
-    # Mouth: jagged, sharp teeth, drool/blood
-    mouth_rect = pygame.Rect(rect.centerx-18, rect.bottom-28, 36, 16)
-    pygame.draw.arc(screen, (120,0,0), mouth_rect, 3.14, 2*3.14, 5)
-    for i in range(6):
-        tooth_x = mouth_rect.left+4+i*6
-        pygame.draw.polygon(screen, (255,255,255), [(tooth_x, mouth_rect.bottom-2), (tooth_x+4, mouth_rect.bottom-2), (tooth_x+2, mouth_rect.bottom+6)])
-    # Drool
-    pygame.draw.arc(screen, (100,200,255), (mouth_rect.left+10, mouth_rect.bottom-2, 8, 8), 0, math.pi, 2)
-    # Blood
-    pygame.draw.arc(screen, (200,0,0), (mouth_rect.right-18, mouth_rect.bottom-2, 8, 8), 0, math.pi, 2)
-    # Health above head
-    hp_text = font.render(f"HP: {hp}", True, (255,255,0))
-    screen.blit(hp_text, (rect.centerx-hp_text.get_width()//2, rect.top-24))
-    # Return all body part polygons/rects for collision
-    return {
-        'body': body_points,
-        'left_arm': left_arm_rect,
-        'right_arm': right_arm_rect,
-        'left_leg': left_leg_rect,
-        'right_leg': right_leg_rect,
-        'head': head_rect
-    }
-
-def run_survival_mode(num_players, player1_name, player2_name, player3_name, char_choices, upgrades1, upgrades2):
-    # Survival mode supporting 1, 2, or 3 players
-    level = 1
-    score = 0
-    speed = 8
-    monsters = []
-    monster_speed = 1
-    monster_size = 40
-    bullets = []
-    font_big = pygame.font.SysFont(None, 72)
-    barrier = {'rect': pygame.Rect(60, HEIGHT-200, WIDTH-120, 24), 'hp': 50}
+# Survival Mode Implementation
+def run_survival_mode(num_players, player1_name, player2_name, player3_name, char_choices, p1_upgrades, p2_upgrades):
+    """
+    Run survival mode for 1, 2, or 3 players with enemies spawning in waves.
+    Players must survive as long as possible against increasing difficulty.
+    """
+    try:
+        pygame.mixer.music.stop()
+        pygame.mixer.music.load('fart.mp3')
+        pygame.mixer.music.play(-1)
+    except Exception as e:
+        print(f"Error playing background music: {e}")
     
-    # Initialize player positions based on player count
+    # Initialize players based on number of players
     players = []
-    if num_players == 1:
-        players.append(pygame.Rect(WIDTH//2, HEIGHT-120, 50, 50))
-    elif num_players == 2:
-        players.append(pygame.Rect(WIDTH//3, HEIGHT-120, 50, 50))
-        players.append(pygame.Rect(2*WIDTH//3, HEIGHT-120, 50, 50))
-    elif num_players == 3:
-        players.append(pygame.Rect(WIDTH//4, HEIGHT-120, 50, 50))
-        players.append(pygame.Rect(WIDTH//2, HEIGHT-120, 50, 50))
-        players.append(pygame.Rect(3*WIDTH//4, HEIGHT-120, 50, 50))
+    player_names = []
     
-    running = True
+    if num_players >= 1:
+        players.append(pygame.Rect(100, HEIGHT//2, 50, 50))
+        player_names.append(player1_name)
+    if num_players >= 2:
+        players.append(pygame.Rect(WIDTH-150, HEIGHT//2, 50, 50))
+        player_names.append(player2_name)
+    if num_players >= 3:
+        players.append(pygame.Rect(WIDTH//2, 100, 50, 50))
+        player_names.append(player3_name)
+    
+    # Game state variables
+    player_healths = [10] * num_players  # Each player starts with 10 health
+    player_rights = [True, False, True]  # Direction each player is facing
+    speed = 5
+    
+    # Survival mode specific variables
+    score = 0
+    level = 1
+    enemies = []
+    enemy_spawn_timer = 0
+    enemy_spawn_rate = 2.0  # Enemies spawn every 2 seconds initially
+    enemies_per_wave = 3
+    level_timer = time.time() + 30  # Level up every 30 seconds
+    
+    bullets = []
+    player_shots = [0] * num_players
+    player_reload_times = [0] * num_players
+    RELOAD_LIMIT = 5
+    RELOAD_DURATION = 2
+    
     start_countdown()
-    while running:
-        # Spawn fewer monsters per level, slower scaling
-        if not monsters:
-            for _ in range(2 + level//2):  # 2 + level//2 monsters per wave (slower increase)
-                x = random.randint(60, WIDTH-60)
-                y = random.randint(-300, -40)
-                color = (random.randint(80,200), random.randint(80,200), random.randint(80,200))
-                monsters.append({'rect': pygame.Rect(x, y, monster_size, monster_size), 'hp': 2 + level//4, 'color': color})
+    
+    clock = pygame.time.Clock()
+    game_over = False
+    
+    while not game_over:
+        now = time.time()
         
+        # Handle events
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+            
             if event.type == pygame.KEYDOWN:
-                # Player 1 shoot (space)
-                if event.key == pygame.K_SPACE and len(players) >= 1:
-                    bullets.append({'rect': pygame.Rect(players[0].centerx-5, players[0].top-10, 10, 20), 'dir': -1, 'owner': 1})
-                # Player 2 shoot (right shift)
-                if event.key == pygame.K_RSHIFT and len(players) >= 2:
-                    bullets.append({'rect': pygame.Rect(players[1].centerx-5, players[1].top-10, 10, 20), 'dir': -1, 'owner': 2})
-                # Player 3 shoot (enter)
-                if event.key == pygame.K_RETURN and len(players) >= 3:
-                    bullets.append({'rect': pygame.Rect(players[2].centerx-5, players[2].top-10, 10, 20), 'dir': -1, 'owner': 3})
+                # Player 1 shooting (Space)
+                if event.key == pygame.K_SPACE and num_players >= 1:
+                    if player_shots[0] < RELOAD_LIMIT and now > player_reload_times[0]:
+                        bx = players[0].right if player_rights[0] else players[0].left - 10
+                        bullets.append({'rect': pygame.Rect(bx, players[0].centery-5, 10, 10), 
+                                      'dir': 1 if player_rights[0] else -1, 'owner': 0})
+                        player_shots[0] += 1
+                        if player_shots[0] == RELOAD_LIMIT:
+                            player_reload_times[0] = now + RELOAD_DURATION
+                
+                # Player 2 shooting (Enter)
+                if event.key == pygame.K_RETURN and num_players >= 2:
+                    if player_shots[1] < RELOAD_LIMIT and now > player_reload_times[1]:
+                        bx = players[1].right if player_rights[1] else players[1].left - 10
+                        bullets.append({'rect': pygame.Rect(bx, players[1].centery-5, 10, 10), 
+                                      'dir': 1 if player_rights[1] else -1, 'owner': 1})
+                        player_shots[1] += 1
+                        if player_shots[1] == RELOAD_LIMIT:
+                            player_reload_times[1] = now + RELOAD_DURATION
+                
+                # Player 3 shooting (Right Shift)
+                if event.key == pygame.K_RSHIFT and num_players >= 3:
+                    if player_shots[2] < RELOAD_LIMIT and now > player_reload_times[2]:
+                        bx = players[2].right if player_rights[2] else players[2].left - 10
+                        bullets.append({'rect': pygame.Rect(bx, players[2].centery-5, 10, 10), 
+                                      'dir': 1 if player_rights[2] else -1, 'owner': 2})
+                        player_shots[2] += 1
+                        if player_shots[2] == RELOAD_LIMIT:
+                            player_reload_times[2] = now + RELOAD_DURATION
         
+        # Reset shots after reload
+        for i in range(num_players):
+            if player_shots[i] == RELOAD_LIMIT and now > player_reload_times[i]:
+                player_shots[i] = 0
+        
+        # Player movement
         keys = pygame.key.get_pressed()
         
         # Player 1 controls (WASD)
-        if len(players) >= 1:
-            if keys[pygame.K_a]: players[0].x -= speed
-            if keys[pygame.K_d]: players[0].x += speed
-            players[0].clamp_ip(pygame.Rect(0,0,WIDTH,HEIGHT))
+        if num_players >= 1:
+            if keys[pygame.K_a]:
+                players[0].x -= speed
+                player_rights[0] = False
+            if keys[pygame.K_d]:
+                players[0].x += speed
+                player_rights[0] = True
+            if keys[pygame.K_w]:
+                players[0].y -= speed
+            if keys[pygame.K_s]:
+                players[0].y += speed
         
         # Player 2 controls (Arrow keys)
-        if len(players) >= 2:
-            if keys[pygame.K_LEFT]: players[1].x -= speed
-            if keys[pygame.K_RIGHT]: players[1].x += speed
-            players[1].clamp_ip(pygame.Rect(0,0,WIDTH,HEIGHT))
+        if num_players >= 2:
+            if keys[pygame.K_LEFT]:
+                players[1].x -= speed
+                player_rights[1] = False
+            if keys[pygame.K_RIGHT]:
+                players[1].x += speed
+                player_rights[1] = True
+            if keys[pygame.K_UP]:
+                players[1].y -= speed
+            if keys[pygame.K_DOWN]:
+                players[1].y += speed
         
         # Player 3 controls (IJKL)
-        if len(players) >= 3:
-            if keys[pygame.K_j]: players[2].x -= speed
-            if keys[pygame.K_l]: players[2].x += speed
-            players[2].clamp_ip(pygame.Rect(0,0,WIDTH,HEIGHT))
+        if num_players >= 3:
+            if keys[pygame.K_j]:
+                players[2].x -= speed
+                player_rights[2] = False
+            if keys[pygame.K_l]:
+                players[2].x += speed
+                player_rights[2] = True
+            if keys[pygame.K_i]:
+                players[2].y -= speed
+            if keys[pygame.K_k]:
+                players[2].y += speed
         
-        # Move monsters
-        for m in monsters:
-            m['rect'].y += monster_speed + level//6  # even slower speed increase
+        # Keep players within bounds
+        for player in players:
+            if player.left < 0:
+                player.left = 0
+            if player.right > WIDTH:
+                player.right = WIDTH
+            if player.top < 0:
+                player.top = 0
+            if player.bottom > HEIGHT:
+                player.bottom = HEIGHT
+        
+        # Spawn enemies
+        if now > enemy_spawn_timer:
+            for _ in range(enemies_per_wave):
+                # Spawn enemies from random edges
+                edge = random.randint(0, 3)  # 0=top, 1=right, 2=bottom, 3=left
+                if edge == 0:  # Top
+                    enemy = pygame.Rect(random.randint(0, WIDTH-30), -30, 30, 30)
+                elif edge == 1:  # Right
+                    enemy = pygame.Rect(WIDTH, random.randint(0, HEIGHT-30), 30, 30)
+                elif edge == 2:  # Bottom
+                    enemy = pygame.Rect(random.randint(0, WIDTH-30), HEIGHT, 30, 30)
+                else:  # Left
+                    enemy = pygame.Rect(-30, random.randint(0, HEIGHT-30), 30, 30)
+                
+                enemies.append({'rect': enemy, 'health': 2})
+            
+            enemy_spawn_timer = now + enemy_spawn_rate
+        
+        # Move enemies toward nearest player
+        for enemy in enemies[:]:
+            # Find nearest player
+            nearest_dist = float('inf')
+            target_player = None
+            for i, player in enumerate(players):
+                if player_healths[i] > 0:  # Only target alive players
+                    dist = ((enemy['rect'].centerx - player.centerx)**2 + (enemy['rect'].centery - player.centery)**2)**0.5
+                    if dist < nearest_dist:
+                        nearest_dist = dist
+                        target_player = player
+            
+            if target_player:
+                # Move enemy toward target
+                dx = target_player.centerx - enemy['rect'].centerx
+                dy = target_player.centery - enemy['rect'].centery
+                dist = (dx**2 + dy**2)**0.5
+                if dist > 0:
+                    enemy_speed = min(2 + level * 0.2, 4)  # Enemies get faster each level
+                    enemy['rect'].x += int((dx / dist) * enemy_speed)
+                    enemy['rect'].y += int((dy / dist) * enemy_speed)
         
         # Move bullets
         for bullet in bullets[:]:
-            bullet['rect'].y += bullet['dir'] * 16
-            if bullet['rect'].bottom < 0:
+            bullet['rect'].x += bullet['dir'] * 8
+            if bullet['rect'].x < 0 or bullet['rect'].x > WIDTH:
                 bullets.remove(bullet)
         
-        # Bullet-monster collision
+        # Bullet-enemy collisions
         for bullet in bullets[:]:
-            hit = False
-            for m in monsters:
-                parts = draw_monster(screen, m['rect'], m['color'], m['hp'])
-                corners = [bullet['rect'].topleft, bullet['rect'].topright, bullet['rect'].bottomleft, bullet['rect'].bottomright]
-                # Check collision with each body part
-                if any(point_in_polygon(x, y, parts['body']) for (x, y) in corners) or \
-                   any(parts['left_arm'].collidepoint(x, y) for (x, y) in corners) or \
-                   any(parts['right_arm'].collidepoint(x, y) for (x, y) in corners) or \
-                   any(parts['left_leg'].collidepoint(x, y) for (x, y) in corners) or \
-                   any(parts['right_leg'].collidepoint(x, y) for (x, y) in corners) or \
-                   any(parts['head'].collidepoint(x, y) for (x, y) in corners):
-                    m['hp'] -= 1
-                    if m['hp'] <= 0:
-                        monsters.remove(m)
-                        score += 1
-                    hit = True
+            for enemy in enemies[:]:
+                if bullet['rect'].colliderect(enemy['rect']):
+                    enemy['health'] -= 1
+                    bullets.remove(bullet)
+                    if enemy['health'] <= 0:
+                        enemies.remove(enemy)
+                        score += 10 * level  # More points for higher levels
                     break
-            if hit and bullet in bullets:
-                bullets.remove(bullet)
         
-        # Monster-barrier collision
-        for m in monsters[:]:
-            if m['rect'].colliderect(barrier['rect']):
-                barrier['hp'] -= 1
-                monsters.remove(m)
+        # Enemy-player collisions
+        for enemy in enemies[:]:
+            for i, player in enumerate(players):
+                if player_healths[i] > 0 and enemy['rect'].colliderect(player):
+                    player_healths[i] -= 1
+                    enemies.remove(enemy)
+                    break
         
-        # Monster-base collision
-        for m in monsters[:]:
-            if m['rect'].bottom >= HEIGHT-10:
-                barrier['hp'] -= 1
-                monsters.remove(m)
+        # Check if all players are dead
+        if all(health <= 0 for health in player_healths):
+            game_over = True
         
-        if barrier['hp'] <= 0:
-            running = False
+        # Level progression
+        if now > level_timer:
+            level += 1
+            level_timer = now + 30
+            enemy_spawn_rate = max(0.5, enemy_spawn_rate - 0.1)  # Spawn enemies faster
+            enemies_per_wave = min(8, enemies_per_wave + 1)  # More enemies per wave
         
         # Draw everything
-        screen.fill((20,20,30))
+        screen.fill((20, 20, 20))  # Dark background for survival mode
         
-        # Draw all players based on number of players
+        # Draw border
+        pygame.draw.rect(screen, (100, 100, 100), (0, 0, WIDTH, HEIGHT), 5)
+        
+        # Draw players
         for i, player in enumerate(players):
-            if i < len(char_choices):
+            if player_healths[i] > 0:
                 draw_survivor_character(screen, player.centerx, player.centery, char_choices[i])
+                
+                # Draw player name and health
+                name_color = [(0,0,255), (255,0,0), (0,255,0)][i]
+                name_text = font.render(f"{player_names[i]}: {player_healths[i]}HP", True, name_color)
+                screen.blit(name_text, (player.centerx - name_text.get_width()//2, player.centery-70))
         
-        pygame.draw.rect(screen, (100,100,255), barrier['rect'])
-        barrier_hp = font.render(f"Barrier HP: {barrier['hp']}", True, (255,255,255))
-        screen.blit(barrier_hp, (barrier['rect'].centerx-barrier_hp.get_width()//2, barrier['rect'].top-30))
+        # Draw enemies
+        for enemy in enemies:
+            pygame.draw.rect(screen, (139, 0, 0), enemy['rect'])  # Dark red enemies
+            pygame.draw.rect(screen, (255, 255, 255), enemy['rect'], 2)  # White border
         
-        for m in monsters:
-            draw_monster(screen, m['rect'], m['color'], m['hp'])
-        
+        # Draw bullets
         for bullet in bullets:
-            pygame.draw.rect(screen, (255,255,0), bullet['rect'])
+            pygame.draw.rect(screen, (255, 255, 0), bullet['rect'])
         
-        score_text = font.render(f"Score: {score}", True, (255,255,255))
-        screen.blit(score_text, (40, 20))
-        level_text = font.render(f"Level: {level}", True, (0,255,0))
-        screen.blit(level_text, (WIDTH-200, 20))
+        # Draw UI
+        score_text = lobby_font.render(f"Score: {score}", True, (255, 255, 255))
+        screen.blit(score_text, (20, 20))
         
-        # Show player names and controls
-        if num_players >= 1:
-            p1_text = font.render(f"{player1_name}: WASD + Space", True, (255,255,255))
-            screen.blit(p1_text, (20, HEIGHT-40))
-        if num_players >= 2:
-            p2_text = font.render(f"{player2_name}: Arrows + RShift", True, (255,255,255))
-            screen.blit(p2_text, (20, HEIGHT-60))
-        if num_players >= 3:
-            p3_text = font.render(f"{player3_name}: IJKL + Enter", True, (255,255,255))
-            screen.blit(p3_text, (20, HEIGHT-80))
+        level_text = lobby_font.render(f"Level: {level}", True, (255, 255, 255))
+        screen.blit(level_text, (20, 60))
         
-        if not monsters:
-            # Level up
-            level += 1
-            monster_speed += 0.5  # slower speed increase per level
-            monster_size = max(30, monster_size-1)  # slower size reduction
-            pygame.time.wait(1000)
+        enemies_text = font.render(f"Enemies: {len(enemies)}", True, (255, 255, 255))
+        screen.blit(enemies_text, (20, 100))
         
-        if not running:
-            # Game over screen with back to menu button
-            while True:
-                screen.fill((20,20,30))
-                gameover_text = font_big.render("Game Over!", True, (255,0,0))
-                screen.blit(gameover_text, (WIDTH//2-gameover_text.get_width()//2, HEIGHT//2-60))
-                
-                final_score_text = lobby_font.render(f"Final Score: {score}", True, (255,255,255))
-                screen.blit(final_score_text, (WIDTH//2-final_score_text.get_width()//2, HEIGHT//2-10))
-                
-                final_level_text = lobby_font.render(f"Reached Level: {level}", True, (0,255,0))
-                screen.blit(final_level_text, (WIDTH//2-final_level_text.get_width()//2, HEIGHT//2+20))
-                
-                back_rect = pygame.Rect(WIDTH//2-80, HEIGHT//2+60, 160, 40)
-                pygame.draw.rect(screen, (100,100,100), back_rect)
-                back_text = font.render("Back to Menu", True, (255,255,255))
-                screen.blit(back_text, (back_rect.centerx-back_text.get_width()//2, back_rect.centery-back_text.get_height()//2))
-                
-                pygame.display.flip()
-                
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        pygame.quit()
-                        sys.exit()
-                    if event.type == pygame.MOUSEBUTTONDOWN:
-                        if back_rect.collidepoint(event.pos):
-                            pygame.mixer.music.stop()
-                            return
-                    if event.type == pygame.KEYDOWN:
-                        if event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
-                            pygame.mixer.music.stop()
-                            return
+        # Show reload status for each player
+        for i in range(num_players):
+            if player_healths[i] > 0:
+                if player_shots[i] < RELOAD_LIMIT and now > player_reload_times[i]:
+                    status = f"P{i+1} Shots: {RELOAD_LIMIT - player_shots[i]}"
+                else:
+                    status = f"P{i+1} Reloading..."
+                status_text = font.render(status, True, [(0,0,255), (255,0,0), (0,255,0)][i])
+                screen.blit(status_text, (WIDTH - 200, 20 + i*30))
+        
+        # Show controls
+        controls_text = font.render("P1: WASD+Space | P2: Arrows+Enter | P3: IJKL+RShift", True, (150, 150, 150))
+        screen.blit(controls_text, (WIDTH//2 - controls_text.get_width()//2, HEIGHT - 30))
         
         pygame.display.flip()
         clock.tick(60)
+    
+    # Game Over Screen with High Score Integration
+    pygame.mixer.music.stop()
+    
+    # Add score to high scores and get updated leaderboard
+    active_player_names = [name for i, name in enumerate(player_names) if name]
+    updated_highscores = add_highscore(active_player_names, score, level)
+    current_rank = get_player_rank(active_player_names, score, level)
+    
+    # Get all-time high score
+    all_highscores = load_highscores()
+    all_time_high = all_highscores[0] if all_highscores else None
+    
+    # Interactive game over screen
+    waiting_for_input = True
+    while waiting_for_input:
+        screen.fill((30, 30, 30))
+        
+        # Title
+        game_over_text = lobby_font.render("SURVIVAL MODE - GAME OVER", True, (255, 0, 0))
+        screen.blit(game_over_text, (WIDTH//2 - game_over_text.get_width()//2, HEIGHT//2 - 200))
+        
+        # Final stats
+        final_score_text = lobby_font.render(f"Final Score: {score}", True, (255, 255, 255))
+        screen.blit(final_score_text, (WIDTH//2 - final_score_text.get_width()//2, HEIGHT//2 - 140))
+        
+        final_level_text = lobby_font.render(f"Reached Level: {level}", True, (255, 255, 255))
+        screen.blit(final_level_text, (WIDTH//2 - final_level_text.get_width()//2, HEIGHT//2 - 110))
+        
+        # Current players' high score info
+        if len(active_player_names) == 1:
+            player_text = f"{active_player_names[0]}'s"
+        else:
+            player_text = " & ".join([name for name in active_player_names if name])
+        
+        rank_text = font.render(f"{player_text} Rank: #{current_rank}", True, (0, 255, 255))
+        screen.blit(rank_text, (WIDTH//2 - rank_text.get_width()//2, HEIGHT//2 - 60))
+        
+        # All-time high score
+        if all_time_high:
+            all_time_text = font.render(f"All-Time High Score: {all_time_high['names']}", True, (255, 215, 0))
+            screen.blit(all_time_text, (WIDTH//2 - all_time_text.get_width()//2, HEIGHT//2 - 30))
+            
+            all_time_score_text = font.render(f"Score: {all_time_high['score']} (Level {all_time_high['level']})", True, (255, 215, 0))
+            screen.blit(all_time_score_text, (WIDTH//2 - all_time_score_text.get_width()//2, HEIGHT//2))
+        else:
+            no_scores_text = font.render("No previous high scores", True, (150, 150, 150))
+            screen.blit(no_scores_text, (WIDTH//2 - no_scores_text.get_width()//2, HEIGHT//2 - 15))
+        
+        # Back to menu button
+        back_button = pygame.Rect(WIDTH//2 - 100, HEIGHT//2 + 60, 200, 50)
+        pygame.draw.rect(screen, (100, 100, 100), back_button)
+        back_text = font.render("Back to Menu", True, (255, 255, 255))
+        screen.blit(back_text, (back_button.centerx - back_text.get_width()//2, back_button.centery - back_text.get_height()//2))
+        
+        # Show leaderboard preview
+        leaderboard_title = font.render("Top 5 High Scores:", True, (200, 200, 200))
+        screen.blit(leaderboard_title, (WIDTH//2 - leaderboard_title.get_width()//2, HEIGHT//2 + 130))
+        
+        for i, entry in enumerate(updated_highscores[:5]):
+            if i < 5:  # Show top 5
+                color = (255, 215, 0) if i == 0 else (192, 192, 192) if i == 1 else (205, 127, 50) if i == 2 else (255, 255, 255)
+                entry_text = font.render(f"{i+1}. {entry['names']}: {entry['score']} (Lvl {entry['level']})", True, color)
+                screen.blit(entry_text, (WIDTH//2 - entry_text.get_width()//2, HEIGHT//2 + 160 + i*25))
+        
+        pygame.display.flip()
+        
+        # Handle input
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if back_button.collidepoint(event.pos):
+                    waiting_for_input = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE or event.key == pygame.K_RETURN:
+                    waiting_for_input = False
 
-# Main program loop
-while True:
-    mode = mode_lobby()
-    if mode == 0:
-        # Show Play Local / Play Online selection
-        selected = 0
-        options = ["Play Local", "Play Online"]
-        while True:
-            screen.fill((30, 30, 30))
-            title = lobby_font.render("Battle Mode", True, (255,255,255))
-            screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-120))
-            local_rect = pygame.Rect(WIDTH//2-220, HEIGHT//2, 200, 80)
-            pygame.draw.rect(screen, (0,180,0), local_rect)
-            local_text = font.render("Play Local", True, (255,255,255))
-            screen.blit(local_text, (local_rect.centerx-local_text.get_width()//2, local_rect.centery-local_text.get_height()//2))
-            online_rect = pygame.Rect(WIDTH//2+20, HEIGHT//2, 200, 80)
-            pygame.draw.rect(screen, (0,120,255), online_rect)
-            online_text = font.render("Play Online", True, (255,255,255))
-            screen.blit(online_text, (online_rect.centerx-online_text.get_width()//2, online_rect.centery-online_text.get_height()//2))
-            back_rect = pygame.Rect(WIDTH//2-100, HEIGHT-100, 200, 60)
-            pygame.draw.rect(screen, (100,100,100), back_rect)
-            back_text = font.render("Back", True, (255,255,255))
-            screen.blit(back_text, (back_rect.centerx-back_text.get_width()//2, back_rect.centery-back_text.get_height()//2))
-            pygame.display.flip()
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if local_rect.collidepoint(event.pos):
-                        player1_name = get_player_name("Player 1, enter your name:", HEIGHT//2 - 120)
-                        player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
-                        char_choices = character_select(0)  # Mafia mode
-                        # Go straight to battle, no shop, no upgrades
-                        result = run_game_with_upgrades(player1_name, player2_name, char_choices, 0, 0, 0, 0, 0, 0, mode=0)
-                        if result == 'lobby':
-                            break  # Return to main menu
-                    if online_rect.collidepoint(event.pos):
-                        # Show Host/Join buttons
-                        while True:
-                            screen.fill((30,30,30))
-                            title = lobby_font.render("Online Battle Mode", True, (255,255,255))
-                            screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-120))
-                            host_rect = pygame.Rect(WIDTH//2-220, HEIGHT//2, 200, 80)
-                            join_rect = pygame.Rect(WIDTH//2+20, HEIGHT//2, 200, 80)
-                            pygame.draw.rect(screen, (0,200,0), host_rect)
-                            pygame.draw.rect(screen, (0,120,255), join_rect)
-                            host_text = font.render("Host Game", True, (255,255,255))
-                            join_text = font.render("Join Game", True, (255,255,255))
-                            screen.blit(host_text, (host_rect.centerx-host_text.get_width()//2, host_rect.centery-host_text.get_height()//2))
-                            screen.blit(join_text, (join_rect.centerx-join_text.get_width()//2, join_rect.centery-join_text.get_height()//2))
-                            # Back button for online menu
-                            back_rect2 = pygame.Rect(WIDTH//2-100, HEIGHT-100, 200, 60)
-                            pygame.draw.rect(screen, (100,100,100), back_rect2)
-                            back_text2 = font.render("Back", True, (255,255,255))
-                            screen.blit(back_text2, (back_rect2.centerx-back_text2.get_width()//2, back_rect2.centery-back_text2.get_height()//2))
-                            pygame.display.flip()
-                            for event in pygame.event.get():
-                                if event.type == pygame.QUIT:
-                                    pygame.quit()
-                                    sys.exit()
-                                if event.type == pygame.MOUSEBUTTONDOWN:
-                                    if host_rect.collidepoint(event.pos):
-                                        # Host Game: show IP, wait for connection
-                                        import socket
-                                        hostname = socket.gethostname()
-                                        ip_addr = socket.gethostbyname(hostname)
-                                        waiting = True
-                                        exit_button_rect = pygame.Rect(WIDTH//2-100, HEIGHT-120, 200, 60)
-                                        host = NetworkHost()
-                                        connected = False
-                                        while waiting:
-                                            screen.fill((30,30,30))
-                                            info = font.render(f"Your IP: {ip_addr}", True, (0,255,0))
-                                            wait_text = font.render("Waiting for player to join...", True, (255,255,0))
-                                            screen.blit(info, (WIDTH//2-info.get_width()//2, HEIGHT//2-100))
-                                            screen.blit(wait_text, (WIDTH//2-wait_text.get_width()//2, HEIGHT//2-40))
-                                            pygame.draw.rect(screen, (255,0,0), exit_button_rect)
-                                            exit_text = lobby_font.render("Exit", True, (255,255,255))
-                                            screen.blit(exit_text, (exit_button_rect.centerx-exit_text.get_width()//2, exit_button_rect.centery-exit_text.get_height()//2))
-                                            pygame.display.flip()
-                                            for event in pygame.event.get():
-                                                if event.type == pygame.QUIT:
-                                                    host.close()
-                                                    pygame.quit()
-                                                    sys.exit()
-                                                if event.type == pygame.MOUSEBUTTONDOWN:
-                                                    if exit_button_rect.collidepoint(event.pos):
-                                                        host.close()
-                                                        waiting = False
-                                                        break
-                                                if event.type == pygame.KEYDOWN:
-                                                    if event.key == pygame.K_ESCAPE:
-                                                        host.close()
-                                                        waiting = False
-                                                        break
-                                            if host.conn:
-                                                connected = True
-                                                waiting = False
-                                        if connected:
-                                            # Simple handshake
-                                            host.send("hello from host")
-                                            msg = host.recv()
-                                            if msg == "hello from client":
-                                                info = font.render("Connected! Starting game...", True, (0,255,0))
-                                                screen.blit(info, (WIDTH//2-info.get_width()//2, HEIGHT-120))
-                                                pygame.display.flip()
-                                                pygame.time.wait(1500)
-                                                # Host: get own name/char, receive joiner's
-                                                player1_name, char1 = online_get_name_and_character("Player 1", mode)
-                                                host.send(f"{player1_name},{char1}")
-                                                joiner_info = host.recv()
-                                                player2_name, char2 = joiner_info.split(",")
-                                                char_choices = [int(char1), int(char2)]
-                                                result = run_game_with_upgrades(player1_name, player2_name, char_choices, 0, 0, 0, 0, 0, 0, mode=0, network=host, is_host=True, online=True)
-                                                host.close()
-                                                if result == 'lobby':
-                                                    break
-                                        break
-                                    if join_rect.collidepoint(event.pos):
-                                        # Join Game: enter IP (immediately focused for typing)
-                                        ip = ""
-                                        entering = True
-                                        error_message = None
-                                        while entering:
-                                            screen.fill((30,30,30))
-                                            prompt = font.render("Enter Host IP:", True, (255,255,255))
-                                            input_box = pygame.Rect(WIDTH//2-300, HEIGHT//2-20, 600, 50)
-                                            pygame.draw.rect(screen, (255,255,255), input_box, 0)
-                                            pygame.draw.rect(screen, (0,255,0), input_box, 4)
-                                            ip_font = pygame.font.SysFont(None, 48)
-                                            ip_text_surface = ip_font.render(ip, True, (0,0,0))
-                                            screen.blit(prompt, (WIDTH//2-prompt.get_width()//2, HEIGHT//2-60))
-                                            screen.blit(ip_text_surface, (input_box.x+10, input_box.y+input_box.height//2-ip_text_surface.get_height()//2))
-                                            info = font.render("Enter: Connect, Esc: Cancel", True, (0,0,0))
-                                            screen.blit(info, (WIDTH//2-info.get_width()//2, HEIGHT-120))
-                                            # Draw Back button
-                                            back_rect = pygame.Rect(WIDTH//2-100, HEIGHT-100, 200, 60)
-                                            pygame.draw.rect(screen, (100,100,100), back_rect)
-                                            back_text = font.render("Back", True, (255,255,255))
-                                            screen.blit(back_text, (back_rect.centerx-back_text.get_width()//2, back_rect.centery-back_text.get_height()//2))
-                                            if error_message:
-                                                err = font.render(error_message, True, (255,0,0))
-                                                screen.blit(err, (WIDTH//2-err.get_width()//2, HEIGHT//2+60))
-                                            pygame.display.flip()
-                                            event = pygame.event.wait()
-                                            if event.type == pygame.QUIT:
-                                                pygame.quit()
-                                                sys.exit()
-                                            if event.type == pygame.KEYDOWN:
-                                                if event.key == pygame.K_ESCAPE:
-                                                    entering = False
-                                                    break
-                                                elif event.key == pygame.K_RETURN:
-                                                    try:
-                                                        client = NetworkClient(ip)
-                                                        client.send("hello from client")
-                                                        msg = client.recv()
-                                                        if msg == "hello from host":
-                                                            info = font.render("Connected! Starting game...", True, (0,255,0))
-                                                            screen.blit(info, (WIDTH//2-info.get_width()//2, HEIGHT-120))
-                                                            pygame.display.flip()
-                                                            pygame.time.wait(1500)
-                                                            # Joiner: get own name/char, send to host, receive host's
-                                                            player2_name, char2 = online_get_name_and_character("Player 2", mode)
-                                                            client.send(f"{player2_name},{char2}")
-                                                            host_info = client.recv()
-                                                            player1_name, char1 = host_info.split(",")
-                                                            char_choices = [int(char1), int(char2)]
-                                                            result = run_game_with_upgrades(0, player1_name, player2_name, char_choices, network=client, is_host=False, online=True)
-                                                            client.close()
-                                                            if result == 'lobby':
-                                                                entering = False
-                                                                break
-                                                        else:
-                                                            error_message = "No host found at that IP. Try again."
-                                                            client.close()
-                                                    except Exception as e:
-                                                        error_message = f"Failed: {e}"
-                                                elif event.key == pygame.K_BACKSPACE:
-                                                    ip = ip[:-1]
-                                                else:
-                                                    if len(event.unicode) == 1 and (event.unicode.isdigit() or event.unicode == "."):
-                                                        ip += event.unicode
-                                            if event.type == pygame.MOUSEBUTTONDOWN:
-                                                if back_rect.collidepoint(event.pos):
-                                                    entering = False
-                                                    break
-    elif mode == 1:
-        # Coin Collection Mode: Play Local / Play Online
-        selected = 0
-        options = ["Play Local", "Play Online"]
-        while True:
-            screen.fill((30, 30, 30))
-            title = lobby_font.render("Coin Collection Mode", True, (255,255,255))
-            screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-120))
-            local_rect = pygame.Rect(WIDTH//2-220, HEIGHT//2, 200, 80)
-            online_rect = pygame.Rect(WIDTH//2+20, HEIGHT//2, 200, 80)
-            pygame.draw.rect(screen, (0,180,0), local_rect)
-            pygame.draw.rect(screen, (0,120,255), online_rect)
-            local_text = font.render("Play Local", True, (255,255,255))
-            online_text = font.render("Play Online", True, (255,255,255))
-            screen.blit(local_text, (local_rect.centerx-local_text.get_width()//2, local_rect.centery-local_text.get_height()//2))
-            screen.blit(online_text, (online_rect.centerx-online_text.get_width()//2, online_rect.centery-online_text.get_height()//2))
-            back_rect = pygame.Rect(WIDTH//2-100, HEIGHT-100, 200, 60)
-            pygame.draw.rect(screen, (100,100,100), back_rect)
-            back_text = font.render("Back", True, (255,255,255))
-            screen.blit(back_text, (back_rect.centerx-back_text.get_width()//2, back_rect.centery-back_text.get_height()//2))
-            pygame.display.flip()
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if local_rect.collidepoint(event.pos):
-                        player1_name = get_player_name("Player 1, enter your name:", HEIGHT//2 - 120)
-                        player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
-                        char_choices = character_select(1)
-                        run_coin_collection_and_shop(player1_name, player2_name, char_choices)
-                        break
-                    if back_rect.collidepoint(event.pos):
-                        break
-            else:
-                continue
-            break  # Always return to main menu after game ends
-    elif mode == 2:
-        # Show Play Local / Play Online selection for Survival Mode
-        selected = 0
-        options = ["Play Local", "Play Online (Coming Soon)"]
-        while True:
-            screen.fill((30, 30, 30))
-            title = lobby_font.render("Survival Mode", True, (255,255,255))
-            screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-120))
-            
-            for i, option in enumerate(options):
-                y_pos = HEIGHT//2-20 + i*60
-                rect = pygame.Rect(WIDTH//2-120, y_pos, 240, 50)
-                color = (0,100,200) if option == "Play Local" else (100,100,100)
-                pygame.draw.rect(screen, color, rect)
-                option_text = font.render(option, True, (255,255,255))
-                screen.blit(option_text, (rect.centerx-option_text.get_width()//2, rect.centery-option_text.get_height()//2))
-            
-            back_rect = pygame.Rect(WIDTH//2-100, HEIGHT-100, 200, 60)
-            pygame.draw.rect(screen, (100,100,100), back_rect)
-            back_text = font.render("Back", True, (255,255,255))
-            screen.blit(back_text, (back_rect.centerx-back_text.get_width()//2, back_rect.centery-back_text.get_height()//2))
-            
-            pygame.display.flip()
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if options[0] == "Play Local" and HEIGHT//2-20 <= event.pos[1] <= HEIGHT//2+30 and WIDTH//2-120 <= event.pos[0] <= WIDTH//2+120:
-                        # Go to local player count selection
-                        while True:
-                            screen.fill((30, 30, 30))
-                            title = lobby_font.render("Survival Mode - Local Play", True, (255,255,255))
-                            screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-180))
-                            
-                            subtitle = font.render("Select Number of Players:", True, (200,200,200))
-                            screen.blit(subtitle, (WIDTH//2-subtitle.get_width()//2, HEIGHT//2-120))
-                            
-                            # Player count buttons
-                            one_player_rect = pygame.Rect(WIDTH//2-300, HEIGHT//2-30, 180, 60)
-                            two_player_rect = pygame.Rect(WIDTH//2-90, HEIGHT//2-30, 180, 60)
-                            three_player_rect = pygame.Rect(WIDTH//2+120, HEIGHT//2-30, 180, 60)
-                            
-                            pygame.draw.rect(screen, (0,120,180), one_player_rect)
-                            pygame.draw.rect(screen, (0,180,0), two_player_rect)
-                            pygame.draw.rect(screen, (180,120,0), three_player_rect)
-                            
-                            one_text = font.render("1 Player", True, (255,255,255))
-                            two_text = font.render("2 Players", True, (255,255,255))
-                            three_text = font.render("3 Players", True, (255,255,255))
-                            
-                            screen.blit(one_text, (one_player_rect.centerx-one_text.get_width()//2, one_player_rect.centery-one_text.get_height()//2))
-                            screen.blit(two_text, (two_player_rect.centerx-two_text.get_width()//2, two_player_rect.centery-two_text.get_height()//2))
-                            screen.blit(three_text, (three_player_rect.centerx-three_text.get_width()//2, three_player_rect.centery-three_text.get_height()//2))
-                            
-                            local_back_rect = pygame.Rect(WIDTH//2-100, HEIGHT-100, 200, 60)
-                            pygame.draw.rect(screen, (100,100,100), local_back_rect)
-                            local_back_text = font.render("Back", True, (255,255,255))
-                            screen.blit(local_back_text, (local_back_rect.centerx-local_back_text.get_width()//2, local_back_rect.centery-local_back_text.get_height()//2))
-                            
-                            pygame.display.flip()
-                            for local_event in pygame.event.get():
-                                if local_event.type == pygame.QUIT:
-                                    pygame.quit()
-                                    sys.exit()
-                                if local_event.type == pygame.MOUSEBUTTONDOWN:
-                                    if one_player_rect.collidepoint(local_event.pos):
-                                        # 1 Player mode
-                                        player1_name = get_player_name("Enter your name for Survival Mode:", HEIGHT//2)
-                                        char_choices = character_select_single_player(2)  # 2 = survivor mode
-                                        run_survival_mode(1, player1_name, "", "", char_choices, [], [])
-                                        break
-                                    if two_player_rect.collidepoint(local_event.pos):
-                                        # 2 Player mode
-                                        player1_name = get_player_name("Player 1, enter your name for Survival Mode:", HEIGHT//2-60)
-                                        player2_name = get_player_name("Player 2, enter your name for Survival Mode:", HEIGHT//2+60)
-                                        char_choices = character_select(2)  # 2 = survivor mode
-                                        run_survival_mode(2, player1_name, player2_name, "", char_choices, [], [])
-                                        break
-                                    if three_player_rect.collidepoint(local_event.pos):
-                                        # 3 Player mode
-                                        player1_name = get_player_name("Player 1, enter your name for Survival Mode:", HEIGHT//2-90)
-                                        player2_name = get_player_name("Player 2, enter your name for Survival Mode:", HEIGHT//2-30)
-                                        player3_name = get_player_name("Player 3, enter your name for Survival Mode:", HEIGHT//2+30)
-                                        char_choices = character_select_three_player(2)  # 2 = survivor mode
-                                        run_survival_mode(3, player1_name, player2_name, player3_name, char_choices, [], [])
-                                        break
-                                    if local_back_rect.collidepoint(local_event.pos):
-                                        break
-                            else:
-                                continue
-                            break  # Return to local/online selection
-                        break
-                    elif options[1] == "Play Online (Coming Soon)" and HEIGHT//2+40 <= event.pos[1] <= HEIGHT//2+90 and WIDTH//2-120 <= event.pos[0] <= WIDTH//2+120:
-                        # Show coming soon message
-                        while True:
-                            screen.fill((30, 30, 30))
-                            title = lobby_font.render("Online Survival Mode", True, (255,255,255))
-                            screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-100))
-                            
-                            msg1 = font.render("Online multiplayer for Survival Mode", True, (200,200,200))
-                            screen.blit(msg1, (WIDTH//2-msg1.get_width()//2, HEIGHT//2-40))
-                            
-                            msg2 = font.render("is coming in a future update!", True, (200,200,200))
-                            screen.blit(msg2, (WIDTH//2-msg2.get_width()//2, HEIGHT//2-10))
-                            
-                            msg3 = font.render("For now, enjoy local co-op play.", True, (150,150,150))
-                            screen.blit(msg3, (WIDTH//2-msg3.get_width()//2, HEIGHT//2+30))
-                            
-                            ok_rect = pygame.Rect(WIDTH//2-60, HEIGHT//2+80, 120, 40)
-                            pygame.draw.rect(screen, (0,120,180), ok_rect)
-                            ok_text = font.render("OK", True, (255,255,255))
-                            screen.blit(ok_text, (ok_rect.centerx-ok_text.get_width()//2, ok_rect.centery-ok_text.get_height()//2))
-                            
-                            pygame.display.flip()
-                            for msg_event in pygame.event.get():
-                                if msg_event.type == pygame.QUIT:
-                                    pygame.quit()
-                                    sys.exit()
-                                if msg_event.type == pygame.MOUSEBUTTONDOWN:
-                                    if ok_rect.collidepoint(msg_event.pos):
-                                        break
-                                if msg_event.type == pygame.KEYDOWN:
-                                    break
-                            else:
-                                continue
-                            break
-                    if back_rect.collidepoint(event.pos):
-                        break
-            else:
-                continue
-            break  # Always return to main menu after game ends
+# High Score System for Survival Mode
+HIGHSCORE_FILE = "survival_highscores.json"
+
+def load_highscores():
+    """Load high scores from file, return empty list if file doesn't exist"""
+    try:
+        if os.path.exists(HIGHSCORE_FILE):
+            with open(HIGHSCORE_FILE, 'r') as f:
+                return json.load(f)
+        return []
+    except:
+        return []
+
+def save_highscores(highscores):
+    """Save high scores to file"""
+    try:
+        with open(HIGHSCORE_FILE, 'w') as f:
+            json.dump(highscores, f, indent=2)
+    except:
+        pass  # Fail silently if can't save
+
+def add_highscore(player_names, score, level):
+    """Add a new high score entry and maintain top 10"""
+    highscores = load_highscores()
+    
+    # Create player name string
+    if len(player_names) == 1:
+        name_str = player_names[0]
+    else:
+        name_str = " & ".join([name for name in player_names if name])
+    
+    new_entry = {
+        "names": name_str,
+        "score": score,
+        "level": level,
+        "players": len([name for name in player_names if name]),
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+    }
+    
+    highscores.append(new_entry)
+    # Sort by score (highest first), then by level
+    highscores.sort(key=lambda x: (x["score"], x["level"]), reverse=True)
+    
+    # Keep only top 10
+    highscores = highscores[:10]
+    
+    save_highscores(highscores)
+    return highscores
+
+def get_player_rank(player_names, score, level):
+    """Get the rank of the current players in the all-time leaderboard"""
+    highscores = load_highscores()
+    
+    # Count how many scores are better than current score
+    better_scores = 0
+    for entry in highscores:
+        if entry["score"] > score or (entry["score"] == score and entry["level"] > level):
+            better_scores += 1
+    
+    return better_scores + 1  # Rank is 1-based
 
 
 
