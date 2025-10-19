@@ -491,63 +491,126 @@ def character_select_three_player(mode):
 # Drawing functions for each character
 
 def draw_mafia_character(screen, x, y, style):
-    if style == 0:  # Classic Mafia Don - Ultra Realistic
-        # Realistic Italian-American head with proper anatomy
+    if style == 0:  # Classic Mafia Don - Museum-Quality Masterpiece
+        # Ultra-realistic Italian-American head with perfect anatomy
         head_color = (218, 178, 128)
+        # Base head structure
         pygame.draw.ellipse(screen, head_color, (x-16, y-38, 32, 42))
-        pygame.draw.ellipse(screen, (200, 160, 110), (x-14, y-36, 28, 38))  # Face shading
+        # Multi-layer face shading for 3D depth
+        pygame.draw.ellipse(screen, (200, 160, 110), (x-14, y-36, 28, 38))
+        pygame.draw.ellipse(screen, (210, 170, 118), (x-12, y-34, 24, 34))  # Inner highlight
         
-        # Strong Italian jawline and cheekbones
+        # Hyper-realistic nose with bridge and nostrils
+        pygame.draw.polygon(screen, (195, 155, 105), [(x-3, y-22), (x+3, y-22), (x+4, y-14), (x-4, y-14)])
+        pygame.draw.ellipse(screen, (180, 140, 90), (x-4, y-16, 3, 4))  # Left nostril
+        pygame.draw.ellipse(screen, (180, 140, 90), (x+1, y-16, 3, 4))  # Right nostril
+        pygame.draw.line(screen, (220, 180, 130), (x, y-22), (x, y-14), 1)  # Nose bridge highlight
+        
+        # Powerful Italian jawline with anatomical precision
         pygame.draw.polygon(screen, (190, 150, 100), [(x-12, y-8), (x-8, y-4), (x+8, y-4), (x+12, y-8)])
-        pygame.draw.arc(screen, (185, 145, 95), (x-14, y-20, 12, 8), 3.8, 5.5, 2)  # Left cheekbone
-        pygame.draw.arc(screen, (185, 145, 95), (x+2, y-20, 12, 8), 3.8, 5.5, 2)   # Right cheekbone
+        pygame.draw.polygon(screen, (200, 160, 110), [(x-10, y-8), (x-6, y-5), (x+6, y-5), (x+10, y-8)])  # Jaw highlight
         
-        # Professional fedora with authentic details
+        # Prominent cheekbones with depth
+        pygame.draw.arc(screen, (185, 145, 95), (x-14, y-20, 12, 8), 3.8, 5.5, 2)
+        pygame.draw.arc(screen, (185, 145, 95), (x+2, y-20, 12, 8), 3.8, 5.5, 2)
+        pygame.draw.arc(screen, (205, 165, 115), (x-13, y-19, 10, 6), 3.8, 5.5, 1)  # Cheekbone highlights
+        pygame.draw.arc(screen, (205, 165, 115), (x+3, y-19, 10, 6), 3.8, 5.5, 1)
+        
+        # Museum-quality Italian fedora with exquisite detail
         hat_color = (45, 45, 45)
-        pygame.draw.ellipse(screen, hat_color, (x-18, y-48, 36, 12))     # Crown
-        pygame.draw.ellipse(screen, (35, 35, 35), (x-16, y-46, 32, 8))  # Crown top
-        pygame.draw.ellipse(screen, hat_color, (x-22, y-42, 44, 6))     # Brim
-        pygame.draw.rect(screen, (200, 0, 0), (x-16, y-44, 32, 4))     # Red band
-        pygame.draw.rect(screen, (180, 0, 0), (x-14, y-43, 28, 2))     # Band highlight
+        pygame.draw.ellipse(screen, hat_color, (x-18, y-48, 36, 12))     # Crown base
+        pygame.draw.ellipse(screen, (35, 35, 35), (x-16, y-46, 32, 8))  # Crown top (darker)
+        pygame.draw.ellipse(screen, (55, 55, 55), (x-15, y-47, 30, 6))  # Crown highlight
+        pygame.draw.ellipse(screen, hat_color, (x-22, y-42, 44, 6))     # Wide brim
+        pygame.draw.ellipse(screen, (30, 30, 30), (x-21, y-42, 42, 4))  # Brim shadow underneath
+        # Luxury red silk band with shine
+        pygame.draw.rect(screen, (200, 0, 0), (x-16, y-44, 32, 4))
+        pygame.draw.rect(screen, (220, 20, 20), (x-14, y-43, 28, 2))    # Band highlight
+        pygame.draw.rect(screen, (160, 0, 0), (x-14, y-46, 28, 1))      # Band shadow
+        # Hat texture/felt lines
+        for i in range(-14, 16, 4):
+            pygame.draw.line(screen, (50, 50, 50), (x+i, y-46), (x+i, y-42), 1)
         
-        # Luxury aviator sunglasses with reflections
-        pygame.draw.polygon(screen, (20, 20, 20), [(x-12, y-26), (x-2, y-26), (x-2, y-18), (x-12, y-18)])
-        pygame.draw.polygon(screen, (20, 20, 20), [(x+2, y-26), (x+12, y-26), (x+12, y-18), (x+2, y-18)])
-        pygame.draw.line(screen, (255, 215, 0), (x-2, y-22), (x+2, y-22), 2)  # Gold bridge
-        # Lens reflections
-        pygame.draw.line(screen, (100, 100, 150), (x-10, y-24), (x-6, y-20), 2)
-        pygame.draw.line(screen, (100, 100, 150), (x+4, y-24), (x+8, y-20), 2)
+        # Luxury designer aviator sunglasses with perfect reflections
+        # Gold frame borders
+        pygame.draw.polygon(screen, (200, 160, 20), [(x-13, y-27), (x-1, y-27), (x-1, y-17), (x-13, y-17)], 1)
+        pygame.draw.polygon(screen, (200, 160, 20), [(x+1, y-27), (x+13, y-27), (x+13, y-17), (x+1, y-17)], 1)
+        # Dark tinted lenses
+        pygame.draw.polygon(screen, (15, 15, 15), [(x-12, y-26), (x-2, y-26), (x-2, y-18), (x-12, y-18)])
+        pygame.draw.polygon(screen, (15, 15, 15), [(x+2, y-26), (x+12, y-26), (x+12, y-18), (x+2, y-18)])
+        # Gold bridge with detail
+        pygame.draw.line(screen, (255, 215, 0), (x-2, y-22), (x+2, y-22), 3)
+        pygame.draw.line(screen, (230, 190, 0), (x-2, y-21), (x+2, y-21), 1)  # Bridge highlight
+        # Realistic lens reflections (sky/light)
+        pygame.draw.line(screen, (120, 140, 180), (x-10, y-25), (x-5, y-20), 2)
+        pygame.draw.line(screen, (120, 140, 180), (x+5, y-25), (x+10, y-20), 2)
+        pygame.draw.circle(screen, (180, 200, 230), (x-9, y-24), 2)  # Reflection spot
+        pygame.draw.circle(screen, (180, 200, 230), (x+6, y-24), 2)
+        # Temple arms (gold)
+        pygame.draw.line(screen, (255, 215, 0), (x-12, y-22), (x-16, y-20), 2)
+        pygame.draw.line(screen, (255, 215, 0), (x+12, y-22), (x+16, y-20), 2)
         
         # Realistic thick eyebrows (visible above glasses)
         for i in range(8):
             pygame.draw.line(screen, (60, 40, 20), (x-12+i*2, y-30), (x-11+i*2, y-32), 1)
             pygame.draw.line(screen, (60, 40, 20), (x+4+i*2, y-30), (x+5+i*2, y-32), 1)
         
-        # Authentic Italian mustache with detail
+        # Authentic Italian mustache with hyper-realistic hair detail
         pygame.draw.ellipse(screen, (80, 42, 20), (x-8, y-12, 16, 6))
         pygame.draw.ellipse(screen, (60, 32, 15), (x-7, y-11, 14, 4))
-        # Mustache curl details
+        pygame.draw.ellipse(screen, (90, 52, 30), (x-7, y-12, 14, 3))  # Top highlight
+        # Mustache curl details with individual hairs
         pygame.draw.arc(screen, (80, 42, 20), (x-10, y-10, 6, 6), 0, 3.14, 2)
         pygame.draw.arc(screen, (80, 42, 20), (x+4, y-10, 6, 6), 0, 3.14, 2)
+        # Individual mustache hairs for realism
+        for i in range(8):
+            pygame.draw.line(screen, (70, 35, 18), (x-6+i*2, y-11), (x-6+i*2, y-9), 1)
+        # Mustache wax shine
+        pygame.draw.line(screen, (100, 60, 35), (x-4, y-11), (x+4, y-11), 1)
         
-        # Realistic neck
+        # Realistic neck with Adam's apple and shadows
         pygame.draw.rect(screen, head_color, (x-6, y-8, 12, 15))
+        pygame.draw.rect(screen, (200, 160, 110), (x-5, y-7, 10, 13))  # Neck shading
+        pygame.draw.ellipse(screen, (190, 150, 100), (x-2, y-2, 4, 6))  # Adam's apple
+        pygame.draw.line(screen, (210, 170, 120), (x-1, y-2), (x-1, y+3), 1)  # Neck tendon
+        pygame.draw.line(screen, (210, 170, 120), (x+1, y-2), (x+1, y+3), 1)
         
-        # Luxury Italian suit with fine details
+        # Museum-quality Italian tailored suit with exquisite details
         suit_color = (25, 25, 25)
         pygame.draw.rect(screen, suit_color, (x-16, y+5, 32, 40))
-        pygame.draw.polygon(screen, (20, 20, 20), [(x-12, y+5), (x-8, y), (x+8, y), (x+12, y+5)])  # Lapels
+        pygame.draw.rect(screen, (35, 35, 35), (x-15, y+6, 30, 38))  # Suit highlight
+        # Perfect peaked lapels with silk facing
+        pygame.draw.polygon(screen, (20, 20, 20), [(x-12, y+5), (x-8, y), (x+8, y), (x+12, y+5)])
+        pygame.draw.polygon(screen, (40, 40, 40), [(x-11, y+5), (x-8, y+1), (x+8, y+1), (x+11, y+5)])  # Lapel shine
+        # Lapel notch details
+        pygame.draw.line(screen, (15, 15, 15), (x-8, y+2), (x-10, y+8), 2)
+        pygame.draw.line(screen, (15, 15, 15), (x+8, y+2), (x+10, y+8), 2)
         
-        # Crisp white dress shirt
+        # Crisp Egyptian cotton dress shirt with realistic folds
         pygame.draw.rect(screen, (255, 255, 255), (x-6, y+5, 12, 35))
         pygame.draw.rect(screen, (240, 240, 240), (x-5, y+6, 10, 33))  # Shirt shading
+        pygame.draw.rect(screen, (250, 250, 250), (x-4, y+7, 8, 31))   # Center panel highlight
+        # Shirt buttons with detail
+        for btn_y in range(4):
+            pygame.draw.circle(screen, (245, 245, 245), (x, y+10+btn_y*7), 2)
+            pygame.draw.circle(screen, (255, 255, 255), (x, y+10+btn_y*7), 1)
+            # Button holes
+            pygame.draw.line(screen, (220, 220, 220), (x-1, y+10+btn_y*7), (x+1, y+10+btn_y*7), 1)
+        # Collar details
+        pygame.draw.polygon(screen, (250, 250, 250), [(x-6, y+5), (x-4, y+2), (x-2, y+5)])  # Left collar
+        pygame.draw.polygon(screen, (250, 250, 250), [(x+6, y+5), (x+4, y+2), (x+2, y+5)])  # Right collar
         
-        # Italian silk tie with pattern
+        # Italian silk tie with luxurious pattern
         tie_color = (150, 0, 0)
         pygame.draw.polygon(screen, tie_color, [(x-2, y+12), (x+2, y+12), (x+3, y+35), (x-3, y+35)])
-        # Tie pattern
+        pygame.draw.polygon(screen, (170, 10, 10), [(x-1, y+12), (x+1, y+12), (x+2, y+35), (x-2, y+35)])  # Tie center shine
+        # Silk tie pattern (diagonal stripes)
         for i in range(4):
-            pygame.draw.line(screen, (180, 30, 30), (x-1, y+15+i*5), (x+1, y+15+i*5), 1)
+            pygame.draw.line(screen, (180, 30, 30), (x-2, y+15+i*5), (x+2, y+17+i*5), 1)
+            pygame.draw.line(screen, (120, 0, 0), (x-2, y+17+i*5), (x+2, y+19+i*5), 1)
+        # Tie knot with depth
+        pygame.draw.polygon(screen, (130, 0, 0), [(x-3, y+8), (x+3, y+8), (x+2, y+12), (x-2, y+12)])
+        pygame.draw.polygon(screen, (150, 10, 10), [(x-2, y+8), (x+2, y+8), (x+1, y+11), (x-1, y+11)])  # Knot highlight
         
         # Gold pocket square
         pygame.draw.rect(screen, (255, 215, 0), (x+8, y+12, 6, 6))
@@ -562,20 +625,44 @@ def draw_mafia_character(screen, x, y, style):
         pygame.draw.circle(screen, (255, 215, 0), (x+12, y+25), 3)
         pygame.draw.circle(screen, (200, 0, 0), (x+12, y+25), 2)  # Ruby center
         
-        # Realistic arms in suit sleeves
+        # Realistic arms with anatomical muscle definition
         pygame.draw.ellipse(screen, suit_color, (x-22, y+10, 10, 25))
         pygame.draw.ellipse(screen, suit_color, (x+12, y+10, 10, 25))
+        pygame.draw.ellipse(screen, (35, 35, 35), (x-21, y+11, 8, 23))  # Arm highlights
+        pygame.draw.ellipse(screen, (35, 35, 35), (x+13, y+11, 8, 23))
+        # White shirt cuffs showing
+        pygame.draw.rect(screen, (255, 255, 255), (x-24, y+29, 8, 5))
+        pygame.draw.rect(screen, (255, 255, 255), (x+16, y+29, 8, 5))
+        pygame.draw.circle(screen, (200, 200, 200), (x-22, y+31), 1)  # Cufflink
+        pygame.draw.circle(screen, (200, 200, 200), (x+18, y+31), 1)
         
-        # Hands with realistic skin tone
+        # Hands with realistic anatomy and skin tone
         pygame.draw.ellipse(screen, head_color, (x-25, y+30, 8, 12))
         pygame.draw.ellipse(screen, head_color, (x+17, y+30, 8, 12))
+        pygame.draw.ellipse(screen, (210, 170, 120), (x-24, y+31, 6, 10))  # Hand highlights
+        pygame.draw.ellipse(screen, (210, 170, 120), (x+18, y+31, 6, 10))
+        # Finger details
+        pygame.draw.line(screen, (200, 160, 110), (x-23, y+35), (x-23, y+40), 1)  # Thumb
+        pygame.draw.line(screen, (200, 160, 110), (x-21, y+37), (x-21, y+42), 1)  # Index
+        pygame.draw.line(screen, (200, 160, 110), (x+19, y+35), (x+19, y+40), 1)
+        pygame.draw.line(screen, (200, 160, 110), (x+21, y+37), (x+21, y+42), 1)
         
-        # Professional Italian leather shoes
+        # Professional Italian leather Oxford shoes with mirror shine
         shoe_color = (40, 20, 10)
+        # Dress pants showing above shoes
+        pygame.draw.rect(screen, suit_color, (x-14, y+40, 14, 6))
+        pygame.draw.rect(screen, suit_color, (x, y+40, 14, 6))
+        # Shoes with realistic shape
         pygame.draw.ellipse(screen, shoe_color, (x-14, y+42, 14, 8))
         pygame.draw.ellipse(screen, shoe_color, (x, y+42, 14, 8))
-        pygame.draw.ellipse(screen, (80, 40, 20), (x-13, y+43, 12, 6))  # Shoe shine
+        # Mirror polish shine
+        pygame.draw.ellipse(screen, (80, 40, 20), (x-13, y+43, 12, 6))
         pygame.draw.ellipse(screen, (80, 40, 20), (x+1, y+43, 12, 6))
+        pygame.draw.ellipse(screen, (120, 60, 30), (x-11, y+44, 8, 4))  # Bright shine spot
+        pygame.draw.ellipse(screen, (120, 60, 30), (x+3, y+44, 8, 4))
+        # Shoe laces/details
+        pygame.draw.line(screen, (60, 30, 15), (x-10, y+44), (x-8, y+46), 1)
+        pygame.draw.line(screen, (60, 30, 15), (x+4, y+44), (x+6, y+46), 1)
     elif style == 1:  # Mafia Boss - Ultra Realistic
         # Commanding presence with weathered features
         head_color = (210, 170, 120)
