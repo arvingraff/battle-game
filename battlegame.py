@@ -1589,21 +1589,9 @@ def run_game(mode, player1_name, player2_name, char_choices, network=None, is_ho
             gun_offset_y1 = player1.centery+10
             gun_offset_y2 = player2.centery+10
             
-            # Determine Player 1's current weapon based on upgrades
-            if p1_bazooka_left > 0:
-                p1_weapon = "bazooka"
-            elif p1_kannon_left > 0:
-                p1_weapon = "kannon"
-            else:
-                p1_weapon = "default"
-            
-            # Determine Player 2's current weapon based on upgrades
-            if p2_bazooka_left > 0:
-                p2_weapon = "bazooka"
-            elif p2_kannon_left > 0:
-                p2_weapon = "kannon"
-            else:
-                p2_weapon = "default"
+            # Use simple default weapon for basic run_game function
+            p1_weapon = "default"
+            p2_weapon = "default"
             
             # Draw Player 1 weapon
             hand_x1 = player1.centerx + (20 if p1_right else -20)
@@ -2092,21 +2080,9 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
             gun_offset_y1 = player1.centery+10
             gun_offset_y2 = player2.centery+10
             
-            # Determine Player 1's current weapon based on upgrades
-            if p1_bazooka_left > 0:
-                p1_weapon = "bazooka"
-            elif p1_kannon_left > 0:
-                p1_weapon = "kannon"
-            else:
-                p1_weapon = "default"
-            
-            # Determine Player 2's current weapon based on upgrades
-            if p2_bazooka_left > 0:
-                p2_weapon = "bazooka"
-            elif p2_kannon_left > 0:
-                p2_weapon = "kannon"
-            else:
-                p2_weapon = "default"
+            # Use the currently selected weapon for display
+            p1_weapon = p1_selected_weapon
+            p2_weapon = p2_selected_weapon
             
             # Draw Player 1 weapon
             hand_x1 = player1.centerx + (20 if p1_right else -20)
