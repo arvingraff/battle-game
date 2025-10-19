@@ -1787,41 +1787,370 @@ def run_coin_collection_and_shop(player1_name, player2_name, char_choices):
     return
 
 def draw_weapon(screen, x, y, right, weapon):
-    # Draws the selected weapon for a player
+    # Draws ultra-realistic weapons with museum-quality detail
     if weapon == "bazooka":
-        # Bazooka: big green tube, orange tip
+        # Ultra-realistic RPG-7 Bazooka with extreme detail
         if right:
-            pygame.draw.rect(screen, (0,180,0), (x, y-8, 44, 14))
-            pygame.draw.ellipse(screen, (255,140,0), (x+44, y-12, 12, 22))
-            pygame.draw.rect(screen, (80,40,0), (x+10, y-8, 10, 14))
-        else:
-            pygame.draw.rect(screen, (0,180,0), (x-56, y-8, 44, 14))
-            pygame.draw.ellipse(screen, (255,140,0), (x-68, y-12, 12, 22))
-            pygame.draw.rect(screen, (80,40,0), (x-20, y-8, 10, 14))
+            # Main launch tube (olive green military grade)
+            pygame.draw.rect(screen, (75, 83, 32), (x, y-9, 50, 18))
+            # Tube highlights and shadows for 3D effect
+            pygame.draw.rect(screen, (95, 103, 52), (x, y-9, 50, 4))  # Top highlight
+            pygame.draw.rect(screen, (55, 63, 22), (x, y+5, 50, 4))  # Bottom shadow
+            
+            # Warhead cone (detailed rocket tip)
+            pygame.draw.polygon(screen, (180, 50, 30), [(x+50, y), (x+65, y-2), (x+65, y+10), (x+50, y+9)])
+            pygame.draw.polygon(screen, (220, 70, 50), [(x+50, y), (x+65, y-2), (x+57, y+4)])  # Highlight
+            
+            # Warhead stabilizing fins
+            pygame.draw.polygon(screen, (160, 45, 25), [(x+58, y-8), (x+62, y-12), (x+62, y-2)])
+            pygame.draw.polygon(screen, (160, 45, 25), [(x+58, y+17), (x+62, y+20), (x+62, y+11)])
+            
+            # Front sight and grip assembly
+            pygame.draw.rect(screen, (40, 40, 40), (x+8, y-12, 3, 6))  # Front sight post
+            pygame.draw.circle(screen, (50, 50, 50), (x+10, y-13), 2)  # Sight hood
+            
+            # Trigger guard and trigger mechanism
+            pygame.draw.rect(screen, (30, 30, 30), (x+15, y+8, 8, 2))  # Guard bottom
+            pygame.draw.rect(screen, (30, 30, 30), (x+15, y+2, 2, 8))  # Guard front
+            pygame.draw.rect(screen, (30, 30, 30), (x+21, y+2, 2, 8))  # Guard back
+            pygame.draw.rect(screen, (200, 180, 50), (x+17, y+5, 3, 4))  # Trigger (gold)
+            
+            # Wooden pistol grip with realistic grain
+            pygame.draw.ellipse(screen, (101, 67, 33), (x+10, y+9, 16, 14))
+            pygame.draw.rect(screen, (101, 67, 33), (x+12, y+10, 12, 12))
+            # Wood grain details
+            pygame.draw.line(screen, (85, 55, 28), (x+13, y+12), (x+13, y+20), 1)
+            pygame.draw.line(screen, (85, 55, 28), (x+16, y+11), (x+16, y+21), 1)
+            pygame.draw.line(screen, (85, 55, 28), (x+19, y+12), (x+19, y+20), 1)
+            pygame.draw.line(screen, (85, 55, 28), (x+22, y+13), (x+22, y+19), 1)
+            
+            # Rear iron sight
+            pygame.draw.rect(screen, (40, 40, 40), (x-5, y-10, 4, 8))
+            pygame.draw.rect(screen, (60, 60, 60), (x-4, y-8, 2, 4))  # Sight notch
+            
+            # Strap mounts (metal loops)
+            pygame.draw.circle(screen, (50, 50, 50), (x+5, y), 3, 2)
+            pygame.draw.circle(screen, (50, 50, 50), (x+40, y), 3, 2)
+            
+            # Tube reinforcement bands
+            pygame.draw.rect(screen, (50, 50, 50), (x+20, y-9, 2, 18))
+            pygame.draw.rect(screen, (50, 50, 50), (x+35, y-9, 2, 18))
+            
+            # Venturi nozzle at back
+            pygame.draw.rect(screen, (60, 60, 60), (x-8, y-6, 8, 12))
+            pygame.draw.circle(screen, (30, 30, 30), (x-4, y), 4)  # Nozzle opening
+            
+        else:  # Left-facing
+            # Main launch tube (olive green military grade)
+            pygame.draw.rect(screen, (75, 83, 32), (x-50, y-9, 50, 18))
+            # Tube highlights and shadows
+            pygame.draw.rect(screen, (95, 103, 52), (x-50, y-9, 50, 4))
+            pygame.draw.rect(screen, (55, 63, 22), (x-50, y+5, 50, 4))
+            
+            # Warhead cone
+            pygame.draw.polygon(screen, (180, 50, 30), [(x-50, y), (x-65, y-2), (x-65, y+10), (x-50, y+9)])
+            pygame.draw.polygon(screen, (220, 70, 50), [(x-50, y), (x-65, y-2), (x-57, y+4)])
+            
+            # Warhead fins
+            pygame.draw.polygon(screen, (160, 45, 25), [(x-58, y-8), (x-62, y-12), (x-62, y-2)])
+            pygame.draw.polygon(screen, (160, 45, 25), [(x-58, y+17), (x-62, y+20), (x-62, y+11)])
+            
+            # Front sight
+            pygame.draw.rect(screen, (40, 40, 40), (x-11, y-12, 3, 6))
+            pygame.draw.circle(screen, (50, 50, 50), (x-10, y-13), 2)
+            
+            # Trigger guard and trigger
+            pygame.draw.rect(screen, (30, 30, 30), (x-23, y+8, 8, 2))
+            pygame.draw.rect(screen, (30, 30, 30), (x-17, y+2, 2, 8))
+            pygame.draw.rect(screen, (30, 30, 30), (x-23, y+2, 2, 8))
+            pygame.draw.rect(screen, (200, 180, 50), (x-20, y+5, 3, 4))
+            
+            # Wooden pistol grip with grain
+            pygame.draw.ellipse(screen, (101, 67, 33), (x-26, y+9, 16, 14))
+            pygame.draw.rect(screen, (101, 67, 33), (x-24, y+10, 12, 12))
+            pygame.draw.line(screen, (85, 55, 28), (x-13, y+12), (x-13, y+20), 1)
+            pygame.draw.line(screen, (85, 55, 28), (x-16, y+11), (x-16, y+21), 1)
+            pygame.draw.line(screen, (85, 55, 28), (x-19, y+12), (x-19, y+20), 1)
+            pygame.draw.line(screen, (85, 55, 28), (x-22, y+13), (x-22, y+19), 1)
+            
+            # Rear sight
+            pygame.draw.rect(screen, (40, 40, 40), (x+1, y-10, 4, 8))
+            pygame.draw.rect(screen, (60, 60, 60), (x+2, y-8, 2, 4))
+            
+            # Strap mounts
+            pygame.draw.circle(screen, (50, 50, 50), (x-5, y), 3, 2)
+            pygame.draw.circle(screen, (50, 50, 50), (x-40, y), 3, 2)
+            
+            # Reinforcement bands
+            pygame.draw.rect(screen, (50, 50, 50), (x-22, y-9, 2, 18))
+            pygame.draw.rect(screen, (50, 50, 50), (x-37, y-9, 2, 18))
+            
+            # Venturi nozzle
+            pygame.draw.rect(screen, (60, 60, 60), (x, y-6, 8, 12))
+            pygame.draw.circle(screen, (30, 30, 30), (x+4, y), 4)
+            
     elif weapon == "kannon":
-        # Kannon: big gray barrel, gold tip
+        # Ultra-realistic Artillery Cannon with museum-grade detail
         if right:
-            pygame.draw.rect(screen, (120,120,120), (x, y-10, 38, 18))
-            pygame.draw.ellipse(screen, (255,215,0), (x+38, y-14, 14, 26))
-            pygame.draw.rect(screen, (80,80,80), (x+10, y-10, 10, 18))
-        else:
-            pygame.draw.rect(screen, (120,120,120), (x-52, y-10, 38, 18))
-            pygame.draw.ellipse(screen, (255,215,0), (x-66, y-14, 14, 26))
-            pygame.draw.rect(screen, (80,80,80), (x-20, y-10, 10, 18))
+            # Main barrel (battleship gray steel)
+            pygame.draw.rect(screen, (105, 105, 105), (x, y-11, 45, 22))
+            # Barrel highlights (top shine)
+            pygame.draw.rect(screen, (145, 145, 145), (x, y-11, 45, 5))
+            # Barrel shadows (bottom)
+            pygame.draw.rect(screen, (75, 75, 75), (x, y+6, 45, 5))
+            
+            # Muzzle brake/flash suppressor (detailed gold-brass finish)
+            pygame.draw.rect(screen, (184, 134, 11), (x+45, y-13, 8, 26))
+            # Muzzle brake vents (4 rectangular cuts)
+            pygame.draw.rect(screen, (30, 30, 30), (x+46, y-11, 6, 4))
+            pygame.draw.rect(screen, (30, 30, 30), (x+46, y-5, 6, 4))
+            pygame.draw.rect(screen, (30, 30, 30), (x+46, y+1, 6, 4))
+            pygame.draw.rect(screen, (30, 30, 30), (x+46, y+7, 6, 4))
+            # Muzzle highlights
+            pygame.draw.rect(screen, (255, 215, 0), (x+45, y-13, 8, 3))
+            
+            # Bore opening (dark inner barrel)
+            pygame.draw.circle(screen, (20, 20, 20), (x+53, y), 6)
+            pygame.draw.circle(screen, (40, 40, 40), (x+53, y), 4)
+            # Rifling effect
+            pygame.draw.circle(screen, (30, 30, 30), (x+53, y), 3, 1)
+            
+            # Barrel reinforcement rings (heavy artillery style)
+            pygame.draw.rect(screen, (85, 85, 85), (x+10, y-11, 3, 22))
+            pygame.draw.rect(screen, (85, 85, 85), (x+20, y-11, 3, 22))
+            pygame.draw.rect(screen, (85, 85, 85), (x+30, y-11, 3, 22))
+            pygame.draw.rect(screen, (85, 85, 85), (x+40, y-11, 3, 22))
+            
+            # Breech mechanism (back of cannon)
+            pygame.draw.rect(screen, (90, 90, 90), (x-10, y-8, 10, 16))
+            pygame.draw.circle(screen, (70, 70, 70), (x-5, y), 6)
+            pygame.draw.circle(screen, (50, 50, 50), (x-5, y), 3)  # Breech handle
+            
+            # Recoil compensator housing
+            pygame.draw.rect(screen, (95, 95, 95), (x+5, y-14, 35, 3))
+            pygame.draw.rect(screen, (95, 95, 95), (x+5, y+11, 35, 3))
+            
+            # Mounting bracket (connects to turret/vehicle)
+            pygame.draw.rect(screen, (80, 80, 80), (x-5, y-5, 8, 10))
+            pygame.draw.circle(screen, (100, 100, 100), (x-3, y-2), 2)  # Bolt
+            pygame.draw.circle(screen, (100, 100, 100), (x-3, y+2), 2)  # Bolt
+            
+            # Elevation gear teeth
+            for i in range(5):
+                pygame.draw.rect(screen, (70, 70, 70), (x-8+i*2, y+12, 1, 3))
+            
+            # Sighting scope mount
+            pygame.draw.rect(screen, (60, 60, 60), (x+15, y-16, 8, 4))
+            pygame.draw.circle(screen, (40, 40, 60), (x+19, y-14), 2)  # Scope lens
+            
+            # Shell ejection port
+            pygame.draw.rect(screen, (50, 50, 50), (x-8, y-3, 3, 6))
+            
+            # Warning stripes on barrel (yellow/black hazard)
+            pygame.draw.polygon(screen, (255, 220, 0), [(x+25, y-11), (x+28, y-11), (x+25, y-8)])
+            pygame.draw.polygon(screen, (0, 0, 0), [(x+28, y-11), (x+31, y-11), (x+28, y-8)])
+            
+        else:  # Left-facing
+            # Main barrel
+            pygame.draw.rect(screen, (105, 105, 105), (x-45, y-11, 45, 22))
+            pygame.draw.rect(screen, (145, 145, 145), (x-45, y-11, 45, 5))
+            pygame.draw.rect(screen, (75, 75, 75), (x-45, y+6, 45, 5))
+            
+            # Muzzle brake
+            pygame.draw.rect(screen, (184, 134, 11), (x-53, y-13, 8, 26))
+            pygame.draw.rect(screen, (30, 30, 30), (x-52, y-11, 6, 4))
+            pygame.draw.rect(screen, (30, 30, 30), (x-52, y-5, 6, 4))
+            pygame.draw.rect(screen, (30, 30, 30), (x-52, y+1, 6, 4))
+            pygame.draw.rect(screen, (30, 30, 30), (x-52, y+7, 6, 4))
+            pygame.draw.rect(screen, (255, 215, 0), (x-53, y-13, 8, 3))
+            
+            # Bore opening
+            pygame.draw.circle(screen, (20, 20, 20), (x-53, y), 6)
+            pygame.draw.circle(screen, (40, 40, 40), (x-53, y), 4)
+            pygame.draw.circle(screen, (30, 30, 30), (x-53, y), 3, 1)
+            
+            # Reinforcement rings
+            pygame.draw.rect(screen, (85, 85, 85), (x-13, y-11, 3, 22))
+            pygame.draw.rect(screen, (85, 85, 85), (x-23, y-11, 3, 22))
+            pygame.draw.rect(screen, (85, 85, 85), (x-33, y-11, 3, 22))
+            pygame.draw.rect(screen, (85, 85, 85), (x-43, y-11, 3, 22))
+            
+            # Breech mechanism
+            pygame.draw.rect(screen, (90, 90, 90), (x, y-8, 10, 16))
+            pygame.draw.circle(screen, (70, 70, 70), (x+5, y), 6)
+            pygame.draw.circle(screen, (50, 50, 50), (x+5, y), 3)
+            
+            # Recoil compensator
+            pygame.draw.rect(screen, (95, 95, 95), (x-40, y-14, 35, 3))
+            pygame.draw.rect(screen, (95, 95, 95), (x-40, y+11, 35, 3))
+            
+            # Mounting bracket
+            pygame.draw.rect(screen, (80, 80, 80), (x-3, y-5, 8, 10))
+            pygame.draw.circle(screen, (100, 100, 100), (x+3, y-2), 2)
+            pygame.draw.circle(screen, (100, 100, 100), (x+3, y+2), 2)
+            
+            # Elevation gear
+            for i in range(5):
+                pygame.draw.rect(screen, (70, 70, 70), (x+6-i*2, y+12, 1, 3))
+            
+            # Sighting scope
+            pygame.draw.rect(screen, (60, 60, 60), (x-23, y-16, 8, 4))
+            pygame.draw.circle(screen, (40, 40, 60), (x-19, y-14), 2)
+            
+            # Shell ejection port
+            pygame.draw.rect(screen, (50, 50, 50), (x+5, y-3, 3, 6))
+            
+            # Warning stripes
+            pygame.draw.polygon(screen, (255, 220, 0), [(x-25, y-11), (x-28, y-11), (x-25, y-8)])
+            pygame.draw.polygon(screen, (0, 0, 0), [(x-28, y-11), (x-31, y-11), (x-28, y-8)])
+            
     else:
-        # Default gun: AK-47 style
+        # Ultra-realistic AK-47 assault rifle with extreme detail
         if right:
-            pygame.draw.rect(screen, (80,80,80), (x+20, y-4, 22, 4))
-            pygame.draw.rect(screen, (139,69,19), (x-18, y-7, 16, 8))
-            pygame.draw.rect(screen, (80,80,80), (x, y-7, 38, 8))
-            pygame.draw.arc(screen, (60,60,60), (x+10, y+2, 18, 14), 3.14, 2*3.14, 4)
-            pygame.draw.rect(screen, (60,60,60), (x+30, y+2, 6, 12))
-        else:
-            pygame.draw.rect(screen, (80,80,80), (x-42, y-4, 22, 4))
-            pygame.draw.rect(screen, (139,69,19), (x+2, y-7, 16, 8))
-            pygame.draw.rect(screen, (80,80,80), (x-38, y-7, 38, 8))
-            pygame.draw.arc(screen, (60,60,60), (x-28, y+2, 18, 14), 0, 3.14, 4)
-            pygame.draw.rect(screen, (60,60,60), (x-36, y+2, 6, 12))
+            # Wooden stock (rich walnut brown with grain)
+            pygame.draw.rect(screen, (101, 67, 33), (x-20, y-5, 18, 10))
+            # Wood grain detail
+            pygame.draw.line(screen, (85, 55, 28), (x-18, y-4), (x-18, y+4), 1)
+            pygame.draw.line(screen, (85, 55, 28), (x-14, y-3), (x-14, y+5), 1)
+            pygame.draw.line(screen, (85, 55, 28), (x-10, y-4), (x-10, y+4), 1)
+            pygame.draw.line(screen, (85, 55, 28), (x-6, y-3), (x-6, y+5), 1)
+            
+            # Receiver (stamped steel, dark gunmetal)
+            pygame.draw.rect(screen, (65, 65, 65), (x-2, y-6, 32, 12))
+            # Receiver top cover highlights
+            pygame.draw.rect(screen, (85, 85, 85), (x-2, y-6, 32, 2))
+            pygame.draw.rect(screen, (45, 45, 45), (x-2, y+4, 32, 2))
+            
+            # Dust cover rivets (authentic AK detail)
+            pygame.draw.circle(screen, (55, 55, 55), (x+5, y-4), 1)
+            pygame.draw.circle(screen, (55, 55, 55), (x+15, y-4), 1)
+            pygame.draw.circle(screen, (55, 55, 55), (x+25, y-4), 1)
+            
+            # Barrel (extending forward)
+            pygame.draw.rect(screen, (75, 75, 75), (x+30, y-3, 18, 6))
+            pygame.draw.rect(screen, (95, 95, 95), (x+30, y-3, 18, 1))  # Top shine
+            
+            # Gas tube above barrel
+            pygame.draw.rect(screen, (70, 70, 70), (x+32, y-7, 14, 3))
+            # Gas tube rings
+            pygame.draw.rect(screen, (60, 60, 60), (x+34, y-7, 1, 3))
+            pygame.draw.rect(screen, (60, 60, 60), (x+40, y-7, 1, 3))
+            
+            # Front sight post
+            pygame.draw.rect(screen, (50, 50, 50), (x+46, y-8, 2, 6))
+            pygame.draw.circle(screen, (60, 60, 60), (x+47, y-9), 2)  # Sight hood
+            pygame.draw.rect(screen, (200, 180, 50), (x+46, y-6, 2, 2))  # Gold tritium dot
+            
+            # Muzzle device (slant brake)
+            pygame.draw.polygon(screen, (60, 60, 60), [(x+48, y-2), (x+52, y-4), (x+52, y+3), (x+48, y+3)])
+            pygame.draw.circle(screen, (30, 30, 30), (x+52, y), 2)  # Bore
+            
+            # Magazine (curved banana mag - iconic AK feature)
+            pygame.draw.polygon(screen, (120, 90, 50), [(x+8, y+6), (x+18, y+8), (x+18, y+20), (x+8, y+18)])
+            # Magazine ribs
+            pygame.draw.line(screen, (100, 75, 40), (x+10, y+8), (x+10, y+18), 1)
+            pygame.draw.line(screen, (100, 75, 40), (x+14, y+8), (x+14, y+19), 1)
+            # Magazine base plate
+            pygame.draw.rect(screen, (80, 60, 30), (x+8, y+18, 10, 2))
+            
+            # Pistol grip (black polymer)
+            pygame.draw.polygon(screen, (40, 40, 40), [(x+10, y+6), (x+16, y+6), (x+14, y+16), (x+8, y+14)])
+            # Grip texture lines
+            for i in range(5):
+                pygame.draw.line(screen, (30, 30, 30), (x+10, y+7+i*2), (x+13, y+7+i*2), 1)
+            
+            # Trigger guard (stamped steel)
+            pygame.draw.rect(screen, (60, 60, 60), (x+15, y+5, 2, 8))
+            pygame.draw.rect(screen, (60, 60, 60), (x+15, y+13, 8, 2))
+            pygame.draw.rect(screen, (60, 60, 60), (x+21, y+5, 2, 10))
+            
+            # Trigger (gold finish)
+            pygame.draw.rect(screen, (200, 180, 50), (x+17, y+8, 3, 4))
+            
+            # Charging handle
+            pygame.draw.rect(screen, (55, 55, 55), (x+20, y-8, 6, 3))
+            pygame.draw.circle(screen, (65, 65, 65), (x+23, y-7), 2)
+            
+            # Rear sight (tangent style)
+            pygame.draw.rect(screen, (50, 50, 50), (x+24, y-10, 3, 6))
+            pygame.draw.rect(screen, (70, 70, 70), (x+25, y-8, 1, 3))  # Sight notch
+            
+            # Selector switch (safety lever)
+            pygame.draw.rect(screen, (180, 50, 50), (x+4, y-8, 8, 2))  # Red safety indicator
+            
+            # Sling mount
+            pygame.draw.circle(screen, (55, 55, 55), (x-5, y+2), 3, 2)
+            pygame.draw.circle(screen, (55, 55, 55), (x+28, y-2), 3, 2)
+            
+        else:  # Left-facing
+            # Wooden stock
+            pygame.draw.rect(screen, (101, 67, 33), (x+2, y-5, 18, 10))
+            pygame.draw.line(screen, (85, 55, 28), (x+18, y-4), (x+18, y+4), 1)
+            pygame.draw.line(screen, (85, 55, 28), (x+14, y-3), (x+14, y+5), 1)
+            pygame.draw.line(screen, (85, 55, 28), (x+10, y-4), (x+10, y+4), 1)
+            pygame.draw.line(screen, (85, 55, 28), (x+6, y-3), (x+6, y+5), 1)
+            
+            # Receiver
+            pygame.draw.rect(screen, (65, 65, 65), (x-30, y-6, 32, 12))
+            pygame.draw.rect(screen, (85, 85, 85), (x-30, y-6, 32, 2))
+            pygame.draw.rect(screen, (45, 45, 45), (x-30, y+4, 32, 2))
+            
+            # Rivets
+            pygame.draw.circle(screen, (55, 55, 55), (x-5, y-4), 1)
+            pygame.draw.circle(screen, (55, 55, 55), (x-15, y-4), 1)
+            pygame.draw.circle(screen, (55, 55, 55), (x-25, y-4), 1)
+            
+            # Barrel
+            pygame.draw.rect(screen, (75, 75, 75), (x-48, y-3, 18, 6))
+            pygame.draw.rect(screen, (95, 95, 95), (x-48, y-3, 18, 1))
+            
+            # Gas tube
+            pygame.draw.rect(screen, (70, 70, 70), (x-46, y-7, 14, 3))
+            pygame.draw.rect(screen, (60, 60, 60), (x-35, y-7, 1, 3))
+            pygame.draw.rect(screen, (60, 60, 60), (x-41, y-7, 1, 3))
+            
+            # Front sight
+            pygame.draw.rect(screen, (50, 50, 50), (x-48, y-8, 2, 6))
+            pygame.draw.circle(screen, (60, 60, 60), (x-47, y-9), 2)
+            pygame.draw.rect(screen, (200, 180, 50), (x-48, y-6, 2, 2))
+            
+            # Muzzle device
+            pygame.draw.polygon(screen, (60, 60, 60), [(x-48, y-2), (x-52, y-4), (x-52, y+3), (x-48, y+3)])
+            pygame.draw.circle(screen, (30, 30, 30), (x-52, y), 2)
+            
+            # Magazine
+            pygame.draw.polygon(screen, (120, 90, 50), [(x-8, y+6), (x-18, y+8), (x-18, y+20), (x-8, y+18)])
+            pygame.draw.line(screen, (100, 75, 40), (x-10, y+8), (x-10, y+18), 1)
+            pygame.draw.line(screen, (100, 75, 40), (x-14, y+8), (x-14, y+19), 1)
+            pygame.draw.rect(screen, (80, 60, 30), (x-18, y+18, 10, 2))
+            
+            # Pistol grip
+            pygame.draw.polygon(screen, (40, 40, 40), [(x-10, y+6), (x-16, y+6), (x-14, y+16), (x-8, y+14)])
+            for i in range(5):
+                pygame.draw.line(screen, (30, 30, 30), (x-10, y+7+i*2), (x-13, y+7+i*2), 1)
+            
+            # Trigger guard
+            pygame.draw.rect(screen, (60, 60, 60), (x-17, y+5, 2, 8))
+            pygame.draw.rect(screen, (60, 60, 60), (x-23, y+13, 8, 2))
+            pygame.draw.rect(screen, (60, 60, 60), (x-23, y+5, 2, 10))
+            
+            # Trigger
+            pygame.draw.rect(screen, (200, 180, 50), (x-20, y+8, 3, 4))
+            
+            # Charging handle
+            pygame.draw.rect(screen, (55, 55, 55), (x-26, y-8, 6, 3))
+            pygame.draw.circle(screen, (65, 65, 65), (x-23, y-7), 2)
+            
+            # Rear sight
+            pygame.draw.rect(screen, (50, 50, 50), (x-27, y-10, 3, 6))
+            pygame.draw.rect(screen, (70, 70, 70), (x-26, y-8, 1, 3))
+            
+            # Selector switch
+            pygame.draw.rect(screen, (180, 50, 50), (x-12, y-8, 8, 2))
+            
+            # Sling mounts
+            pygame.draw.circle(screen, (55, 55, 55), (x+5, y+2), 3, 2)
+            pygame.draw.circle(screen, (55, 55, 55), (x-28, y-2), 3, 2)
 
 # Main game with upgrades
 
