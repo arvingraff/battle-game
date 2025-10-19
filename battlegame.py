@@ -1758,6 +1758,14 @@ def run_game(mode, player1_name, player2_name, char_choices, network=None, is_ho
 # Re-add Coin Collection mode
 
 def run_coin_collection_and_shop(player1_name, player2_name, char_choices):
+    # Play coin collection music
+    try:
+        pygame.mixer.music.stop()
+        pygame.mixer.music.load('coin.mp3')
+        pygame.mixer.music.play(-1)
+    except Exception as e:
+        print(f"Error playing coin collection music: {e}")
+    
     # Coin collection phase
     player1_score = 0
     player2_score = 0
