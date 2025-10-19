@@ -588,66 +588,195 @@ def draw_mafia_character(screen, x, y, style):
     # ...add arms, legs, shoes as needed...
 
 def draw_explorer_character(screen, x, y, style):
-    if style == 0:  # Jungle Explorer (improved)
-        # Head
-        pygame.draw.ellipse(screen, (255, 224, 189), (x-15, y-35, 30, 38))
+    if style == 0:  # Jungle Explorer - Ultra Realistic
+        # Realistic human head with proper anatomy
+        head_color = (210, 180, 140)
+        pygame.draw.ellipse(screen, head_color, (x-16, y-38, 32, 42))
+        pygame.draw.ellipse(screen, (195, 165, 125), (x-14, y-36, 28, 38))  # Face shading
+        
+        # Detailed realistic eyes
+        pygame.draw.ellipse(screen, (255, 255, 255), (x-10, y-28, 8, 6))  # Left eye
+        pygame.draw.ellipse(screen, (255, 255, 255), (x+2, y-28, 8, 6))   # Right eye
+        pygame.draw.ellipse(screen, (70, 130, 180), (x-8, y-26, 4, 4))    # Left iris (blue)
+        pygame.draw.ellipse(screen, (70, 130, 180), (x+4, y-26, 4, 4))    # Right iris
+        pygame.draw.ellipse(screen, (0, 0, 0), (x-7, y-25, 2, 2))         # Left pupil
+        pygame.draw.ellipse(screen, (0, 0, 0), (x+5, y-25, 2, 2))         # Right pupil
+        
+        # Realistic eyebrows with hair texture
+        for i in range(6):
+            pygame.draw.line(screen, (101, 67, 33), (x-10+i*2, y-30), (x-9+i*2, y-32), 1)
+            pygame.draw.line(screen, (101, 67, 33), (x+2+i*2, y-30), (x+3+i*2, y-32), 1)
+        
+        # Realistic nose with shading
+        pygame.draw.polygon(screen, (190, 160, 120), [(x-1, y-22), (x+1, y-22), (x+2, y-18), (x-2, y-18)])
+        pygame.draw.line(screen, (170, 140, 100), (x-1, y-20), (x+1, y-20), 1)
+        
+        # Natural mouth
+        pygame.draw.ellipse(screen, (205, 92, 92), (x-4, y-15, 8, 4))
+        pygame.draw.line(screen, (180, 75, 75), (x-3, y-13), (x+3, y-13), 1)
+        
+        # Stubble/beard texture
+        for beard_x in range(x-8, x+8, 2):
+            for beard_y in range(y-12, y-5, 2):
+                if (beard_x + beard_y) % 3 == 0:
+                    pygame.draw.circle(screen, (80, 50, 30), (beard_x, beard_y), 1)
+        
+        # Professional Safari Hat
+        hat_color = (139, 69, 19)
+        pygame.draw.ellipse(screen, hat_color, (x-18, y-45, 36, 12))
+        pygame.draw.ellipse(screen, (101, 67, 33), (x-16, y-43, 32, 8))
+        pygame.draw.ellipse(screen, hat_color, (x-22, y-40, 44, 6))  # Brim
+        pygame.draw.rect(screen, (205, 133, 63), (x-15, y-42, 30, 3))  # Hat band
+        pygame.draw.rect(screen, (184, 134, 11), (x+8, y-43, 4, 5))   # Buckle
+        
+        # Realistic neck
+        pygame.draw.rect(screen, head_color, (x-6, y-8, 12, 15))
+        
+        # Professional Safari Shirt with details
+        shirt_color = (34, 139, 34)
+        pygame.draw.rect(screen, shirt_color, (x-14, y+5, 28, 35))
+        pygame.draw.polygon(screen, (28, 115, 28), [(x-10, y+5), (x-6, y), (x+6, y), (x+10, y+5)])  # Collar
+        pygame.draw.rect(screen, (28, 115, 28), (x-2, y+5, 4, 30))  # Button placket
+        
+        # Shirt buttons
+        for btn in range(5):
+            pygame.draw.circle(screen, (240, 230, 140), (x, y+8+btn*6), 2)
+            pygame.draw.circle(screen, (200, 190, 100), (x, y+8+btn*6), 1)
+        
+        # Chest pockets
+        pygame.draw.rect(screen, (28, 115, 28), (x-12, y+12, 8, 6))
+        pygame.draw.rect(screen, (28, 115, 28), (x+4, y+12, 8, 6))
+        
+        # Realistic arms
+        pygame.draw.ellipse(screen, head_color, (x-22, y+8, 10, 25))
+        pygame.draw.ellipse(screen, head_color, (x+12, y+8, 10, 25))
+        
+        # Hands with fingers
+        pygame.draw.ellipse(screen, head_color, (x-25, y+30, 8, 12))
+        pygame.draw.ellipse(screen, head_color, (x+17, y+30, 8, 12))
+        for finger in range(3):
+            pygame.draw.line(screen, (180, 150, 110), (x-23+finger*2, y+32), (x-23+finger*2, y+38), 1)
+            pygame.draw.line(screen, (180, 150, 110), (x+19+finger*2, y+32), (x+19+finger*2, y+38), 1)
+        
+        # Utility Belt
+        pygame.draw.rect(screen, (101, 67, 33), (x-15, y+35, 30, 4))
+        pygame.draw.rect(screen, (184, 134, 11), (x-3, y+34, 6, 6))  # Buckle
+        pygame.draw.rect(screen, (101, 67, 33), (x-13, y+36, 4, 6))  # Pouch
+        pygame.draw.rect(screen, (101, 67, 33), (x+9, y+36, 4, 6))   # Pouch
+        
+        # Cargo Pants
+        pants_color = (107, 142, 35)
+        pygame.draw.rect(screen, pants_color, (x-12, y+40, 24, 30))
+        pygame.draw.rect(screen, (85, 115, 25), (x-11, y+45, 6, 8))  # Cargo pocket
+        pygame.draw.rect(screen, (85, 115, 25), (x+5, y+45, 6, 8))   # Cargo pocket
+        
+        # Legs
+        pygame.draw.rect(screen, pants_color, (x-10, y+70, 8, 25))
+        pygame.draw.rect(screen, pants_color, (x+2, y+70, 8, 25))
+        
+        # Professional Hiking Boots
+        boot_color = (101, 67, 33)
+        pygame.draw.ellipse(screen, boot_color, (x-14, y+90, 12, 8))
+        pygame.draw.ellipse(screen, boot_color, (x+2, y+90, 12, 8))
+        pygame.draw.ellipse(screen, (60, 40, 20), (x-15, y+95, 14, 4))  # Soles
+        pygame.draw.ellipse(screen, (60, 40, 20), (x+1, y+95, 14, 4))
+        
+        # Boot laces
+        for lace in range(4):
+            pygame.draw.line(screen, (255, 255, 255), (x-11+lace*2, y+90), (x-10+lace*2, y+94), 1)
+            pygame.draw.line(screen, (255, 255, 255), (x+5+lace*2, y+90), (x+6+lace*2, y+94), 1)
+
+    elif style == 1:  # Desert Adventurer - Ultra Realistic
+        # Sun-weathered desert explorer with authentic gear
+        
+        # Head with sun-tanned, weathered skin
+        head_color = (222, 184, 135)
+        pygame.draw.ellipse(screen, head_color, (x-16, y-38, 32, 42))
+        pygame.draw.ellipse(screen, (200, 165, 115), (x-14, y-36, 28, 38))
+        
+        # Intense desert eyes with squint lines
+        pygame.draw.ellipse(screen, (255, 255, 255), (x-10, y-28, 8, 5))  # Squinted from sun
+        pygame.draw.ellipse(screen, (255, 255, 255), (x+2, y-28, 8, 5))
+        pygame.draw.ellipse(screen, (139, 69, 19), (x-8, y-26, 4, 3))     # Brown eyes
+        pygame.draw.ellipse(screen, (139, 69, 19), (x+4, y-26, 4, 3))
+        pygame.draw.ellipse(screen, (0, 0, 0), (x-7, y-25, 2, 2))         # Left pupil
+        pygame.draw.ellipse(screen, (0, 0, 0), (x+5, y-25, 2, 2))         # Right pupil
+        
+        # Sun wrinkles and weathering
+        pygame.draw.line(screen, (180, 150, 100), (x-12, y-30), (x-8, y-28), 1)  # Crow's feet
+        pygame.draw.line(screen, (180, 150, 100), (x+8, y-28), (x+12, y-30), 1)
+        pygame.draw.line(screen, (180, 150, 100), (x-4, y-20), (x+4, y-20), 1)   # Forehead line
+        
+        # Wide-brim desert sun hat
+        hat_color = (210, 180, 140)
+        pygame.draw.ellipse(screen, hat_color, (x-25, y-42, 50, 8))    # Wide brim
+        pygame.draw.ellipse(screen, hat_color, (x-16, y-45, 32, 12))   # Crown
+        pygame.draw.ellipse(screen, (190, 160, 120), (x-14, y-43, 28, 8))
+        pygame.draw.rect(screen, (139, 69, 19), (x-15, y-42, 30, 3))  # Hat band
+        pygame.draw.rect(screen, (184, 134, 11), (x+8, y-43, 4, 5))   # Buckle
+        
+        # Protective neck scarf/shemagh
+        scarf_color = (245, 245, 220)
+        pygame.draw.polygon(screen, scarf_color, [(x-12, y-8), (x+12, y-8), (x+8, y+5), (x-8, y+5)])
+        for i in range(3):
+            pygame.draw.line(screen, (220, 220, 200), (x-10+i*7, y-6), (x-8+i*7, y+3), 1)
+        
+        # Desert clothing - light colored and breathable
+        shirt_color = (245, 245, 220)
+        pygame.draw.rect(screen, shirt_color, (x-14, y+5, 28, 35))
+        pygame.draw.polygon(screen, (225, 225, 200), [(x-10, y+5), (x-6, y), (x+6, y), (x+10, y+5)])
+        pygame.draw.rect(screen, (225, 225, 200), (x-2, y+5, 4, 30))
+        
+        # Arms with sun protection
+        pygame.draw.ellipse(screen, head_color, (x-22, y+8, 10, 25))
+        pygame.draw.ellipse(screen, head_color, (x+12, y+8, 10, 25))
+        
+        # Desert pants
+        pants_color = (210, 180, 140)
+        pygame.draw.rect(screen, pants_color, (x-12, y+40, 24, 30))
+        
+        # Legs
+        pygame.draw.rect(screen, pants_color, (x-10, y+70, 8, 25))
+        pygame.draw.rect(screen, pants_color, (x+2, y+70, 8, 25))
+        
+        # Desert boots
+        boot_color = (139, 69, 19)
+        pygame.draw.ellipse(screen, boot_color, (x-14, y+90, 12, 8))
+        pygame.draw.ellipse(screen, boot_color, (x+2, y+90, 12, 8))
+        
+    elif style == 2:  # Arctic Explorer - Ultra Realistic
+        # Head with cold-weather gear
+        head_color = (255, 230, 200)
+        pygame.draw.ellipse(screen, head_color, (x-16, y-38, 32, 42))
+        
         # Eyes
-        pygame.draw.ellipse(screen, (255,255,255), (x-8, y-25, 7, 10))
-        pygame.draw.ellipse(screen, (255,255,255), (x+1, y-25, 7, 10))
-        pygame.draw.ellipse(screen, (0,0,0), (x-5, y-21, 3, 5))
-        pygame.draw.ellipse(screen, (0,0,0), (x+4, y-21, 3, 5))
-        # Explorer hat
-        pygame.draw.rect(screen, (139,69,19), (x-15, y-40, 30, 10))
-        pygame.draw.rect(screen, (205,133,63), (x-10, y-45, 20, 8))
-        pygame.draw.ellipse(screen, (139,69,19), (x-15, y-48, 30, 10))
-        # Smile
-        pygame.draw.arc(screen, (255,0,0), (x-7, y-10, 14, 10), 3.14, 2*3.14, 3)
-        # Backpack
-        pygame.draw.rect(screen, (80,50,20), (x-18, y+10, 36, 18))
-        # Green shirt
-        pygame.draw.rect(screen, (0, 200, 0), (x-10, y+3, 20, 38))
-        # Boots
-        pygame.draw.ellipse(screen, (80,50,20), (x-12, y+38, 12, 8))
-        pygame.draw.ellipse(screen, (80,50,20), (x+0, y+38, 12, 8))
-    elif style == 1:  # Desert Adventurer (improved)
-        # Head
-        pygame.draw.ellipse(screen, (255, 224, 189), (x-15, y-35, 30, 38))
-        # Eyes
-        pygame.draw.ellipse(screen, (255,255,255), (x-8, y-25, 7, 10))
-        pygame.draw.ellipse(screen, (255,255,255), (x+1, y-25, 7, 10))
-        pygame.draw.ellipse(screen, (0,0,0), (x-5, y-21, 3, 5))
-        pygame.draw.ellipse(screen, (0,0,0), (x+4, y-21, 3, 5))
-        # Sun hat
-        pygame.draw.rect(screen, (210,180,140), (x-15, y-40, 30, 10))
-        pygame.draw.ellipse(screen, (210,180,140), (x-15, y-48, 30, 10))
-        # Scarf
-        pygame.draw.rect(screen, (255,222,173), (x-10, y-45, 20, 8))
-        # Goggles
-        pygame.draw.rect(screen, (255,215,0), (x-10, y+25, 20, 8))
-        # Smile
-        pygame.draw.arc(screen, (255,140,0), (x-7, y-10, 14, 10), 3.14, 2*3.14, 3)
-        # Backpack
-        pygame.draw.rect(screen, (210,180,140), (x-18, y+10, 36, 18))
-        # Shirt
-        pygame.draw.rect(screen, (255, 228, 181), (x-10, y+3, 20, 38))
-        # Boots
-        pygame.draw.ellipse(screen, (210,180,140), (x-12, y+38, 12, 8))
-        pygame.draw.ellipse(screen, (210,180,140), (x+0, y+38, 12, 8))
-    elif style == 2:  # Arctic Explorer (improved)
-        # Head
-        pygame.draw.ellipse(screen, (220, 220, 255), (x-15, y-35, 30, 38))
-        # Eyes
-        pygame.draw.ellipse(screen, (255,255,255), (x-8, y-25, 7, 10))
-        pygame.draw.ellipse(screen, (255,255,255), (x+1, y-25, 7, 10))
-        pygame.draw.ellipse(screen, (0,0,0), (x-5, y-21, 3, 5))
-        pygame.draw.ellipse(screen, (0,0,0), (x+4, y-21, 3, 5))
-        # Fur hood
-        pygame.draw.rect(screen, (135,206,250), (x-15, y-40, 30, 10))
-        pygame.draw.ellipse(screen, (255,255,255), (x-15, y-48, 30, 10))
-        # Fur trim
-        pygame.draw.rect(screen, (255,255,255), (x-10, y-45, 20, 8))
-        # Rosy cheeks
-        pygame.draw.circle(screen, (255,182,193), (x, y-20), 4)
+        pygame.draw.ellipse(screen, (255, 255, 255), (x-10, y-28, 8, 6))
+        pygame.draw.ellipse(screen, (255, 255, 255), (x+2, y-28, 8, 6))
+        pygame.draw.ellipse(screen, (70, 130, 180), (x-8, y-26, 4, 4))
+        pygame.draw.ellipse(screen, (70, 130, 180), (x+4, y-26, 4, 4))
+        
+        # Cold weather hood/hat
+        pygame.draw.ellipse(screen, (25, 25, 112), (x-20, y-45, 40, 15))
+        pygame.draw.ellipse(screen, (255, 255, 255), (x-18, y-43, 36, 8))  # Fur trim
+        
+        # Heavy winter clothing
+        coat_color = (25, 25, 112)
+        pygame.draw.rect(screen, coat_color, (x-16, y+5, 32, 40))
+        
+        # Arms
+        pygame.draw.ellipse(screen, coat_color, (x-24, y+8, 12, 30))
+        pygame.draw.ellipse(screen, coat_color, (x+12, y+8, 12, 30))
+        
+        # Insulated pants
+        pygame.draw.rect(screen, (47, 79, 79), (x-14, y+45, 28, 25))
+        
+        # Legs
+        pygame.draw.rect(screen, (47, 79, 79), (x-12, y+70, 10, 25))
+        pygame.draw.rect(screen, (47, 79, 79), (x+2, y+70, 10, 25))
+        
+        # Heavy winter boots
+        pygame.draw.ellipse(screen, (139, 69, 19), (x-16, y+90, 16, 10))
+        pygame.draw.ellipse(screen, (139, 69, 19), (x, y+90, 16, 10))
         # Smile
         pygame.draw.arc(screen, (255,0,0), (x-7, y-10, 14, 10), 3.14, 2*3.14, 3)
         # Blue parka
