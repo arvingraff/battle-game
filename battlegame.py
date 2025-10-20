@@ -94,7 +94,7 @@ def online_get_name_and_character(player_label, mode):
 
 def mode_lobby():
     selected = 0
-    options = ["Battle Mode", "Coin Collection Mode", "Survival Mode", "Play Music", "Stop Music", "Watch Cute Video", "Watch Grandma", "Exit"]
+    options = ["Battle Mode", "Coin Collection Mode", "Makka Pakka Mode", "Survival Mode", "Play Music", "Stop Music", "Watch Cute Video", "Watch Grandma", "Exit"]
     music_playing = False
     pygame.mixer.music.stop()  # Ensure no music plays automatically
     while True:
@@ -140,6 +140,8 @@ def mode_lobby():
                             return 0
                         elif options[selected] == "Coin Collection Mode":
                             return 1
+                        elif options[selected] == "Makka Pakka Mode":
+                            return 3
                         elif options[selected] == "Survival Mode":
                             return 2
 
@@ -3156,6 +3158,220 @@ def run_survival_mode(num_players, player1_name, player2_name, player3_name, cha
         pygame.display.flip()
         clock.tick(60)
 
+# Makka Pakka Mode Functions
+def draw_makka_pakka(screen, x, y, color):
+    """Draw a cute Makka Pakka character"""
+    # Round body
+    pygame.draw.ellipse(screen, color, (x-20, y-15, 40, 50))
+    
+    # Lighter belly
+    lighter = tuple(min(255, c + 50) for c in color)
+    pygame.draw.ellipse(screen, lighter, (x-12, y-5, 24, 35))
+    
+    # Head
+    pygame.draw.circle(screen, (255, 220, 177), (x, y-25), 15)
+    
+    # Big cute eyes
+    pygame.draw.circle(screen, (255, 255, 255), (x-6, y-27), 5)
+    pygame.draw.circle(screen, (255, 255, 255), (x+6, y-27), 5)
+    pygame.draw.circle(screen, (0, 0, 0), (x-5, y-26), 3)
+    pygame.draw.circle(screen, (0, 0, 0), (x+5, y-26), 3)
+    
+    # Cute smile
+    pygame.draw.arc(screen, (0, 0, 0), (x-6, y-22, 12, 8), 3.14, 6.28, 2)
+    
+    # Little hat
+    pygame.draw.polygon(screen, (139, 69, 19), [(x-10, y-32), (x+10, y-32), (x, y-42)])
+    
+    # Arms
+    pygame.draw.circle(screen, color, (x-18, y), 8)
+    pygame.draw.circle(screen, color, (x+18, y), 8)
+    
+    # Legs
+    pygame.draw.circle(screen, color, (x-10, y+30), 8)
+    pygame.draw.circle(screen, color, (x+10, y+30), 8)
+    
+    # Sponge in hand
+    pygame.draw.rect(screen, (255, 255, 0), (x-25, y-5, 8, 8))
+    pygame.draw.circle(screen, (200, 200, 0), (x-23, y-3), 2)
+    pygame.draw.circle(screen, (200, 200, 0), (x-19, y-1), 2)
+
+def run_makka_pakka_mode(player1_name, player2_name):
+    """Makka Pakka Mode: Players run around washing faces to score points!"""
+    try:
+        pygame.mixer.music.stop()
+        pygame.mixer.music.load('fart.mp3')
+        pygame.mixer.music.play(-1)
+    except Exception as e:
+        print(f"Error playing Makka Pakka music: {e}")
+    
+    # Initialize players
+    player1 = pygame.Rect(WIDTH//4, HEIGHT//2, 50, 50)
+    player2 = pygame.Rect(3*WIDTH//4, HEIGHT//2, 50, 50)
+    
+    # Game state
+    player1_score = 0
+    player2_score = 0
+    speed = 7
+    game_duration = 90
+    end_time = time.time() + game_duration
+    
+    # Create dirty faces
+    faces = []
+    for _ in range(15):
+        face = {
+            'rect': pygame.Rect(random.randint(60, WIDTH-60), random.randint(60, HEIGHT-60), 40, 40),
+            'dirty': True,
+            'washer': None
+            }
+        faces.append(face)
+    
+    running = True
+    
+    while running:
+        now = time.time()
+        time_left = max(0, end_time - now)
+        
+        if time_left <= 0:
+            break
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return 'lobby'
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                back_rect = pygame.Rect(10, 10, 100, 40)
+                if back_rect.collidepoint(event.pos):
+                    return 'lobby'
+        
+        # Player controls
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_w] and player1.y > 60:
+            player1.y -= speed
+        if keys[pygame.K_s] and player1.y < HEIGHT - 60:
+            player1.y += speed
+        if keys[pygame.K_a] and player1.x > 10:
+            player1.x -= speed
+        if keys[pygame.K_d] and player1.x < WIDTH - 60:
+            player1.x += speed
+        
+        if keys[pygame.K_UP] and player2.y > 60:
+            player2.y -= speed
+        if keys[pygame.K_DOWN] and player2.y < HEIGHT - 60:
+            player2.y += speed
+        if keys[pygame.K_LEFT] and player2.x > 10:
+            player2.x -= speed
+        if keys[pygame.K_RIGHT] and player2.x < WIDTH - 60:
+            player2.x += speed
+        
+        # Check collisions
+        for face in faces:
+            if face['dirty']:
+                if player1.colliderect(face['rect']):
+                    face['dirty'] = False
+                    player1_score += 1
+                    face['washer'] = 1
+                elif player2.colliderect(face['rect']):
+                    face['dirty'] = False
+                    player2_score += 1
+                    face['washer'] = 2
+        
+        # Draw
+        screen.fill((173, 216, 230))
+        
+        # Draw grass
+        for i in range(0, WIDTH, 20):
+            for j in range(0, HEIGHT, 20):
+                grass_shade = (34 + random.randint(-10, 10), 139 + random.randint(-20, 20), 34 + random.randint(-10, 10))
+                pygame.draw.circle(screen, grass_shade, (i, j), 3)
+        
+        # Draw faces
+        for face in faces:
+            if face['dirty']:
+                pygame.draw.ellipse(screen, (255, 220, 177), face['rect'])
+                pygame.draw.ellipse(screen, (139, 90, 43), (face['rect'].x+5, face['rect'].y+5, 30, 30))
+                pygame.draw.circle(screen, (0, 0, 0), (face['rect'].x+12, face['rect'].y+15), 3)
+                pygame.draw.circle(screen, (0, 0, 0), (face['rect'].x+28, face['rect'].y+15), 3)
+                pygame.draw.arc(screen, (0, 0, 0), (face['rect'].x+10, face['rect'].y+25, 20, 10), 0, 3.14, 2)
+            else:
+                pygame.draw.ellipse(screen, (255, 220, 177), face['rect'])
+                pygame.draw.circle(screen, (0, 0, 0), (face['rect'].x+12, face['rect'].y+15), 3)
+                pygame.draw.circle(screen, (0, 0, 0), (face['rect'].x+28, face['rect'].y+15), 3)
+                pygame.draw.arc(screen, (0, 0, 0), (face['rect'].x+10, face['rect'].y+20, 20, 10), 3.14, 6.28, 2)
+                for _ in range(3):
+                    sx = face['rect'].x + random.randint(-5, 45)
+                    sy = face['rect'].y + random.randint(-5, 45)
+                    pygame.draw.circle(screen, (255, 255, 0), (sx, sy), 2)
+                if face['washer'] == 1:
+                    pygame.draw.circle(screen, (255, 0, 0), (face['rect'].x+20, face['rect'].y-5), 4)
+                elif face['washer'] == 2:
+                    pygame.draw.circle(screen, (0, 0, 255), (face['rect'].x+20, face['rect'].y-5), 4)
+        
+        # Draw characters
+        draw_makka_pakka(screen, player1.x+25, player1.y+25, (255, 0, 0))
+        draw_makka_pakka(screen, player2.x+25, player2.y+25, (0, 0, 255))
+        
+        # Draw names
+        p1_text = name_font.render(player1_name, True, (255, 0, 0))
+        p2_text = name_font.render(player2_name, True, (0, 0, 255))
+        screen.blit(p1_text, (player1.x+25-p1_text.get_width()//2, player1.y-15))
+        screen.blit(p2_text, (player2.x+25-p2_text.get_width()//2, player2.y-15))
+        
+        # Draw UI
+        score_text = font.render(f"{player1_name}: {player1_score}  |  {player2_name}: {player2_score}", True, (255, 255, 255))
+        screen.blit(score_text, (WIDTH//2-score_text.get_width()//2, 60))
+        
+        timer_text = lobby_font.render(f"Time: {int(time_left)}s", True, (255, 215, 0))
+        screen.blit(timer_text, (WIDTH//2-timer_text.get_width()//2, 10))
+        
+        # Back button
+        back_rect = pygame.Rect(10, 10, 100, 40)
+        pygame.draw.rect(screen, (100, 100, 100), back_rect)
+        back_text = name_font.render("Back (ESC)", True, (255, 255, 255))
+        screen.blit(back_text, (back_rect.centerx-back_text.get_width()//2, back_rect.centery-back_text.get_height()//2))
+        
+        pygame.display.flip()
+        clock.tick(60)
+    
+    # Game over screen
+    while True:
+        screen.fill((50, 50, 50))
+        
+        title = lobby_font.render("Game Over!", True, (255, 215, 0))
+        screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-150))
+        
+        if player1_score > player2_score:
+            winner_text = lobby_font.render(f"{player1_name} Wins!", True, (0, 255, 0))
+        elif player2_score > player1_score:
+            winner_text = lobby_font.render(f"{player2_name} Wins!", True, (0, 255, 0))
+        else:
+            winner_text = lobby_font.render("It's a Tie!", True, (255, 255, 0))
+        screen.blit(winner_text, (WIDTH//2-winner_text.get_width()//2, HEIGHT//2-80))
+        
+        final_score = font.render(f"{player1_name}: {player1_score} faces  |  {player2_name}: {player2_score} faces", True, (255, 255, 255))
+        screen.blit(final_score, (WIDTH//2-final_score.get_width()//2, HEIGHT//2-20))
+        
+        back_button = pygame.Rect(WIDTH//2-100, HEIGHT//2+40, 200, 60)
+        pygame.draw.rect(screen, (0, 150, 0), back_button)
+        back_text = font.render("Back to Menu", True, (255, 255, 255))
+        screen.blit(back_text, (back_button.centerx-back_text.get_width()//2, back_button.centery-back_text.get_height()//2))
+        
+        pygame.display.flip()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE or event.key == pygame.K_RETURN:
+                    return 'lobby'
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if back_button.collidepoint(event.pos):
+                    return 'lobby'
+
 # Main program loop
 while True:
     mode = mode_lobby()
@@ -3522,6 +3738,58 @@ while True:
             else:
                 continue
             break  # Always return to main menu after game ends
+    elif mode == 3:
+        # Makka Pakka Mode - Face Washing Game
+        while True:
+            screen.fill((30, 30, 30))
+            title = lobby_font.render("Makka Pakka Mode", True, (255, 215, 0))
+            screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-150))
+            
+            subtitle = font.render("Wash the most faces to win!", True, (200, 200, 200))
+            screen.blit(subtitle, (WIDTH//2-subtitle.get_width()//2, HEIGHT//2-100))
+            
+            # Show instructions
+            instr1 = name_font.render("Player 1: WASD to move and wash faces", True, (255, 0, 0))
+            instr2 = name_font.render("Player 2: Arrow Keys to move and wash faces", True, (0, 0, 255))
+            instr3 = name_font.render("Run into dirty faces to clean them!", True, (255, 255, 0))
+            screen.blit(instr1, (WIDTH//2-instr1.get_width()//2, HEIGHT//2-50))
+            screen.blit(instr2, (WIDTH//2-instr2.get_width()//2, HEIGHT//2-20))
+            screen.blit(instr3, (WIDTH//2-instr3.get_width()//2, HEIGHT//2+10))
+            
+            # Start button
+            start_rect = pygame.Rect(WIDTH//2-100, HEIGHT//2+60, 200, 60)
+            pygame.draw.rect(screen, (0, 180, 0), start_rect)
+            start_text = font.render("Start Game", True, (255, 255, 255))
+            screen.blit(start_text, (start_rect.centerx-start_text.get_width()//2, start_rect.centery-start_text.get_height()//2))
+            
+            # Back button
+            back_rect = pygame.Rect(WIDTH//2-100, HEIGHT-100, 200, 60)
+            pygame.draw.rect(screen, (100, 100, 100), back_rect)
+            back_text = font.render("Back", True, (255, 255, 255))
+            screen.blit(back_text, (back_rect.centerx-back_text.get_width()//2, back_rect.centery-back_text.get_height()//2))
+            
+            pygame.display.flip()
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        break
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if start_rect.collidepoint(event.pos):
+                        # Get player names and start
+                        player1_name = get_player_name("Player 1, enter your name:", HEIGHT//2 - 120)
+                        player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
+                        result = run_makka_pakka_mode(player1_name, player2_name)
+                        if result == 'lobby':
+                            break
+                    if back_rect.collidepoint(event.pos):
+                        break
+            else:
+                continue
+            break
 
 
 
