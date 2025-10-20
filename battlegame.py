@@ -3222,9 +3222,14 @@ def run_makka_pakka_mode(player1_name, player2_name):
         face = {
             'rect': pygame.Rect(random.randint(60, WIDTH-60), random.randint(60, HEIGHT-60), 40, 40),
             'dirty': True,
-            'washer': None
+            'washer': None,
+            'wash_progress': 0  # Track washing progress (0-10)
             }
         faces.append(face)
+    
+    # Track button press states to detect new presses
+    p1_shoot_pressed = False
+    p2_shoot_pressed = False
     
     running = True
     
@@ -3267,17 +3272,36 @@ def run_makka_pakka_mode(player1_name, player2_name):
         if keys[pygame.K_RIGHT] and player2.x < WIDTH - 60:
             player2.x += speed
         
-        # Check collisions
+        # Check shooting buttons (Space for P1, Right Shift for P2)
+        p1_shoot_now = keys[pygame.K_SPACE]
+        p2_shoot_now = keys[pygame.K_RSHIFT]
+        
+        # Detect new button presses
+        p1_new_press = p1_shoot_now and not p1_shoot_pressed
+        p2_new_press = p2_shoot_now and not p2_shoot_pressed
+        
+        p1_shoot_pressed = p1_shoot_now
+        p2_shoot_pressed = p2_shoot_now
+        
+        # Check washing - need to press button while near face
         for face in faces:
             if face['dirty']:
+                # Player 1 washing
                 if player1.colliderect(face['rect']):
-                    face['dirty'] = False
-                    player1_score += 1
-                    face['washer'] = 1
+                    if p1_new_press:
+                        face['wash_progress'] += 1
+                        if face['wash_progress'] >= 10:
+                            face['dirty'] = False
+                            player1_score += 1
+                            face['washer'] = 1
+                # Player 2 washing
                 elif player2.colliderect(face['rect']):
-                    face['dirty'] = False
-                    player2_score += 1
-                    face['washer'] = 2
+                    if p2_new_press:
+                        face['wash_progress'] += 1
+                        if face['wash_progress'] >= 10:
+                            face['dirty'] = False
+                            player2_score += 1
+                            face['washer'] = 2
         
         # Draw
         screen.fill((173, 216, 230))
@@ -3297,6 +3321,20 @@ def run_makka_pakka_mode(player1_name, player2_name):
                 pygame.draw.circle(screen, (0, 0, 0), (face['rect'].x+12, face['rect'].y+15), 3)
                 pygame.draw.circle(screen, (0, 0, 0), (face['rect'].x+28, face['rect'].y+15), 3)
                 pygame.draw.arc(screen, (0, 0, 0), (face['rect'].x+10, face['rect'].y+25, 20, 10), 0, 3.14, 2)
+                
+                # Draw washing progress bar if being washed
+                if face['wash_progress'] > 0:
+                    bar_width = 40
+                    bar_height = 6
+                    bar_x = face['rect'].x
+                    bar_y = face['rect'].y - 10
+                    # Background bar (gray)
+                    pygame.draw.rect(screen, (100, 100, 100), (bar_x, bar_y, bar_width, bar_height))
+                    # Progress bar (blue)
+                    progress_width = int((face['wash_progress'] / 10) * bar_width)
+                    pygame.draw.rect(screen, (0, 200, 255), (bar_x, bar_y, progress_width, bar_height))
+                    # Border
+                    pygame.draw.rect(screen, (0, 0, 0), (bar_x, bar_y, bar_width, bar_height), 1)
             else:
                 # Clean washed face - nice skin color with sparkles!
                 pygame.draw.ellipse(screen, (255, 220, 177), face['rect'])
@@ -3754,9 +3792,9 @@ while True:
             screen.blit(subtitle, (WIDTH//2-subtitle.get_width()//2, HEIGHT//2-100))
             
             # Show instructions
-            instr1 = name_font.render("Player 1: WASD to move and wash faces", True, (255, 0, 0))
-            instr2 = name_font.render("Player 2: Arrow Keys to move and wash faces", True, (0, 0, 255))
-            instr3 = name_font.render("Run into dirty faces to clean them!", True, (255, 255, 0))
+            instr1 = name_font.render("Player 1: WASD to move, SPACE to wash", True, (255, 0, 0))
+            instr2 = name_font.render("Player 2: Arrow Keys to move, RIGHT SHIFT to wash", True, (0, 0, 255))
+            instr3 = name_font.render("Stand near a green face and press your wash button 10 times!", True, (255, 255, 0))
             screen.blit(instr1, (WIDTH//2-instr1.get_width()//2, HEIGHT//2-50))
             screen.blit(instr2, (WIDTH//2-instr2.get_width()//2, HEIGHT//2-20))
             screen.blit(instr3, (WIDTH//2-instr3.get_width()//2, HEIGHT//2+10))
