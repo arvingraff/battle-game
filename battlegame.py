@@ -3497,11 +3497,18 @@ def run_makka_pakka_mode(player1_name, player2_name):
         draw_makka_pakka(screen, player1.x+25, player1.y+25, (255, 0, 0))
         draw_makka_pakka(screen, player2.x+25, player2.y+25, (0, 0, 255))
         
-        # Draw names
-        p1_text = name_font.render(player1_name, True, (255, 0, 0))
-        p2_text = name_font.render(player2_name, True, (0, 0, 255))
-        screen.blit(p1_text, (player1.x+25-p1_text.get_width()//2, player1.y-15))
-        screen.blit(p2_text, (player2.x+25-p2_text.get_width()//2, player2.y-15))
+        # Draw name tags above their heads (above the antenna bobble)
+        p1_text = name_font.render(player1_name, True, (255, 255, 255))
+        p2_text = name_font.render(player2_name, True, (255, 255, 255))
+        # Draw background for name tags
+        p1_bg = pygame.Rect(player1.x+25-p1_text.get_width()//2-4, player1.y-50, p1_text.get_width()+8, p1_text.get_height()+4)
+        p2_bg = pygame.Rect(player2.x+25-p2_text.get_width()//2-4, player2.y-50, p2_text.get_width()+8, p2_text.get_height()+4)
+        pygame.draw.rect(screen, (255, 0, 0), p1_bg, border_radius=5)
+        pygame.draw.rect(screen, (0, 0, 255), p2_bg, border_radius=5)
+        pygame.draw.rect(screen, (255, 255, 255), p1_bg, 2, border_radius=5)
+        pygame.draw.rect(screen, (255, 255, 255), p2_bg, 2, border_radius=5)
+        screen.blit(p1_text, (player1.x+25-p1_text.get_width()//2, player1.y-48))
+        screen.blit(p2_text, (player2.x+25-p2_text.get_width()//2, player2.y-48))
         
         # Draw UI
         score_text = font.render(f"{player1_name}: {player1_score}  |  {player2_name}: {player2_score}", True, (255, 255, 255))
