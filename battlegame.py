@@ -94,7 +94,7 @@ def online_get_name_and_character(player_label, mode):
 
 def mode_lobby():
     selected = 0
-    options = ["Battle Mode", "Coin Collection Mode", "Makka Pakka Mode", "Survival Mode", "Play Music", "Stop Music", "Watch Cute Video", "Watch Grandma", "Exit"]
+    options = ["Battle Mode", "Coin Collection Mode", "Makka Pakka Mode", "Escape Mom Mode", "Survival Mode", "Play Music", "Stop Music", "Watch Cute Video", "Watch Grandma", "Exit"]
     music_playing = False
     pygame.mixer.music.stop()  # Ensure no music plays automatically
     while True:
@@ -142,6 +142,8 @@ def mode_lobby():
                             return 1
                         elif options[selected] == "Makka Pakka Mode":
                             return 3
+                        elif options[selected] == "Escape Mom Mode":
+                            return 4
                         elif options[selected] == "Survival Mode":
                             return 2
 
@@ -3622,6 +3624,208 @@ def run_makka_pakka_mode(player1_name, player2_name):
                 if back_button.collidepoint(event.pos):
                     return 'lobby'
 
+# Escape Mom Horror Mode
+def run_escape_mom_mode():
+    """Scary horror mode - escape from an angry mother in dark corridors!"""
+    try:
+        pygame.mixer.music.stop()
+        # Use fart.mp3 but play it slower/creepier if possible, or just use suspenseful silence
+    except:
+        pass
+    
+    # Player (child)
+    player = pygame.Rect(WIDTH//2, HEIGHT//2, 30, 40)
+    player_speed = 5
+    
+    # Mother (chaser)
+    mom = pygame.Rect(random.randint(0, WIDTH), random.randint(0, HEIGHT), 40, 60)
+    mom_speed = 3  # Slower but persistent
+    mom_visible = False  # She's hidden in the dark!
+    mom_last_seen = 0
+    
+    # Corridor walls (random maze)
+    walls = []
+    # Create a corridor maze
+    for i in range(15):
+        if random.random() < 0.5:
+            # Vertical wall
+            w = pygame.Rect(random.randint(50, WIDTH-150), random.randint(50, HEIGHT-150), 20, random.randint(100, 300))
+        else:
+            # Horizontal wall
+            w = pygame.Rect(random.randint(50, WIDTH-150), random.randint(50, HEIGHT-150), random.randint(100, 300), 20)
+        walls.append(w)
+    
+    # Game state
+    survived_time = 0
+    start_time = time.time()
+    caught = False
+    heartbeat_sound = 0
+    
+    # Darkness vignette
+    darkness_surface = pygame.Surface((WIDTH, HEIGHT))
+    darkness_surface.set_alpha(180)
+    
+    while not caught:
+        now = time.time()
+        survived_time = now - start_time
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return 'lobby'
+        
+        # Player controls
+        keys = pygame.key.get_pressed()
+        old_x, old_y = player.x, player.y
+        
+        if keys[pygame.K_w] or keys[pygame.K_UP]:
+            player.y -= player_speed
+        if keys[pygame.K_s] or keys[pygame.K_DOWN]:
+            player.y += player_speed
+        if keys[pygame.K_a] or keys[pygame.K_LEFT]:
+            player.x -= player_speed
+        if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+            player.x += player_speed
+        
+        # Keep player in bounds
+        player.x = max(10, min(WIDTH-40, player.x))
+        player.y = max(10, min(HEIGHT-50, player.y))
+        
+        # Check wall collisions
+        for wall in walls:
+            if player.colliderect(wall):
+                player.x, player.y = old_x, old_y
+                break
+        
+        # Mom AI - hunts the player
+        dx = player.x - mom.x
+        dy = player.y - mom.y
+        dist = math.sqrt(dx*dx + dy*dy)
+        
+        # Mom moves toward player
+        if dist > 0:
+            mom.x += (dx / dist) * mom_speed
+            mom.y += (dy / dist) * mom_speed
+        
+        # Mom collision with walls
+        mom_old_x, mom_old_y = mom.x, mom.y
+        for wall in walls:
+            if mom.colliderect(wall):
+                # Mom can phase through walls sometimes (spooky!)
+                if random.random() < 0.3:
+                    pass  # She goes through!
+                else:
+                    mom.x, mom.y = mom_old_x, mom_old_y
+                break
+        
+        # Check if mom is close (she becomes visible!)
+        if dist < 200:
+            mom_visible = True
+            mom_last_seen = now
+        elif now - mom_last_seen > 2:
+            mom_visible = False
+        
+        # Caught!
+        if player.colliderect(mom):
+            caught = True
+        
+        # Drawing
+        screen.fill((20, 20, 25))  # Dark blue/black
+        
+        # Draw walls (dim gray corridors)
+        for wall in walls:
+            pygame.draw.rect(screen, (60, 60, 70), wall)
+            pygame.draw.rect(screen, (40, 40, 50), wall, 2)
+        
+        # Draw player (small scared child)
+        # Head
+        pygame.draw.circle(screen, (255, 220, 180), (player.centerx, player.y+10), 8)
+        # Eyes (scared wide eyes)
+        pygame.draw.circle(screen, (255, 255, 255), (player.centerx-4, player.y+8), 3)
+        pygame.draw.circle(screen, (255, 255, 255), (player.centerx+4, player.y+8), 3)
+        pygame.draw.circle(screen, (0, 0, 0), (player.centerx-4, player.y+8), 2)
+        pygame.draw.circle(screen, (0, 0, 0), (player.centerx+4, player.y+8), 2)
+        # Scared mouth
+        pygame.draw.arc(screen, (0, 0, 0), (player.centerx-4, player.y+12, 8, 6), 0, 3.14, 2)
+        # Body (pajamas)
+        pygame.draw.rect(screen, (100, 150, 200), (player.x+5, player.y+18, 20, 22))
+        
+        # Draw mom (scary when visible!)
+        if mom_visible:
+            # Angry mother figure (scary red tint)
+            # Head
+            pygame.draw.circle(screen, (255, 200, 200), (mom.centerx, mom.y+15), 12)
+            # Angry eyes
+            pygame.draw.line(screen, (200, 0, 0), (mom.centerx-8, mom.y+12), (mom.centerx-4, mom.y+14), 3)
+            pygame.draw.line(screen, (200, 0, 0), (mom.centerx+4, mom.y+14), (mom.centerx+8, mom.y+12), 3)
+            # Angry mouth
+            pygame.draw.arc(screen, (150, 0, 0), (mom.centerx-6, mom.y+18, 12, 8), 3.14, 6.28, 3)
+            # Body (dress)
+            pygame.draw.rect(screen, (100, 50, 50), (mom.x+8, mom.y+27, 24, 33))
+            # Arms reaching
+            pygame.draw.line(screen, (255, 200, 200), (mom.centerx-10, mom.y+30), (mom.centerx-20, mom.y+25), 6)
+            pygame.draw.line(screen, (255, 200, 200), (mom.centerx+10, mom.y+30), (mom.centerx+20, mom.y+25), 6)
+            
+            # Warning text when she's near!
+            if dist < 100:
+                warning = lobby_font.render("SHE'S CLOSE!", True, (255, 0, 0))
+                screen.blit(warning, (WIDTH//2-warning.get_width()//2, 50))
+        
+        # Darkness overlay (limited vision)
+        darkness_surface.fill((0, 0, 0))
+        # Create a circle of light around player
+        for radius in range(150, 0, -5):
+            alpha = int(200 * (1 - radius/150))
+            pygame.draw.circle(darkness_surface, (0, 0, 0, alpha), player.center, radius)
+        screen.blit(darkness_surface, (0, 0))
+        
+        # UI
+        time_text = font.render(f"Survived: {int(survived_time)}s", True, (255, 255, 255))
+        screen.blit(time_text, (20, 20))
+        
+        tip_text = name_font.render("Use WASD/Arrows to run! Press ESC to quit", True, (200, 200, 200))
+        screen.blit(tip_text, (WIDTH//2-tip_text.get_width()//2, HEIGHT-30))
+        
+        # Heartbeat effect when mom is close
+        if dist < 150:
+            heartbeat_sound += 1
+            if heartbeat_sound % 30 < 15:
+                pygame.draw.circle(screen, (255, 0, 0, 50), (20, HEIGHT-40), 15)
+        
+        pygame.display.flip()
+        clock.tick(60)
+    
+    # Game over - got caught!
+    while True:
+        screen.fill((20, 0, 0))  # Red tint
+        
+        gameover = lobby_font.render("SHE CAUGHT YOU!", True, (255, 0, 0))
+        screen.blit(gameover, (WIDTH//2-gameover.get_width()//2, HEIGHT//2-100))
+        
+        time_survived = font.render(f"You survived for {int(survived_time)} seconds", True, (255, 255, 255))
+        screen.blit(time_survived, (WIDTH//2-time_survived.get_width()//2, HEIGHT//2-30))
+        
+        back_button = pygame.Rect(WIDTH//2-100, HEIGHT//2+40, 200, 60)
+        pygame.draw.rect(screen, (100, 0, 0), back_button)
+        back_text = font.render("Back to Menu", True, (255, 255, 255))
+        screen.blit(back_text, (back_button.centerx-back_text.get_width()//2, back_button.centery-back_text.get_height()//2))
+        
+        pygame.display.flip()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE or event.key == pygame.K_RETURN:
+                    return 'lobby'
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if back_button.collidepoint(event.pos):
+                    return 'lobby'
+
 # Main program loop
 while True:
     mode = mode_lobby()
@@ -4035,6 +4239,60 @@ while True:
                         player1_name = get_player_name("Player 1, enter your name:", HEIGHT//2 - 120)
                         player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
                         result = run_makka_pakka_mode(player1_name, player2_name)
+                        if result == 'lobby':
+                            break
+                    if back_rect.collidepoint(event.pos):
+                        break
+            else:
+                continue
+            break
+    elif mode == 4:
+        # Escape Mom Horror Mode
+        while True:
+            screen.fill((20, 20, 30))
+            title = lobby_font.render("ESCAPE MOM MODE", True, (255, 50, 50))
+            screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-180))
+            
+            warning = font.render("WARNING: SCARY CONTENT!", True, (255, 100, 100))
+            screen.blit(warning, (WIDTH//2-warning.get_width()//2, HEIGHT//2-130))
+            
+            subtitle = font.render("Run through dark corridors and escape from an angry mother!", True, (200, 200, 200))
+            screen.blit(subtitle, (WIDTH//2-subtitle.get_width()//2, HEIGHT//2-90))
+            
+            # Show instructions
+            instr1 = name_font.render("You are a child running through dark hallways", True, (180, 180, 180))
+            instr2 = name_font.render("She's hunting you but you can't see her in the dark...", True, (180, 180, 180))
+            instr3 = name_font.render("Use WASD or Arrow Keys to run and escape!", True, (255, 255, 150))
+            instr4 = name_font.render("Survive as long as you can!", True, (255, 150, 150))
+            screen.blit(instr1, (WIDTH//2-instr1.get_width()//2, HEIGHT//2-40))
+            screen.blit(instr2, (WIDTH//2-instr2.get_width()//2, HEIGHT//2-10))
+            screen.blit(instr3, (WIDTH//2-instr3.get_width()//2, HEIGHT//2+20))
+            screen.blit(instr4, (WIDTH//2-instr4.get_width()//2, HEIGHT//2+50))
+            
+            # Start button
+            start_rect = pygame.Rect(WIDTH//2-100, HEIGHT//2+90, 200, 60)
+            pygame.draw.rect(screen, (150, 0, 0), start_rect)
+            start_text = font.render("Start Game", True, (255, 255, 255))
+            screen.blit(start_text, (start_rect.centerx-start_text.get_width()//2, start_rect.centery-start_text.get_height()//2))
+            
+            # Back button
+            back_rect = pygame.Rect(WIDTH//2-100, HEIGHT-100, 200, 60)
+            pygame.draw.rect(screen, (100, 100, 100), back_rect)
+            back_text = font.render("Back", True, (255, 255, 255))
+            screen.blit(back_text, (back_rect.centerx-back_text.get_width()//2, back_rect.centery-back_text.get_height()//2))
+            
+            pygame.display.flip()
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        break
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if start_rect.collidepoint(event.pos):
+                        result = run_escape_mom_mode()
                         if result == 'lobby':
                             break
                     if back_rect.collidepoint(event.pos):
