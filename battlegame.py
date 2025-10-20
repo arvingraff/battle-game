@@ -3183,101 +3183,161 @@ def run_survival_mode(num_players, player1_name, player2_name, player3_name, cha
 # Makka Pakka Mode Functions
 def draw_makka_pakka(screen, x, y, color):
     """Draw a VERY realistic Makka Pakka character from In the Night Garden"""
-    # Makka Pakka's signature beige/cream body color (ignore color parameter for body)
-    makka_pakka_beige = (240, 228, 200)
-    makka_pakka_darker = (220, 208, 180)
+    # Makka Pakka's signature stone/beige body color
+    makka_pakka_beige = (235, 220, 195)
+    makka_pakka_darker = (215, 200, 175)
+    makka_pakka_shadow = (195, 180, 155)
     
-    # Main round body with texture
-    pygame.draw.ellipse(screen, makka_pakka_beige, (x-22, y-18, 44, 52))
-    pygame.draw.ellipse(screen, makka_pakka_darker, (x-20, y-16, 40, 48))  # Inner shading
-    # Belly with circular pattern texture
-    pygame.draw.ellipse(screen, (230, 218, 190), (x-15, y-8, 30, 35))
-    # Textured circles on belly
+    # MUCH ROUNDER body - Makka Pakka is very round and squat!
+    # Main body (almost perfectly round)
+    pygame.draw.circle(screen, makka_pakka_shadow, (x, y-5), 26)  # Shadow base
+    pygame.draw.circle(screen, makka_pakka_beige, (x, y-8), 25)
+    pygame.draw.circle(screen, makka_pakka_darker, (x, y-8), 23)  # Inner shading
+    pygame.draw.circle(screen, (225, 210, 185), (x-5, y-12), 18)  # Highlight (top-left)
+    
+    # Textured belly pattern (circular dots - Makka Pakka's signature!)
+    pygame.draw.circle(screen, (215, 200, 175), (x, y-3), 16)
     for i in range(3):
-        for j in range(2):
+        for j in range(3):
+            if i == 1 and j == 1:  # Center
+                continue
             cx = x - 8 + i * 8
-            cy = y - 2 + j * 12
-            pygame.draw.circle(screen, (210, 198, 170), (cx, cy), 3)
-            pygame.draw.circle(screen, (200, 188, 160), (cx, cy), 2)
+            cy = y - 10 + j * 8
+            pygame.draw.circle(screen, (205, 190, 165), (cx, cy), 3)
+            pygame.draw.circle(screen, (195, 180, 155), (cx, cy), 2)
+            pygame.draw.circle(screen, (225, 210, 185), (cx-1, cy-1), 1)  # Shine
     
-    # Makka Pakka's distinctive round head (beige)
-    pygame.draw.circle(screen, makka_pakka_beige, (x, y-28), 18)
-    pygame.draw.circle(screen, makka_pakka_darker, (x, y-28), 16)  # Shading
-    pygame.draw.circle(screen, (230, 218, 190), (x, y-28), 14)  # Highlight
+    # DISTINCTIVE ROUND HEAD - much bigger and rounder than before!
+    pygame.draw.circle(screen, makka_pakka_shadow, (x, y-33), 22)  # Head shadow
+    pygame.draw.circle(screen, makka_pakka_beige, (x, y-35), 20)
+    pygame.draw.circle(screen, makka_pakka_darker, (x, y-35), 18)  # Shading
+    pygame.draw.circle(screen, (225, 210, 185), (x-4, y-38), 14)  # Highlight
     
-    # Characteristic small ears on sides
-    pygame.draw.ellipse(screen, makka_pakka_beige, (x-20, y-30, 6, 8))
-    pygame.draw.ellipse(screen, makka_pakka_beige, (x+14, y-30, 6, 8))
-    pygame.draw.ellipse(screen, (210, 198, 170), (x-19, y-29, 4, 6))
-    pygame.draw.ellipse(screen, (210, 198, 170), (x+15, y-29, 4, 6))
+    # Makka Pakka's VERY DISTINCTIVE small round ears
+    # Left ear
+    pygame.draw.circle(screen, makka_pakka_beige, (x-18, y-36), 5)
+    pygame.draw.circle(screen, (205, 190, 165), (x-18, y-36), 3)
+    # Right ear
+    pygame.draw.circle(screen, makka_pakka_beige, (x+18, y-36), 5)
+    pygame.draw.circle(screen, (205, 190, 165), (x+18, y-36), 3)
     
-    # Makka Pakka's adorable BIG round eyes (distinctive feature!)
-    # White of eyes
-    pygame.draw.circle(screen, (255, 255, 255), (x-7, y-30), 6)
-    pygame.draw.circle(screen, (255, 255, 255), (x+7, y-30), 6)
-    # Dark pupils (looking slightly different directions)
-    pygame.draw.circle(screen, (50, 40, 30), (x-6, y-29), 4)
-    pygame.draw.circle(screen, (50, 40, 30), (x+8, y-29), 4)
-    # Eye shine highlights
-    pygame.draw.circle(screen, (255, 255, 255), (x-5, y-31), 2)
-    pygame.draw.circle(screen, (255, 255, 255), (x+9, y-31), 2)
+    # Makka Pakka's HUGE adorable eyes - his most recognizable feature!
+    # Much BIGGER eyes (he has very large eyes for his face)
+    # Left eye
+    pygame.draw.circle(screen, (255, 255, 255), (x-8, y-37), 8)
+    pygame.draw.circle(screen, (240, 240, 240), (x-8, y-37), 7)
+    pygame.draw.circle(screen, (60, 50, 40), (x-7, y-36), 5)  # Large dark pupil
+    pygame.draw.circle(screen, (30, 25, 20), (x-7, y-36), 4)
+    pygame.draw.circle(screen, (255, 255, 255), (x-5, y-38), 2)  # Big shine
+    # Right eye
+    pygame.draw.circle(screen, (255, 255, 255), (x+8, y-37), 8)
+    pygame.draw.circle(screen, (240, 240, 240), (x+8, y-37), 7)
+    pygame.draw.circle(screen, (60, 50, 40), (x+9, y-36), 5)  # Large dark pupil
+    pygame.draw.circle(screen, (30, 25, 20), (x+9, y-36), 4)
+    pygame.draw.circle(screen, (255, 255, 255), (x+11, y-38), 2)  # Big shine
     
-    # Small button nose
-    pygame.draw.circle(screen, (200, 170, 140), (x, y-24), 3)
-    pygame.draw.circle(screen, (180, 150, 120), (x, y-24), 2)
+    # Small distinctive button nose (very small compared to eyes!)
+    pygame.draw.circle(screen, (190, 160, 135), (x, y-29), 3)
+    pygame.draw.circle(screen, (170, 140, 115), (x, y-29), 2)
+    pygame.draw.circle(screen, (210, 180, 155), (x-1, y-30), 1)  # Nose shine
     
-    # Wide happy smile (Makka Pakka's signature expression!)
-    pygame.draw.arc(screen, (100, 80, 60), (x-8, y-22, 16, 10), 3.14, 6.28, 3)
-    # Rosy cheeks
-    pygame.draw.circle(screen, (255, 200, 180), (x-12, y-24), 4)
-    pygame.draw.circle(screen, (255, 200, 180), (x+12, y-24), 4)
+    # Makka Pakka's characteristic WIDE smile (always happy!)
+    pygame.draw.arc(screen, (120, 100, 80), (x-9, y-27, 18, 12), 3.14, 6.28, 3)
+    # Smile highlight
+    pygame.draw.arc(screen, (100, 80, 60), (x-8, y-26, 16, 10), 3.14, 6.28, 2)
     
-    # Makka Pakka's distinctive bobble hat with antenna
+    # VERY rosy cheeks (Makka Pakka has prominent rosy cheeks!)
+    pygame.draw.circle(screen, (255, 180, 160), (x-14, y-30), 5)
+    pygame.draw.circle(screen, (255, 200, 180), (x-14, y-30), 4)
+    pygame.draw.circle(screen, (255, 180, 160), (x+14, y-30), 5)
+    pygame.draw.circle(screen, (255, 200, 180), (x+14, y-30), 4)
+    
+    # Makka Pakka's ICONIC bobble hat with long antenna!
     hat_color = color if color != (255, 255, 255) else (200, 150, 100)
-    # Hat base
-    pygame.draw.ellipse(screen, hat_color, (x-14, y-45, 28, 10))
-    pygame.draw.ellipse(screen, tuple(min(255, c+30) for c in hat_color), (x-12, y-44, 24, 8))
-    # Hat dome
-    pygame.draw.ellipse(screen, hat_color, (x-10, y-52, 20, 12))
-    pygame.draw.ellipse(screen, tuple(min(255, c+20) for c in hat_color), (x-8, y-51, 16, 10))
-    # Antenna with bobble on top
-    pygame.draw.line(screen, (100, 80, 60), (x, y-52), (x, y-62), 3)
-    pygame.draw.circle(screen, hat_color, (x, y-64), 5)
-    pygame.draw.circle(screen, tuple(min(255, c+40) for c in hat_color), (x, y-64), 3)
+    hat_light = tuple(min(255, c+40) for c in hat_color)
+    hat_dark = tuple(max(0, c-20) for c in hat_color)
     
-    # Realistic arms reaching out
+    # Striped hat rim (Makka Pakka's hat has texture)
+    pygame.draw.ellipse(screen, hat_dark, (x-16, y-52, 32, 10))
+    pygame.draw.ellipse(screen, hat_color, (x-15, y-51, 30, 8))
+    pygame.draw.ellipse(screen, hat_light, (x-14, y-50, 28, 6))
+    # Stripe details
+    for i in range(4):
+        pygame.draw.line(screen, hat_dark, (x-12+i*6, y-49), (x-10+i*6, y-49), 2)
+    
+    # Hat dome (rounder)
+    pygame.draw.circle(screen, hat_color, (x, y-57), 11)
+    pygame.draw.circle(screen, hat_light, (x-2, y-59), 8)
+    pygame.draw.circle(screen, hat_dark, (x+3, y-55), 6)
+    
+    # LONG antenna with bobble (very distinctive!)
+    pygame.draw.line(screen, (120, 100, 80), (x, y-57), (x, y-72), 3)
+    pygame.draw.line(screen, (140, 120, 100), (x-1, y-57), (x-1, y-72), 1)  # Highlight
+    # Bobble on top (color-coded for player)
+    pygame.draw.circle(screen, hat_dark, (x, y-75), 7)
+    pygame.draw.circle(screen, hat_color, (x, y-76), 6)
+    pygame.draw.circle(screen, hat_light, (x-2, y-77), 4)
+    pygame.draw.circle(screen, (255, 255, 255), (x-2, y-78), 2)  # Shine
+    
+    # SHORT STUBBY arms (Makka Pakka has very short arms!)
     arm_color = makka_pakka_beige
     # Left arm
-    pygame.draw.ellipse(screen, arm_color, (x-28, y-8, 12, 20))
-    pygame.draw.ellipse(screen, makka_pakka_darker, (x-27, y-7, 10, 18))
-    # Right arm
-    pygame.draw.ellipse(screen, arm_color, (x+16, y-8, 12, 20))
-    pygame.draw.ellipse(screen, makka_pakka_darker, (x+17, y-7, 10, 18))
+    pygame.draw.ellipse(screen, makka_pakka_shadow, (x-30, y-6, 14, 18))
+    pygame.draw.ellipse(screen, arm_color, (x-29, y-7, 12, 16))
+    pygame.draw.ellipse(screen, makka_pakka_darker, (x-28, y-6, 10, 14))
+    # Right arm  
+    pygame.draw.ellipse(screen, makka_pakka_shadow, (x+16, y-6, 14, 18))
+    pygame.draw.ellipse(screen, arm_color, (x+17, y-7, 12, 16))
+    pygame.draw.ellipse(screen, makka_pakka_darker, (x+18, y-6, 10, 14))
     
-    # Mittened hands
-    pygame.draw.ellipse(screen, arm_color, (x-32, y+8, 10, 12))
-    pygame.draw.ellipse(screen, arm_color, (x+22, y+8, 10, 12))
-    # Hand details
-    pygame.draw.circle(screen, makka_pakka_darker, (x-27, y+14), 2)
-    pygame.draw.circle(screen, makka_pakka_darker, (x+27, y+14), 2)
+    # Round mittened hands
+    pygame.draw.circle(screen, makka_pakka_shadow, (x-29, y+10), 7)
+    pygame.draw.circle(screen, arm_color, (x-29, y+9), 6)
+    pygame.draw.circle(screen, makka_pakka_darker, (x-29, y+9), 5)
+    pygame.draw.circle(screen, makka_pakka_shadow, (x+29, y+10), 7)
+    pygame.draw.circle(screen, arm_color, (x+29, y+9), 6)
+    pygame.draw.circle(screen, makka_pakka_darker, (x+29, y+9), 5)
     
-    # Makka Pakka's famous SPONGE in left hand (yellow with holes!)
-    pygame.draw.rect(screen, (255, 240, 100), (x-38, y+4, 10, 10))
-    pygame.draw.rect(screen, (235, 220, 80), (x-37, y+5, 8, 8))
-    # Sponge holes/texture
-    for sx in range(2):
-        for sy in range(2):
-            pygame.draw.circle(screen, (200, 185, 60), (x-35+sx*4, y+7+sy*4), 1)
-    # Sponge highlight
-    pygame.draw.line(screen, (255, 255, 200), (x-36, y+6), (x-34, y+6), 2)
+    # Makka Pakka's ICONIC SPONGE (bright yellow with holes!)
+    sponge_yellow = (255, 245, 120)
+    sponge_dark = (235, 225, 100)
+    pygame.draw.rect(screen, sponge_dark, (x-41, y+3, 13, 13), border_radius=2)
+    pygame.draw.rect(screen, sponge_yellow, (x-40, y+4, 11, 11), border_radius=2)
+    # Sponge holes (very characteristic!)
+    for sx in range(3):
+        for sy in range(3):
+            hole_x = x-38 + sx*4
+            hole_y = y+6 + sy*4
+            pygame.draw.circle(screen, (210, 200, 80), (hole_x, hole_y), 1)
+    # Sponge shine
+    pygame.draw.rect(screen, (255, 255, 220), (x-39, y+5, 4, 2))
     
-    # Stone bag on right side (Makka Pakka collects stones!)
-    bag_color = (180, 150, 120)
-    pygame.draw.ellipse(screen, bag_color, (x+18, y+5, 14, 18))
-    pygame.draw.ellipse(screen, (160, 130, 100), (x+19, y+6, 12, 16))
-    # Bag strap
-    pygame.draw.arc(screen, (140, 110, 80), (x+10, y-5, 20, 20), 0, 3.14, 2)
-    # Stones peeking out
+    # OG-POG (stone bag) - Makka Pakka ALWAYS carries his Og-Pog!
+    bag_brown = (160, 130, 100)
+    bag_light = (180, 150, 120)
+    pygame.draw.ellipse(screen, (140, 110, 80), (x+20, y+6, 16, 20))
+    pygame.draw.ellipse(screen, bag_brown, (x+21, y+7, 14, 18))
+    pygame.draw.ellipse(screen, bag_light, (x+22, y+8, 12, 16))
+    # Bag opening
+    pygame.draw.ellipse(screen, (100, 80, 60), (x+23, y+8, 10, 5))
+    # Strap across body
+    pygame.draw.arc(screen, (140, 110, 80), (x+8, y-10, 24, 24), 0, 3.14, 3)
+    # Stones peeking out (gray stones!)
+    pygame.draw.circle(screen, (140, 140, 135), (x+25, y+9), 3)
+    pygame.draw.circle(screen, (120, 120, 115), (x+29, y+10), 2)
+    pygame.draw.circle(screen, (160, 160, 155), (x+27, y+11), 2)
+    
+    # SHORT LEGS (Makka Pakka has very short stubby legs!)
+    pygame.draw.ellipse(screen, makka_pakka_shadow, (x-11, y+20, 10, 16))
+    pygame.draw.ellipse(screen, makka_pakka_beige, (x-10, y+19, 8, 14))
+    pygame.draw.ellipse(screen, makka_pakka_shadow, (x+1, y+20, 10, 16))
+    pygame.draw.ellipse(screen, makka_pakka_beige, (x+2, y+19, 8, 14))
+    
+    # Round feet
+    pygame.draw.ellipse(screen, makka_pakka_shadow, (x-13, y+32, 12, 8))
+    pygame.draw.ellipse(screen, makka_pakka_darker, (x-12, y+31, 10, 6))
+    pygame.draw.ellipse(screen, makka_pakka_shadow, (x+1, y+32, 12, 8))
+    pygame.draw.ellipse(screen, makka_pakka_darker, (x+2, y+31, 10, 6))
     pygame.draw.circle(screen, (150, 150, 150), (x+24, y+8), 3)
     pygame.draw.circle(screen, (130, 130, 130), (x+26, y+12), 2)
     
@@ -3500,15 +3560,15 @@ def run_makka_pakka_mode(player1_name, player2_name):
         # Draw name tags above their heads (above the antenna bobble)
         p1_text = name_font.render(player1_name, True, (255, 255, 255))
         p2_text = name_font.render(player2_name, True, (255, 255, 255))
-        # Draw background for name tags
-        p1_bg = pygame.Rect(player1.x+25-p1_text.get_width()//2-4, player1.y-50, p1_text.get_width()+8, p1_text.get_height()+4)
-        p2_bg = pygame.Rect(player2.x+25-p2_text.get_width()//2-4, player2.y-50, p2_text.get_width()+8, p2_text.get_height()+4)
+        # Draw background for name tags (positioned above the taller antenna)
+        p1_bg = pygame.Rect(player1.x+25-p1_text.get_width()//2-4, player1.y-60, p1_text.get_width()+8, p1_text.get_height()+4)
+        p2_bg = pygame.Rect(player2.x+25-p2_text.get_width()//2-4, player2.y-60, p2_text.get_width()+8, p2_text.get_height()+4)
         pygame.draw.rect(screen, (255, 0, 0), p1_bg, border_radius=5)
         pygame.draw.rect(screen, (0, 0, 255), p2_bg, border_radius=5)
         pygame.draw.rect(screen, (255, 255, 255), p1_bg, 2, border_radius=5)
         pygame.draw.rect(screen, (255, 255, 255), p2_bg, 2, border_radius=5)
-        screen.blit(p1_text, (player1.x+25-p1_text.get_width()//2, player1.y-48))
-        screen.blit(p2_text, (player2.x+25-p2_text.get_width()//2, player2.y-48))
+        screen.blit(p1_text, (player1.x+25-p1_text.get_width()//2, player1.y-58))
+        screen.blit(p2_text, (player2.x+25-p2_text.get_width()//2, player2.y-58))
         
         # Draw UI
         score_text = font.render(f"{player1_name}: {player1_score}  |  {player2_name}: {player2_score}", True, (255, 255, 255))
