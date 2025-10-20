@@ -3291,13 +3291,18 @@ def run_makka_pakka_mode(player1_name, player2_name):
         # Draw faces
         for face in faces:
             if face['dirty']:
-                pygame.draw.ellipse(screen, (255, 220, 177), face['rect'])
-                pygame.draw.ellipse(screen, (139, 90, 43), (face['rect'].x+5, face['rect'].y+5, 30, 30))
+                # Dirty unwashed face - GREEN!
+                pygame.draw.ellipse(screen, (50, 200, 50), face['rect'])
+                pygame.draw.ellipse(screen, (30, 150, 30), (face['rect'].x+5, face['rect'].y+5, 30, 30))
                 pygame.draw.circle(screen, (0, 0, 0), (face['rect'].x+12, face['rect'].y+15), 3)
                 pygame.draw.circle(screen, (0, 0, 0), (face['rect'].x+28, face['rect'].y+15), 3)
                 pygame.draw.arc(screen, (0, 0, 0), (face['rect'].x+10, face['rect'].y+25, 20, 10), 0, 3.14, 2)
             else:
+                # Clean washed face - nice skin color with sparkles!
                 pygame.draw.ellipse(screen, (255, 220, 177), face['rect'])
+                # Clean pink cheeks
+                pygame.draw.circle(screen, (255, 182, 193), (face['rect'].x+10, face['rect'].y+20), 5)
+                pygame.draw.circle(screen, (255, 182, 193), (face['rect'].x+30, face['rect'].y+20), 5)
                 pygame.draw.circle(screen, (0, 0, 0), (face['rect'].x+12, face['rect'].y+15), 3)
                 pygame.draw.circle(screen, (0, 0, 0), (face['rect'].x+28, face['rect'].y+15), 3)
                 pygame.draw.arc(screen, (0, 0, 0), (face['rect'].x+10, face['rect'].y+20, 20, 10), 3.14, 6.28, 2)
