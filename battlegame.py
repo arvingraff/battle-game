@@ -504,23 +504,33 @@ def character_select_three_player(mode):
 
 def draw_mafia_character(screen, x, y, style):
     if style == 0:  # Classic Mafia Don - Ultra Realistic
-        # Realistic Italian-American head with proper anatomy
+        # Realistic Italian-American head with proper anatomy and depth
         head_color = (218, 178, 128)
         pygame.draw.ellipse(screen, head_color, (x-16, y-38, 32, 42))
+        # Multiple layers of shading for 3D depth
         pygame.draw.ellipse(screen, (200, 160, 110), (x-14, y-36, 28, 38))  # Face shading
+        pygame.draw.ellipse(screen, (210, 170, 120), (x-12, y-34, 24, 34))  # Mid-tone highlight
+        # Nose bridge shadow
+        pygame.draw.ellipse(screen, (195, 155, 105), (x-3, y-28, 6, 12))
         
         # Strong Italian jawline and cheekbones
         pygame.draw.polygon(screen, (190, 150, 100), [(x-12, y-8), (x-8, y-4), (x+8, y-4), (x+12, y-8)])
         pygame.draw.arc(screen, (185, 145, 95), (x-14, y-20, 12, 8), 3.8, 5.5, 2)  # Left cheekbone
         pygame.draw.arc(screen, (185, 145, 95), (x+2, y-20, 12, 8), 3.8, 5.5, 2)   # Right cheekbone
         
-        # Professional fedora with authentic details
+        # Professional fedora with authentic details and shadows
         hat_color = (45, 45, 45)
+        # Shadow under brim first
+        pygame.draw.ellipse(screen, (15, 15, 15), (x-18, y-40, 36, 8))  # Deep shadow
         pygame.draw.ellipse(screen, hat_color, (x-18, y-48, 36, 12))     # Crown
         pygame.draw.ellipse(screen, (35, 35, 35), (x-16, y-46, 32, 8))  # Crown top
+        pygame.draw.ellipse(screen, (55, 55, 55), (x-15, y-47, 30, 6))  # Crown highlight
         pygame.draw.ellipse(screen, hat_color, (x-22, y-42, 44, 6))     # Brim
+        # Brim shadow gradient
+        pygame.draw.ellipse(screen, (25, 25, 25), (x-20, y-41, 40, 4))
         pygame.draw.rect(screen, (200, 0, 0), (x-16, y-44, 32, 4))     # Red band
         pygame.draw.rect(screen, (180, 0, 0), (x-14, y-43, 28, 2))     # Band highlight
+        pygame.draw.rect(screen, (220, 20, 20), (x-13, y-44, 2, 3))    # Band shine
         
         # Luxury aviator sunglasses with reflections
         pygame.draw.polygon(screen, (20, 20, 20), [(x-12, y-26), (x-2, y-26), (x-2, y-18), (x-12, y-18)])
@@ -545,14 +555,26 @@ def draw_mafia_character(screen, x, y, style):
         # Realistic neck
         pygame.draw.rect(screen, head_color, (x-6, y-8, 12, 15))
         
-        # Luxury Italian suit with fine details
+        # Luxury Italian suit with fine details and fabric texture
         suit_color = (25, 25, 25)
         pygame.draw.rect(screen, suit_color, (x-16, y+5, 32, 40))
+        # Subtle fabric texture lines
+        for i in range(y+7, y+43, 3):
+            pygame.draw.line(screen, (35, 35, 35), (x-15, i), (x+15, i), 1)
+        # Suit highlights on shoulders
+        pygame.draw.ellipse(screen, (40, 40, 40), (x-14, y+6, 8, 6))
+        pygame.draw.ellipse(screen, (40, 40, 40), (x+6, y+6, 8, 6))
         pygame.draw.polygon(screen, (20, 20, 20), [(x-12, y+5), (x-8, y), (x+8, y), (x+12, y+5)])  # Lapels
+        # Lapel shadows
+        pygame.draw.line(screen, (10, 10, 10), (x-10, y+2), (x-8, y+8), 2)
+        pygame.draw.line(screen, (10, 10, 10), (x+10, y+2), (x+8, y+8), 2)
         
-        # Crisp white dress shirt
+        # Crisp white dress shirt with realistic folds
         pygame.draw.rect(screen, (255, 255, 255), (x-6, y+5, 12, 35))
         pygame.draw.rect(screen, (240, 240, 240), (x-5, y+6, 10, 33))  # Shirt shading
+        # Shirt fold lines
+        pygame.draw.line(screen, (230, 230, 230), (x-4, y+15), (x+4, y+15), 1)
+        pygame.draw.line(screen, (230, 230, 230), (x-3, y+25), (x+3, y+25), 1)
         
         # Italian silk tie with pattern
         tie_color = (150, 0, 0)
@@ -3160,41 +3182,117 @@ def run_survival_mode(num_players, player1_name, player2_name, player3_name, cha
 
 # Makka Pakka Mode Functions
 def draw_makka_pakka(screen, x, y, color):
-    """Draw a cute Makka Pakka character"""
-    # Round body
-    pygame.draw.ellipse(screen, color, (x-20, y-15, 40, 50))
+    """Draw a VERY realistic Makka Pakka character from In the Night Garden"""
+    # Makka Pakka's signature beige/cream body color (ignore color parameter for body)
+    makka_pakka_beige = (240, 228, 200)
+    makka_pakka_darker = (220, 208, 180)
     
-    # Lighter belly
-    lighter = tuple(min(255, c + 50) for c in color)
-    pygame.draw.ellipse(screen, lighter, (x-12, y-5, 24, 35))
+    # Main round body with texture
+    pygame.draw.ellipse(screen, makka_pakka_beige, (x-22, y-18, 44, 52))
+    pygame.draw.ellipse(screen, makka_pakka_darker, (x-20, y-16, 40, 48))  # Inner shading
+    # Belly with circular pattern texture
+    pygame.draw.ellipse(screen, (230, 218, 190), (x-15, y-8, 30, 35))
+    # Textured circles on belly
+    for i in range(3):
+        for j in range(2):
+            cx = x - 8 + i * 8
+            cy = y - 2 + j * 12
+            pygame.draw.circle(screen, (210, 198, 170), (cx, cy), 3)
+            pygame.draw.circle(screen, (200, 188, 160), (cx, cy), 2)
     
-    # Head
-    pygame.draw.circle(screen, (255, 220, 177), (x, y-25), 15)
+    # Makka Pakka's distinctive round head (beige)
+    pygame.draw.circle(screen, makka_pakka_beige, (x, y-28), 18)
+    pygame.draw.circle(screen, makka_pakka_darker, (x, y-28), 16)  # Shading
+    pygame.draw.circle(screen, (230, 218, 190), (x, y-28), 14)  # Highlight
     
-    # Big cute eyes
-    pygame.draw.circle(screen, (255, 255, 255), (x-6, y-27), 5)
-    pygame.draw.circle(screen, (255, 255, 255), (x+6, y-27), 5)
-    pygame.draw.circle(screen, (0, 0, 0), (x-5, y-26), 3)
-    pygame.draw.circle(screen, (0, 0, 0), (x+5, y-26), 3)
+    # Characteristic small ears on sides
+    pygame.draw.ellipse(screen, makka_pakka_beige, (x-20, y-30, 6, 8))
+    pygame.draw.ellipse(screen, makka_pakka_beige, (x+14, y-30, 6, 8))
+    pygame.draw.ellipse(screen, (210, 198, 170), (x-19, y-29, 4, 6))
+    pygame.draw.ellipse(screen, (210, 198, 170), (x+15, y-29, 4, 6))
     
-    # Cute smile
-    pygame.draw.arc(screen, (0, 0, 0), (x-6, y-22, 12, 8), 3.14, 6.28, 2)
+    # Makka Pakka's adorable BIG round eyes (distinctive feature!)
+    # White of eyes
+    pygame.draw.circle(screen, (255, 255, 255), (x-7, y-30), 6)
+    pygame.draw.circle(screen, (255, 255, 255), (x+7, y-30), 6)
+    # Dark pupils (looking slightly different directions)
+    pygame.draw.circle(screen, (50, 40, 30), (x-6, y-29), 4)
+    pygame.draw.circle(screen, (50, 40, 30), (x+8, y-29), 4)
+    # Eye shine highlights
+    pygame.draw.circle(screen, (255, 255, 255), (x-5, y-31), 2)
+    pygame.draw.circle(screen, (255, 255, 255), (x+9, y-31), 2)
     
-    # Little hat
-    pygame.draw.polygon(screen, (139, 69, 19), [(x-10, y-32), (x+10, y-32), (x, y-42)])
+    # Small button nose
+    pygame.draw.circle(screen, (200, 170, 140), (x, y-24), 3)
+    pygame.draw.circle(screen, (180, 150, 120), (x, y-24), 2)
     
-    # Arms
-    pygame.draw.circle(screen, color, (x-18, y), 8)
-    pygame.draw.circle(screen, color, (x+18, y), 8)
+    # Wide happy smile (Makka Pakka's signature expression!)
+    pygame.draw.arc(screen, (100, 80, 60), (x-8, y-22, 16, 10), 3.14, 6.28, 3)
+    # Rosy cheeks
+    pygame.draw.circle(screen, (255, 200, 180), (x-12, y-24), 4)
+    pygame.draw.circle(screen, (255, 200, 180), (x+12, y-24), 4)
     
-    # Legs
-    pygame.draw.circle(screen, color, (x-10, y+30), 8)
-    pygame.draw.circle(screen, color, (x+10, y+30), 8)
+    # Makka Pakka's distinctive bobble hat with antenna
+    hat_color = color if color != (255, 255, 255) else (200, 150, 100)
+    # Hat base
+    pygame.draw.ellipse(screen, hat_color, (x-14, y-45, 28, 10))
+    pygame.draw.ellipse(screen, tuple(min(255, c+30) for c in hat_color), (x-12, y-44, 24, 8))
+    # Hat dome
+    pygame.draw.ellipse(screen, hat_color, (x-10, y-52, 20, 12))
+    pygame.draw.ellipse(screen, tuple(min(255, c+20) for c in hat_color), (x-8, y-51, 16, 10))
+    # Antenna with bobble on top
+    pygame.draw.line(screen, (100, 80, 60), (x, y-52), (x, y-62), 3)
+    pygame.draw.circle(screen, hat_color, (x, y-64), 5)
+    pygame.draw.circle(screen, tuple(min(255, c+40) for c in hat_color), (x, y-64), 3)
     
-    # Sponge in hand
-    pygame.draw.rect(screen, (255, 255, 0), (x-25, y-5, 8, 8))
-    pygame.draw.circle(screen, (200, 200, 0), (x-23, y-3), 2)
-    pygame.draw.circle(screen, (200, 200, 0), (x-19, y-1), 2)
+    # Realistic arms reaching out
+    arm_color = makka_pakka_beige
+    # Left arm
+    pygame.draw.ellipse(screen, arm_color, (x-28, y-8, 12, 20))
+    pygame.draw.ellipse(screen, makka_pakka_darker, (x-27, y-7, 10, 18))
+    # Right arm
+    pygame.draw.ellipse(screen, arm_color, (x+16, y-8, 12, 20))
+    pygame.draw.ellipse(screen, makka_pakka_darker, (x+17, y-7, 10, 18))
+    
+    # Mittened hands
+    pygame.draw.ellipse(screen, arm_color, (x-32, y+8, 10, 12))
+    pygame.draw.ellipse(screen, arm_color, (x+22, y+8, 10, 12))
+    # Hand details
+    pygame.draw.circle(screen, makka_pakka_darker, (x-27, y+14), 2)
+    pygame.draw.circle(screen, makka_pakka_darker, (x+27, y+14), 2)
+    
+    # Makka Pakka's famous SPONGE in left hand (yellow with holes!)
+    pygame.draw.rect(screen, (255, 240, 100), (x-38, y+4, 10, 10))
+    pygame.draw.rect(screen, (235, 220, 80), (x-37, y+5, 8, 8))
+    # Sponge holes/texture
+    for sx in range(2):
+        for sy in range(2):
+            pygame.draw.circle(screen, (200, 185, 60), (x-35+sx*4, y+7+sy*4), 1)
+    # Sponge highlight
+    pygame.draw.line(screen, (255, 255, 200), (x-36, y+6), (x-34, y+6), 2)
+    
+    # Stone bag on right side (Makka Pakka collects stones!)
+    bag_color = (180, 150, 120)
+    pygame.draw.ellipse(screen, bag_color, (x+18, y+5, 14, 18))
+    pygame.draw.ellipse(screen, (160, 130, 100), (x+19, y+6, 12, 16))
+    # Bag strap
+    pygame.draw.arc(screen, (140, 110, 80), (x+10, y-5, 20, 20), 0, 3.14, 2)
+    # Stones peeking out
+    pygame.draw.circle(screen, (150, 150, 150), (x+24, y+8), 3)
+    pygame.draw.circle(screen, (130, 130, 130), (x+26, y+12), 2)
+    
+    # Short stumpy legs
+    leg_color = makka_pakka_beige
+    pygame.draw.ellipse(screen, leg_color, (x-12, y+22, 10, 16))
+    pygame.draw.ellipse(screen, leg_color, (x+2, y+22, 10, 16))
+    pygame.draw.ellipse(screen, makka_pakka_darker, (x-11, y+23, 8, 14))
+    pygame.draw.ellipse(screen, makka_pakka_darker, (x+3, y+23, 8, 14))
+    
+    # Little brown shoes/feet
+    pygame.draw.ellipse(screen, (139, 90, 60), (x-14, y+34, 12, 8))
+    pygame.draw.ellipse(screen, (139, 90, 60), (x+2, y+34, 12, 8))
+    pygame.draw.ellipse(screen, (160, 110, 80), (x-13, y+35, 10, 6))
+    pygame.draw.ellipse(screen, (160, 110, 80), (x+3, y+35, 10, 6))
 
 def run_makka_pakka_mode(player1_name, player2_name):
     """Makka Pakka Mode: Players run around washing faces to score points!"""
@@ -3284,24 +3382,42 @@ def run_makka_pakka_mode(player1_name, player2_name):
         p2_shoot_pressed = p2_shoot_now
         
         # Check washing - need to press button while near face
+        # Can wash dirty faces OR steal other player's faces!
         for face in faces:
-            if face['dirty']:
-                # Player 1 washing
-                if player1.colliderect(face['rect']):
-                    if p1_new_press:
+            # Player 1 washing/stealing
+            if player1.colliderect(face['rect']):
+                if p1_new_press:
+                    # If it's dirty or belongs to player 2, start washing
+                    if face['dirty'] or face['washer'] == 2:
                         face['wash_progress'] += 1
                         if face['wash_progress'] >= 10:
+                            # If stealing from player 2, decrease their score
+                            if face['washer'] == 2:
+                                player2_score = max(0, player2_score - 1)
+                            # Claim the face for player 1
                             face['dirty'] = False
-                            player1_score += 1
                             face['washer'] = 1
-                # Player 2 washing
-                elif player2.colliderect(face['rect']):
-                    if p2_new_press:
+                            face['wash_progress'] = 0
+                            player1_score += 1
+            # Player 2 washing/stealing
+            elif player2.colliderect(face['rect']):
+                if p2_new_press:
+                    # If it's dirty or belongs to player 1, start washing
+                    if face['dirty'] or face['washer'] == 1:
                         face['wash_progress'] += 1
                         if face['wash_progress'] >= 10:
+                            # If stealing from player 1, decrease their score
+                            if face['washer'] == 1:
+                                player1_score = max(0, player1_score - 1)
+                            # Claim the face for player 2
                             face['dirty'] = False
-                            player2_score += 1
                             face['washer'] = 2
+                            face['wash_progress'] = 0
+                            player2_score += 1
+            else:
+                # Reset progress if no one is near (so you can't resume later)
+                if face['wash_progress'] > 0 and face['wash_progress'] < 10:
+                    face['wash_progress'] = 0
         
         # Draw
         screen.fill((173, 216, 230))
@@ -3336,22 +3452,46 @@ def run_makka_pakka_mode(player1_name, player2_name):
                     # Border
                     pygame.draw.rect(screen, (0, 0, 0), (bar_x, bar_y, bar_width, bar_height), 1)
             else:
-                # Clean washed face - nice skin color with sparkles!
-                pygame.draw.ellipse(screen, (255, 220, 177), face['rect'])
-                # Clean pink cheeks
-                pygame.draw.circle(screen, (255, 182, 193), (face['rect'].x+10, face['rect'].y+20), 5)
-                pygame.draw.circle(screen, (255, 182, 193), (face['rect'].x+30, face['rect'].y+20), 5)
+                # Clean washed face - color matches the player who owns it!
+                if face['washer'] == 1:
+                    # Player 1's face - RED
+                    face_color = (255, 100, 100)
+                    face_shade = (200, 50, 50)
+                elif face['washer'] == 2:
+                    # Player 2's face - BLUE
+                    face_color = (100, 100, 255)
+                    face_shade = (50, 50, 200)
+                else:
+                    # Default (shouldn't happen)
+                    face_color = (255, 220, 177)
+                    face_shade = (255, 182, 193)
+                
+                pygame.draw.ellipse(screen, face_color, face['rect'])
+                pygame.draw.ellipse(screen, face_shade, (face['rect'].x+5, face['rect'].y+5, 30, 30))
                 pygame.draw.circle(screen, (0, 0, 0), (face['rect'].x+12, face['rect'].y+15), 3)
                 pygame.draw.circle(screen, (0, 0, 0), (face['rect'].x+28, face['rect'].y+15), 3)
                 pygame.draw.arc(screen, (0, 0, 0), (face['rect'].x+10, face['rect'].y+20, 20, 10), 3.14, 6.28, 2)
+                
+                # Sparkles
                 for _ in range(3):
                     sx = face['rect'].x + random.randint(-5, 45)
                     sy = face['rect'].y + random.randint(-5, 45)
-                    pygame.draw.circle(screen, (255, 255, 0), (sx, sy), 2)
-                if face['washer'] == 1:
-                    pygame.draw.circle(screen, (255, 0, 0), (face['rect'].x+20, face['rect'].y-5), 4)
-                elif face['washer'] == 2:
-                    pygame.draw.circle(screen, (0, 0, 255), (face['rect'].x+20, face['rect'].y-5), 4)
+                    pygame.draw.circle(screen, (255, 255, 255), (sx, sy), 2)
+                
+                # Show progress bar if being stolen
+                if face['wash_progress'] > 0:
+                    bar_width = 40
+                    bar_height = 6
+                    bar_x = face['rect'].x
+                    bar_y = face['rect'].y - 10
+                    # Background bar (gray)
+                    pygame.draw.rect(screen, (100, 100, 100), (bar_x, bar_y, bar_width, bar_height))
+                    # Progress bar - show color of player stealing it
+                    progress_width = int((face['wash_progress'] / 10) * bar_width)
+                    steal_color = (255, 0, 0) if face['washer'] == 2 else (0, 0, 255)  # Opposite player's color
+                    pygame.draw.rect(screen, steal_color, (bar_x, bar_y, progress_width, bar_height))
+                    # Border
+                    pygame.draw.rect(screen, (0, 0, 0), (bar_x, bar_y, bar_width, bar_height), 1)
         
         # Draw characters
         draw_makka_pakka(screen, player1.x+25, player1.y+25, (255, 0, 0))
@@ -3788,19 +3928,21 @@ while True:
             title = lobby_font.render("Makka Pakka Mode", True, (255, 215, 0))
             screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-150))
             
-            subtitle = font.render("Wash the most faces to win!", True, (200, 200, 200))
+            subtitle = font.render("Wash faces and steal them from your opponent!", True, (200, 200, 200))
             screen.blit(subtitle, (WIDTH//2-subtitle.get_width()//2, HEIGHT//2-100))
             
             # Show instructions
-            instr1 = name_font.render("Player 1: WASD to move, SPACE to wash", True, (255, 0, 0))
-            instr2 = name_font.render("Player 2: Arrow Keys to move, RIGHT SHIFT to wash", True, (0, 0, 255))
-            instr3 = name_font.render("Stand near a green face and press your wash button 10 times!", True, (255, 255, 0))
-            screen.blit(instr1, (WIDTH//2-instr1.get_width()//2, HEIGHT//2-50))
-            screen.blit(instr2, (WIDTH//2-instr2.get_width()//2, HEIGHT//2-20))
-            screen.blit(instr3, (WIDTH//2-instr3.get_width()//2, HEIGHT//2+10))
+            instr1 = name_font.render("Player 1: WASD to move, SPACE to wash (RED)", True, (255, 0, 0))
+            instr2 = name_font.render("Player 2: Arrow Keys to move, RIGHT SHIFT to wash (BLUE)", True, (0, 0, 255))
+            instr3 = name_font.render("Wash green faces OR steal your opponent's colored faces!", True, (255, 255, 0))
+            instr4 = name_font.render("Press wash button 10 times near any face to claim it!", True, (150, 255, 150))
+            screen.blit(instr1, (WIDTH//2-instr1.get_width()//2, HEIGHT//2-60))
+            screen.blit(instr2, (WIDTH//2-instr2.get_width()//2, HEIGHT//2-30))
+            screen.blit(instr3, (WIDTH//2-instr3.get_width()//2, HEIGHT//2))
+            screen.blit(instr4, (WIDTH//2-instr4.get_width()//2, HEIGHT//2+30))
             
             # Start button
-            start_rect = pygame.Rect(WIDTH//2-100, HEIGHT//2+60, 200, 60)
+            start_rect = pygame.Rect(WIDTH//2-100, HEIGHT//2+70, 200, 60)
             pygame.draw.rect(screen, (0, 180, 0), start_rect)
             start_text = font.render("Start Game", True, (255, 255, 255))
             screen.blit(start_text, (start_rect.centerx-start_text.get_width()//2, start_rect.centery-start_text.get_height()//2))
