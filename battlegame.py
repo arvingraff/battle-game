@@ -8,13 +8,23 @@ from network import NetworkHost, NetworkClient
 
 pygame.init()
 
-
+# Load background image for battle mode
+try:
+    battle_background = pygame.image.load('ball.jpg')
+    has_battle_background = True
+except:
+    has_battle_background = False
+    print("ball.jpg not found, using solid color background for battle mode")
 
 # Set fullscreen mode
 screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 WIDTH, HEIGHT = screen.get_size()
 pygame.display.set_caption("2 Player Battle Game")
 clock = pygame.time.Clock()
+
+# Scale background to screen size if loaded
+if has_battle_background:
+    battle_background = pygame.transform.scale(battle_background, (WIDTH, HEIGHT))
 
 # Game state variables (moved inside run_game)
 player1 = None
@@ -491,126 +501,63 @@ def character_select_three_player(mode):
 # Drawing functions for each character
 
 def draw_mafia_character(screen, x, y, style):
-    if style == 0:  # Classic Mafia Don - Museum-Quality Masterpiece
-        # Ultra-realistic Italian-American head with perfect anatomy
+    if style == 0:  # Classic Mafia Don - Ultra Realistic
+        # Realistic Italian-American head with proper anatomy
         head_color = (218, 178, 128)
-        # Base head structure
         pygame.draw.ellipse(screen, head_color, (x-16, y-38, 32, 42))
-        # Multi-layer face shading for 3D depth
-        pygame.draw.ellipse(screen, (200, 160, 110), (x-14, y-36, 28, 38))
-        pygame.draw.ellipse(screen, (210, 170, 118), (x-12, y-34, 24, 34))  # Inner highlight
+        pygame.draw.ellipse(screen, (200, 160, 110), (x-14, y-36, 28, 38))  # Face shading
         
-        # Hyper-realistic nose with bridge and nostrils
-        pygame.draw.polygon(screen, (195, 155, 105), [(x-3, y-22), (x+3, y-22), (x+4, y-14), (x-4, y-14)])
-        pygame.draw.ellipse(screen, (180, 140, 90), (x-4, y-16, 3, 4))  # Left nostril
-        pygame.draw.ellipse(screen, (180, 140, 90), (x+1, y-16, 3, 4))  # Right nostril
-        pygame.draw.line(screen, (220, 180, 130), (x, y-22), (x, y-14), 1)  # Nose bridge highlight
-        
-        # Powerful Italian jawline with anatomical precision
+        # Strong Italian jawline and cheekbones
         pygame.draw.polygon(screen, (190, 150, 100), [(x-12, y-8), (x-8, y-4), (x+8, y-4), (x+12, y-8)])
-        pygame.draw.polygon(screen, (200, 160, 110), [(x-10, y-8), (x-6, y-5), (x+6, y-5), (x+10, y-8)])  # Jaw highlight
+        pygame.draw.arc(screen, (185, 145, 95), (x-14, y-20, 12, 8), 3.8, 5.5, 2)  # Left cheekbone
+        pygame.draw.arc(screen, (185, 145, 95), (x+2, y-20, 12, 8), 3.8, 5.5, 2)   # Right cheekbone
         
-        # Prominent cheekbones with depth
-        pygame.draw.arc(screen, (185, 145, 95), (x-14, y-20, 12, 8), 3.8, 5.5, 2)
-        pygame.draw.arc(screen, (185, 145, 95), (x+2, y-20, 12, 8), 3.8, 5.5, 2)
-        pygame.draw.arc(screen, (205, 165, 115), (x-13, y-19, 10, 6), 3.8, 5.5, 1)  # Cheekbone highlights
-        pygame.draw.arc(screen, (205, 165, 115), (x+3, y-19, 10, 6), 3.8, 5.5, 1)
-        
-        # Museum-quality Italian fedora with exquisite detail
+        # Professional fedora with authentic details
         hat_color = (45, 45, 45)
-        pygame.draw.ellipse(screen, hat_color, (x-18, y-48, 36, 12))     # Crown base
-        pygame.draw.ellipse(screen, (35, 35, 35), (x-16, y-46, 32, 8))  # Crown top (darker)
-        pygame.draw.ellipse(screen, (55, 55, 55), (x-15, y-47, 30, 6))  # Crown highlight
-        pygame.draw.ellipse(screen, hat_color, (x-22, y-42, 44, 6))     # Wide brim
-        pygame.draw.ellipse(screen, (30, 30, 30), (x-21, y-42, 42, 4))  # Brim shadow underneath
-        # Luxury red silk band with shine
-        pygame.draw.rect(screen, (200, 0, 0), (x-16, y-44, 32, 4))
-        pygame.draw.rect(screen, (220, 20, 20), (x-14, y-43, 28, 2))    # Band highlight
-        pygame.draw.rect(screen, (160, 0, 0), (x-14, y-46, 28, 1))      # Band shadow
-        # Hat texture/felt lines
-        for i in range(-14, 16, 4):
-            pygame.draw.line(screen, (50, 50, 50), (x+i, y-46), (x+i, y-42), 1)
+        pygame.draw.ellipse(screen, hat_color, (x-18, y-48, 36, 12))     # Crown
+        pygame.draw.ellipse(screen, (35, 35, 35), (x-16, y-46, 32, 8))  # Crown top
+        pygame.draw.ellipse(screen, hat_color, (x-22, y-42, 44, 6))     # Brim
+        pygame.draw.rect(screen, (200, 0, 0), (x-16, y-44, 32, 4))     # Red band
+        pygame.draw.rect(screen, (180, 0, 0), (x-14, y-43, 28, 2))     # Band highlight
         
-        # Luxury designer aviator sunglasses with perfect reflections
-        # Gold frame borders
-        pygame.draw.polygon(screen, (200, 160, 20), [(x-13, y-27), (x-1, y-27), (x-1, y-17), (x-13, y-17)], 1)
-        pygame.draw.polygon(screen, (200, 160, 20), [(x+1, y-27), (x+13, y-27), (x+13, y-17), (x+1, y-17)], 1)
-        # Dark tinted lenses
-        pygame.draw.polygon(screen, (15, 15, 15), [(x-12, y-26), (x-2, y-26), (x-2, y-18), (x-12, y-18)])
-        pygame.draw.polygon(screen, (15, 15, 15), [(x+2, y-26), (x+12, y-26), (x+12, y-18), (x+2, y-18)])
-        # Gold bridge with detail
-        pygame.draw.line(screen, (255, 215, 0), (x-2, y-22), (x+2, y-22), 3)
-        pygame.draw.line(screen, (230, 190, 0), (x-2, y-21), (x+2, y-21), 1)  # Bridge highlight
-        # Realistic lens reflections (sky/light)
-        pygame.draw.line(screen, (120, 140, 180), (x-10, y-25), (x-5, y-20), 2)
-        pygame.draw.line(screen, (120, 140, 180), (x+5, y-25), (x+10, y-20), 2)
-        pygame.draw.circle(screen, (180, 200, 230), (x-9, y-24), 2)  # Reflection spot
-        pygame.draw.circle(screen, (180, 200, 230), (x+6, y-24), 2)
-        # Temple arms (gold)
-        pygame.draw.line(screen, (255, 215, 0), (x-12, y-22), (x-16, y-20), 2)
-        pygame.draw.line(screen, (255, 215, 0), (x+12, y-22), (x+16, y-20), 2)
+        # Luxury aviator sunglasses with reflections
+        pygame.draw.polygon(screen, (20, 20, 20), [(x-12, y-26), (x-2, y-26), (x-2, y-18), (x-12, y-18)])
+        pygame.draw.polygon(screen, (20, 20, 20), [(x+2, y-26), (x+12, y-26), (x+12, y-18), (x+2, y-18)])
+        pygame.draw.line(screen, (255, 215, 0), (x-2, y-22), (x+2, y-22), 2)  # Gold bridge
+        # Lens reflections
+        pygame.draw.line(screen, (100, 100, 150), (x-10, y-24), (x-6, y-20), 2)
+        pygame.draw.line(screen, (100, 100, 150), (x+4, y-24), (x+8, y-20), 2)
         
         # Realistic thick eyebrows (visible above glasses)
         for i in range(8):
             pygame.draw.line(screen, (60, 40, 20), (x-12+i*2, y-30), (x-11+i*2, y-32), 1)
             pygame.draw.line(screen, (60, 40, 20), (x+4+i*2, y-30), (x+5+i*2, y-32), 1)
         
-        # Authentic Italian mustache with hyper-realistic hair detail
+        # Authentic Italian mustache with detail
         pygame.draw.ellipse(screen, (80, 42, 20), (x-8, y-12, 16, 6))
         pygame.draw.ellipse(screen, (60, 32, 15), (x-7, y-11, 14, 4))
-        pygame.draw.ellipse(screen, (90, 52, 30), (x-7, y-12, 14, 3))  # Top highlight
-        # Mustache curl details with individual hairs
+        # Mustache curl details
         pygame.draw.arc(screen, (80, 42, 20), (x-10, y-10, 6, 6), 0, 3.14, 2)
         pygame.draw.arc(screen, (80, 42, 20), (x+4, y-10, 6, 6), 0, 3.14, 2)
-        # Individual mustache hairs for realism
-        for i in range(8):
-            pygame.draw.line(screen, (70, 35, 18), (x-6+i*2, y-11), (x-6+i*2, y-9), 1)
-        # Mustache wax shine
-        pygame.draw.line(screen, (100, 60, 35), (x-4, y-11), (x+4, y-11), 1)
         
-        # Realistic neck with Adam's apple and shadows
+        # Realistic neck
         pygame.draw.rect(screen, head_color, (x-6, y-8, 12, 15))
-        pygame.draw.rect(screen, (200, 160, 110), (x-5, y-7, 10, 13))  # Neck shading
-        pygame.draw.ellipse(screen, (190, 150, 100), (x-2, y-2, 4, 6))  # Adam's apple
-        pygame.draw.line(screen, (210, 170, 120), (x-1, y-2), (x-1, y+3), 1)  # Neck tendon
-        pygame.draw.line(screen, (210, 170, 120), (x+1, y-2), (x+1, y+3), 1)
         
-        # Museum-quality Italian tailored suit with exquisite details
+        # Luxury Italian suit with fine details
         suit_color = (25, 25, 25)
         pygame.draw.rect(screen, suit_color, (x-16, y+5, 32, 40))
-        pygame.draw.rect(screen, (35, 35, 35), (x-15, y+6, 30, 38))  # Suit highlight
-        # Perfect peaked lapels with silk facing
-        pygame.draw.polygon(screen, (20, 20, 20), [(x-12, y+5), (x-8, y), (x+8, y), (x+12, y+5)])
-        pygame.draw.polygon(screen, (40, 40, 40), [(x-11, y+5), (x-8, y+1), (x+8, y+1), (x+11, y+5)])  # Lapel shine
-        # Lapel notch details
-        pygame.draw.line(screen, (15, 15, 15), (x-8, y+2), (x-10, y+8), 2)
-        pygame.draw.line(screen, (15, 15, 15), (x+8, y+2), (x+10, y+8), 2)
+        pygame.draw.polygon(screen, (20, 20, 20), [(x-12, y+5), (x-8, y), (x+8, y), (x+12, y+5)])  # Lapels
         
-        # Crisp Egyptian cotton dress shirt with realistic folds
+        # Crisp white dress shirt
         pygame.draw.rect(screen, (255, 255, 255), (x-6, y+5, 12, 35))
         pygame.draw.rect(screen, (240, 240, 240), (x-5, y+6, 10, 33))  # Shirt shading
-        pygame.draw.rect(screen, (250, 250, 250), (x-4, y+7, 8, 31))   # Center panel highlight
-        # Shirt buttons with detail
-        for btn_y in range(4):
-            pygame.draw.circle(screen, (245, 245, 245), (x, y+10+btn_y*7), 2)
-            pygame.draw.circle(screen, (255, 255, 255), (x, y+10+btn_y*7), 1)
-            # Button holes
-            pygame.draw.line(screen, (220, 220, 220), (x-1, y+10+btn_y*7), (x+1, y+10+btn_y*7), 1)
-        # Collar details
-        pygame.draw.polygon(screen, (250, 250, 250), [(x-6, y+5), (x-4, y+2), (x-2, y+5)])  # Left collar
-        pygame.draw.polygon(screen, (250, 250, 250), [(x+6, y+5), (x+4, y+2), (x+2, y+5)])  # Right collar
         
-        # Italian silk tie with luxurious pattern
+        # Italian silk tie with pattern
         tie_color = (150, 0, 0)
         pygame.draw.polygon(screen, tie_color, [(x-2, y+12), (x+2, y+12), (x+3, y+35), (x-3, y+35)])
-        pygame.draw.polygon(screen, (170, 10, 10), [(x-1, y+12), (x+1, y+12), (x+2, y+35), (x-2, y+35)])  # Tie center shine
-        # Silk tie pattern (diagonal stripes)
+        # Tie pattern
         for i in range(4):
-            pygame.draw.line(screen, (180, 30, 30), (x-2, y+15+i*5), (x+2, y+17+i*5), 1)
-            pygame.draw.line(screen, (120, 0, 0), (x-2, y+17+i*5), (x+2, y+19+i*5), 1)
-        # Tie knot with depth
-        pygame.draw.polygon(screen, (130, 0, 0), [(x-3, y+8), (x+3, y+8), (x+2, y+12), (x-2, y+12)])
-        pygame.draw.polygon(screen, (150, 10, 10), [(x-2, y+8), (x+2, y+8), (x+1, y+11), (x-1, y+11)])  # Knot highlight
+            pygame.draw.line(screen, (180, 30, 30), (x-1, y+15+i*5), (x+1, y+15+i*5), 1)
         
         # Gold pocket square
         pygame.draw.rect(screen, (255, 215, 0), (x+8, y+12, 6, 6))
@@ -625,44 +572,20 @@ def draw_mafia_character(screen, x, y, style):
         pygame.draw.circle(screen, (255, 215, 0), (x+12, y+25), 3)
         pygame.draw.circle(screen, (200, 0, 0), (x+12, y+25), 2)  # Ruby center
         
-        # Realistic arms with anatomical muscle definition
+        # Realistic arms in suit sleeves
         pygame.draw.ellipse(screen, suit_color, (x-22, y+10, 10, 25))
         pygame.draw.ellipse(screen, suit_color, (x+12, y+10, 10, 25))
-        pygame.draw.ellipse(screen, (35, 35, 35), (x-21, y+11, 8, 23))  # Arm highlights
-        pygame.draw.ellipse(screen, (35, 35, 35), (x+13, y+11, 8, 23))
-        # White shirt cuffs showing
-        pygame.draw.rect(screen, (255, 255, 255), (x-24, y+29, 8, 5))
-        pygame.draw.rect(screen, (255, 255, 255), (x+16, y+29, 8, 5))
-        pygame.draw.circle(screen, (200, 200, 200), (x-22, y+31), 1)  # Cufflink
-        pygame.draw.circle(screen, (200, 200, 200), (x+18, y+31), 1)
         
-        # Hands with realistic anatomy and skin tone
+        # Hands with realistic skin tone
         pygame.draw.ellipse(screen, head_color, (x-25, y+30, 8, 12))
         pygame.draw.ellipse(screen, head_color, (x+17, y+30, 8, 12))
-        pygame.draw.ellipse(screen, (210, 170, 120), (x-24, y+31, 6, 10))  # Hand highlights
-        pygame.draw.ellipse(screen, (210, 170, 120), (x+18, y+31, 6, 10))
-        # Finger details
-        pygame.draw.line(screen, (200, 160, 110), (x-23, y+35), (x-23, y+40), 1)  # Thumb
-        pygame.draw.line(screen, (200, 160, 110), (x-21, y+37), (x-21, y+42), 1)  # Index
-        pygame.draw.line(screen, (200, 160, 110), (x+19, y+35), (x+19, y+40), 1)
-        pygame.draw.line(screen, (200, 160, 110), (x+21, y+37), (x+21, y+42), 1)
         
-        # Professional Italian leather Oxford shoes with mirror shine
+        # Professional Italian leather shoes
         shoe_color = (40, 20, 10)
-        # Dress pants showing above shoes
-        pygame.draw.rect(screen, suit_color, (x-14, y+40, 14, 6))
-        pygame.draw.rect(screen, suit_color, (x, y+40, 14, 6))
-        # Shoes with realistic shape
         pygame.draw.ellipse(screen, shoe_color, (x-14, y+42, 14, 8))
         pygame.draw.ellipse(screen, shoe_color, (x, y+42, 14, 8))
-        # Mirror polish shine
-        pygame.draw.ellipse(screen, (80, 40, 20), (x-13, y+43, 12, 6))
+        pygame.draw.ellipse(screen, (80, 40, 20), (x-13, y+43, 12, 6))  # Shoe shine
         pygame.draw.ellipse(screen, (80, 40, 20), (x+1, y+43, 12, 6))
-        pygame.draw.ellipse(screen, (120, 60, 30), (x-11, y+44, 8, 4))  # Bright shine spot
-        pygame.draw.ellipse(screen, (120, 60, 30), (x+3, y+44, 8, 4))
-        # Shoe laces/details
-        pygame.draw.line(screen, (60, 30, 15), (x-10, y+44), (x-8, y+46), 1)
-        pygame.draw.line(screen, (60, 30, 15), (x+4, y+44), (x+6, y+46), 1)
     elif style == 1:  # Mafia Boss - Ultra Realistic
         # Commanding presence with weathered features
         head_color = (210, 170, 120)
@@ -1386,6 +1309,230 @@ def run_game(mode, player1_name, player2_name, char_choices, network=None, is_ho
     player2_score = 0
     coin_timer = 0
     if mode == 1:
+        coin_timer = time.time() + 60
+        for _ in range(10):
+            x = random.randint(60, WIDTH-60)
+            y = random.randint(100, HEIGHT-60)
+            coin_rects.append(pygame.Rect(x, y, 24, 24))
+    start_countdown()
+    while True:
+        now = time.time()
+        if mode == 1 and now > coin_timer:
+            winner = "Player 1" if player1_score > player2_score else ("Player 2" if player2_score > player1_score else "Tie")
+            win_text = font.render(f"{winner} Wins!" if winner != "Tie" else "Tie!", True, (0,255,0))
+            screen.blit(win_text, (WIDTH//2 - win_text.get_width()//2, HEIGHT//2))
+            pygame.display.flip()
+            pygame.time.wait(2000)
+            return 'lobby'
+        # Online networking
+        if online:
+            if is_host:
+                my_bullets = '|'.join([f"{b['rect'].x},{b['rect'].y},{b['dir']},{b['owner']}" for b in bullets if b['owner']==1])
+                my_state = f"{player1.x},{player1.y},{p1_right},{player1_health};{my_bullets}"
+                network.send(my_state)
+                try:
+                    data = network.recv()
+                    if data:
+                        parts = data.split(';')
+                        vals = parts[0].split(',')
+                        if len(vals) >= 4:
+                            player2.x = int(vals[0])
+                            player2.y = int(vals[1])
+                            p2_right = vals[2] == 'True'
+                            player2_health = int(vals[3])
+                        if len(parts) > 1 and parts[1]:
+                            for bstr in parts[1].split('|'):
+                                bx, by, bdir, bowner = bstr.split(',')
+                                if not any(abs(b['rect'].x-int(bx))<5 and abs(b['rect'].y-int(by))<5 and b['owner']==2 for b in bullets):
+                                    bullets.append({'rect': pygame.Rect(int(bx), int(by), 10, 10), 'dir': int(bdir), 'owner': int(bowner)})
+                except:
+                    pass
+            else:
+                my_bullets = '|'.join([f"{b['rect'].x},{b['rect'].y},{b['dir']},{b['owner']}" for b in bullets if b['owner']==2])
+                my_state = f"{player2.x},{player2.y},{p2_right},{player2_health};{my_bullets}"
+                network.send(my_state)
+                try:
+                    data = network.recv()
+                    if data:
+                        parts = data.split(';')
+                        vals = parts[0].split(',')
+                        if len(vals) >= 4:
+                            player1.x = int(vals[0])
+                            player1.y = int(vals[1])
+                            p1_right = vals[2] == 'True'
+                            player1_health = int(vals[3])
+                        # Bullets from host
+                        if len(parts) > 1 and parts[1]:
+                            for bstr in parts[1].split('|'):
+                                bx, by, bdir, bowner = bstr.split(',')
+                                if not any(abs(b['rect'].x-int(bx))<5 and abs(b['rect'].y-int(by))<5 and b['owner']==1 for b in bullets):
+                                    bullets.append({'rect': pygame.Rect(int(bx), int(by), 10, 10), 'dir': int(bdir), 'owner': int(bowner)})
+                except:
+                    pass
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if mode == 0:
+                if event.type == pygame.KEYDOWN:
+                    # Player 1 weapon switching
+                    if event.key == pygame.K_q:
+                        p1_selected_weapon = "default"
+                    elif event.key == pygame.K_e and p1_bazooka_left > 0:
+                        p1_selected_weapon = "bazooka"
+                    elif event.key == pygame.K_r and p1_kannon_left > 0:
+                        p1_selected_weapon = "kannon"
+                    # Player 2 weapon switching
+                    elif event.key == pygame.K_o:
+                        p2_selected_weapon = "default"
+                    elif event.key == pygame.K_p and p2_bazooka_left > 0:
+                        p2_selected_weapon = "bazooka"
+                    elif event.key == pygame.K_l and p2_kannon_left > 0:
+                        p2_selected_weapon = "kannon"
+                    # Player 1 shoot (space only)
+                    elif event.key == pygame.K_SPACE:
+                        if player1_shots < RELOAD_LIMIT and now > player1_reload_time:
+                            bx = player1.right if p1_right else player1.left - 10
+                            # Determine weapon type and damage based on selected weapon
+                            weapon_type = "default"
+                            damage = 1
+                            if p1_selected_weapon == "bazooka" and p1_bazooka_left > 0:
+                                weapon_type = "bazooka"
+                                damage = 2
+                                p1_bazooka_left -= 1
+                            elif p1_selected_weapon == "kannon" and p1_kannon_left > 0:
+                                weapon_type = "kannon"
+                                damage = 3
+                                p1_kannon_left -= 1
+                            bullets.append({'rect': pygame.Rect(bx, player1.centery-5, 10, 10), 'dir': 1 if p1_right else -1, 'owner': 1, 'weapon': weapon_type, 'damage': damage})
+                            player1_shots += 1
+                            if player1_shots == RELOAD_LIMIT:
+                                player1_reload_time = now + RELOAD_DURATION
+                    # Player 2 shoot (right shift)
+                    if event.key == pygame.K_RSHIFT:
+                        if player2_shots < RELOAD_LIMIT and now > player2_reload_time:
+                            bx = player2.right if p2_right else player2.left - 10
+                            # Determine weapon type and damage based on selected weapon
+                            weapon_type = "default"
+                            damage = 1
+                            if p2_selected_weapon == "bazooka" and p2_bazooka_left > 0:
+                                weapon_type = "bazooka"
+                                damage = 2
+                                p2_bazooka_left -= 1
+                            elif p2_selected_weapon == "kannon" and p2_kannon_left > 0:
+                                weapon_type = "kannon"
+                                damage = 3
+                                p2_kannon_left -= 1
+                            bullets.append({'rect': pygame.Rect(bx, player2.centery-5, 10, 10), 'dir': 1 if p2_right else -1, 'owner': 2, 'weapon': weapon_type, 'damage': damage})
+                            player2_shots += 1
+                            if player2_shots == RELOAD_LIMIT:
+                                player2_reload_time = now + RELOAD_DURATION
+                    else:
+                        pass  # Optionally show reload message
+
+            else:
+                # No shooting in coin mode
+                pass
+        # Reset shots after reload
+        if player1_shots == RELOAD_LIMIT and now > player1_reload_time:
+            player1_shots = 0
+        if player2_shots == RELOAD_LIMIT and now > player2_reload_time:
+            player2_shots = 0
+
+        keys = pygame.key.get_pressed()
+        # Player 1 controls (WASD)
+        if keys[pygame.K_a]:
+            player1.x -= speed
+            p1_right = False
+        if keys[pygame.K_d]:
+            player1.x += speed
+            p1_right = True
+        if keys[pygame.K_w]:
+            player1.y -= speed
+        if keys[pygame.K_s]:
+            player1.y += speed
+
+        # Player 2 controls (Arrow keys)
+        if keys[pygame.K_LEFT]:
+            player2.x -= speed
+            p2_right = False
+        if keys[pygame.K_RIGHT]:
+            player2.x += speed
+            p2_right = True
+        if keys[pygame.K_UP]:
+            player2.y -= speed
+        if keys[pygame.K_DOWN]:
+            player2.y += speed
+
+        # Update bullets
+        for bullet in bullets[:]:
+            bullet['rect'].x += bullet['dir'] * 8
+            if bullet['rect'].right < 0 or bullet['rect'].left > WIDTH:
+                bullets.remove(bullet)
+
+        # Clamp players to screen
+        if player1.left < 0:
+            player1.left = 0
+        if player1.right > WIDTH:
+            player1.right = WIDTH
+        if player1.top < 0:
+            player1.top = 0
+        if player1.bottom > HEIGHT:
+            player1.bottom = HEIGHT
+        if player2.left < 0:
+            player2.left = 0
+        if player2.right > WIDTH:
+            player2.right = WIDTH
+        if player2.top < 0:
+            player2.top = 0
+        if player2.bottom > HEIGHT:
+            player2.bottom = HEIGHT
+
+        # Coin collection logic
+        if mode == 1:
+            # Check for coin collection using full body hitbox
+            player1_body = pygame.Rect(player1.centerx-20, player1.centery-35, 40, 110)
+            player2_body = pygame.Rect(player2.centerx-20, player2.centery-35, 40, 110)
+            for coin in coin_rects[:]:
+                if player1_body.colliderect(coin):
+                    player1_score += 1
+                    coin_rects.remove(coin)
+                elif player2_body.colliderect(coin):
+                    player2_score += 1
+                    coin_rects.remove(coin)
+            # Respawn coins if needed
+            while len(coin_rects) < 10:
+                x = random.randint(60, WIDTH-60)
+                y = random.randint(100, HEIGHT-60)
+                coin_rects.append(pygame.Rect(x, y, 24, 24))
+
+        # Draw everything
+        if mode == 0 and has_battle_background:
+            screen.blit(battle_background, (0, 0))
+        else:
+            screen.fill((30, 30, 30))
+        # Draw map border
+        print(f"Error playing background music: {e}")
+    # Initialize game state variables for each session
+    player1 = pygame.Rect(100, HEIGHT//2, 50, 50)
+    player2 = pygame.Rect(WIDTH-150, HEIGHT//2, 50, 50)
+    player1_health = 5
+    player2_health = 5
+    speed = 6
+    p1_right = True
+    p2_right = False
+    bullets = []
+    player1_shots = 0
+    player2_shots = 0
+    player1_reload_time = 0
+    player2_reload_time = 0
+    RELOAD_LIMIT = 3
+    RELOAD_DURATION = 3
+    coin_rects = []
+    player1_score = 0
+    player2_score = 0
+    coin_timer = 0
+    if mode == 1:
         coin_timer = time.time() + 30
         for _ in range(10):
             x = random.randint(60, WIDTH-60)
@@ -1758,14 +1905,6 @@ def run_game(mode, player1_name, player2_name, char_choices, network=None, is_ho
 # Re-add Coin Collection mode
 
 def run_coin_collection_and_shop(player1_name, player2_name, char_choices):
-    # Play coin collection music
-    try:
-        pygame.mixer.music.stop()
-        pygame.mixer.music.load('coin.mp3')
-        pygame.mixer.music.play(-1)
-    except Exception as e:
-        print(f"Error playing coin collection music: {e}")
-    
     # Coin collection phase
     player1_score = 0
     player2_score = 0
@@ -2442,7 +2581,10 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
                 coin_rects.append(pygame.Rect(x, y, 24, 24))
 
         # Draw everything
-        screen.fill((30, 30, 30))
+        if mode == 0 and has_battle_background:
+            screen.blit(battle_background, (0, 0))
+        else:
+            screen.fill((30, 30, 30))
         # Draw map border
         border_color = (200, 200, 200)
         border_thickness = 8
