@@ -3184,7 +3184,12 @@ while True:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        break  # Return to main menu with ESC key
                 if event.type == pygame.MOUSEBUTTONDOWN:
+                    if back_rect.collidepoint(event.pos):
+                        break  # Return to main menu
                     if local_rect.collidepoint(event.pos):
                         player1_name = get_player_name("Player 1, enter your name:", HEIGHT//2 - 120)
                         player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
