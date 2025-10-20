@@ -1957,14 +1957,50 @@ def run_coin_collection_and_shop(player1_name, player2_name, char_choices):
             paper_rects.append(pygame.Rect(x, y, 24, 24))
         screen.fill((30,30,30))
         for paper in paper_rects:
-            # Draw green rectangle
-            pygame.draw.rect(screen, (0,180,0), paper)
-            # Draw yellow border
-            pygame.draw.rect(screen, (255,220,0), paper, 3)
-            # Draw yellow $ symbol in center
-            dollar_font = pygame.font.SysFont(None, 32)
-            dollar_text = dollar_font.render("$", True, (255,220,0))
+            # Draw realistic dollar bill
+            # Main bill body (authentic dollar green)
+            pygame.draw.rect(screen, (133, 187, 101), paper)
+            
+            # Border - ornate frame (darker green)
+            pygame.draw.rect(screen, (85, 120, 65), paper, 2)
+            
+            # Inner decorative border
+            inner_rect = pygame.Rect(paper.x+2, paper.y+2, paper.width-4, paper.height-4)
+            pygame.draw.rect(screen, (100, 150, 80), inner_rect, 1)
+            
+            # Central seal/medallion (left side)
+            seal_x = paper.x + paper.width // 4
+            seal_y = paper.centery
+            pygame.draw.circle(screen, (70, 100, 55), (seal_x, seal_y), 4)
+            pygame.draw.circle(screen, (100, 150, 80), (seal_x, seal_y), 3)
+            
+            # Dollar sign in center (large, prominent)
+            dollar_font = pygame.font.SysFont(None, 28)
+            dollar_text = dollar_font.render("$", True, (70, 100, 55))
             screen.blit(dollar_text, (paper.centerx - dollar_text.get_width()//2, paper.centery - dollar_text.get_height()//2))
+            
+            # Decorative corners
+            pygame.draw.circle(screen, (85, 120, 65), (paper.x+3, paper.y+3), 1)
+            pygame.draw.circle(screen, (85, 120, 65), (paper.right-3, paper.y+3), 1)
+            pygame.draw.circle(screen, (85, 120, 65), (paper.x+3, paper.bottom-3), 1)
+            pygame.draw.circle(screen, (85, 120, 65), (paper.right-3, paper.bottom-3), 1)
+            
+            # Serial number lines (top and bottom)
+            pygame.draw.line(screen, (90, 130, 70), (paper.x+3, paper.y+2), (paper.right-3, paper.y+2), 1)
+            pygame.draw.line(screen, (90, 130, 70), (paper.x+3, paper.bottom-2), (paper.right-3, paper.bottom-2), 1)
+            
+            # Watermark effect (subtle lighter area)
+            watermark_rect = pygame.Rect(paper.right-8, paper.y+2, 6, paper.height-4)
+            watermark_surface = pygame.Surface((watermark_rect.width, watermark_rect.height))
+            watermark_surface.set_alpha(30)
+            watermark_surface.fill((200, 220, 180))
+            screen.blit(watermark_surface, watermark_rect)
+            
+            # Highlight shine effect
+            shine_surface = pygame.Surface((paper.width-6, 2))
+            shine_surface.set_alpha(40)
+            shine_surface.fill((255, 255, 255))
+            screen.blit(shine_surface, (paper.x+3, paper.y+3))
         draw_explorer_character(screen, player1.centerx, player1.centery, char_choices[0])
         draw_explorer_character(screen, player2.centerx, player2.centery, char_choices[1])
         score_text = font.render(f"{player1_name}: {player1_score}   {player2_name}: {player2_score}", True, (255,255,255))
