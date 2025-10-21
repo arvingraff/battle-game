@@ -3800,7 +3800,7 @@ def run_escape_mom_mode():
     
     # JUMPSCARE! Show TERRIFYING mom eating you from your perspective!
     jumpscare_time = time.time()
-    jumpscare_duration = 5.0  # 5 seconds of pure terror
+    jumpscare_duration = 2.0  # 2 seconds of pure terror
     
     # Play system beeps for jumpscare sound
     for _ in range(10):
