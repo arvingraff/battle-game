@@ -3798,7 +3798,190 @@ def run_escape_mom_mode():
         pygame.display.flip()
         clock.tick(60)
     
-    # Game over - got caught!
+    # JUMPSCARE! Show TERRIFYING mom eating you from your perspective!
+    jumpscare_time = time.time()
+    jumpscare_duration = 5.0  # 5 seconds of pure terror
+    
+    # Play system beeps for jumpscare sound
+    for _ in range(10):
+        print("\a")  # System beep
+    
+    while time.time() - jumpscare_time < jumpscare_duration:
+        elapsed = time.time() - jumpscare_time
+        progress = elapsed / jumpscare_duration
+        
+        # Flash between black and red for extra scary effect
+        if int((time.time() - jumpscare_time) * 20) % 2 == 0:
+            screen.fill((0, 0, 0))
+        else:
+            screen.fill((int(100 * progress), 0, 0))
+        
+        # Mom grows MASSIVE (20-30x bigger as she gets closer!)
+        scale = 20 + (progress * 10)  # Grows from 20x to 30x size
+        face_size = int(400 * scale / 20)
+        face_x = WIDTH // 2
+        face_y = HEIGHT // 2
+        
+        # GIANT DECAYING HEAD with veins
+        pygame.draw.circle(screen, (200 + int(30 * progress), 160 - int(60 * progress), 160 - int(60 * progress)), (face_x, face_y), face_size//2)
+        pygame.draw.circle(screen, (180 + int(40 * progress), 140 - int(80 * progress), 140 - int(80 * progress)), (face_x, face_y), face_size//2 - 10)
+        
+        # Dark circles under eyes (tired, scary mom)
+        pygame.draw.ellipse(screen, (100, 50, 100), (face_x - 150, face_y - 100, 100, 60))
+        pygame.draw.ellipse(screen, (100, 50, 100), (face_x + 50, face_y - 100, 100, 60))
+        
+        # MASSIVE BLOODSHOT EYES staring DOWN at you!
+        eye_size = int(100 + progress * 30)
+        eye_spacing = int(140 + progress * 20)
+        
+        # Left eye - bloodshot and terrifying
+        pygame.draw.ellipse(screen, (255, 255, 200), (face_x - eye_spacing - eye_size//2, face_y - 100, eye_size, eye_size + 30))
+        # Bloodshot iris - RED
+        pygame.draw.circle(screen, (180, 0, 0), (face_x - eye_spacing, face_y - 70), int(50 + progress * 10))
+        pygame.draw.circle(screen, (120, 0, 0), (face_x - eye_spacing, face_y - 70), int(40 + progress * 8))
+        # Black pupil staring at YOU
+        pygame.draw.circle(screen, (0, 0, 0), (face_x - eye_spacing, face_y - 70), int(25 + progress * 5))
+        # Tiny white glint (makes it look alive)
+        pygame.draw.circle(screen, (255, 255, 255), (face_x - eye_spacing + 8, face_y - 75), 5)
+        
+        # Right eye - bloodshot and terrifying
+        pygame.draw.ellipse(screen, (255, 255, 200), (face_x + eye_spacing - eye_size//2, face_y - 100, eye_size, eye_size + 30))
+        # Bloodshot iris - RED
+        pygame.draw.circle(screen, (180, 0, 0), (face_x + eye_spacing, face_y - 70), int(50 + progress * 10))
+        pygame.draw.circle(screen, (120, 0, 0), (face_x + eye_spacing, face_y - 70), int(40 + progress * 8))
+        # Black pupil staring at YOU
+        pygame.draw.circle(screen, (0, 0, 0), (face_x + eye_spacing, face_y - 70), int(25 + progress * 5))
+        # Tiny white glint
+        pygame.draw.circle(screen, (255, 255, 255), (face_x + eye_spacing + 8, face_y - 75), 5)
+        
+        # Red veins spreading from eyes
+        for i in range(15):
+            vein_angle = random.random() * 6.28
+            vein_length = random.randint(30, 80)
+            start_x = face_x - eye_spacing
+            start_y = face_y - 70
+            end_x = int(start_x + math.cos(vein_angle) * vein_length)
+            end_y = int(start_y + math.sin(vein_angle) * vein_length)
+            pygame.draw.line(screen, (200, 0, 0), (start_x, start_y), (end_x, end_y), 2)
+        for i in range(15):
+            vein_angle = random.random() * 6.28
+            vein_length = random.randint(30, 80)
+            start_x = face_x + eye_spacing
+            start_y = face_y - 70
+            end_x = int(start_x + math.cos(vein_angle) * vein_length)
+            end_y = int(start_y + math.sin(vein_angle) * vein_length)
+            pygame.draw.line(screen, (200, 0, 0), (start_x, start_y), (end_x, end_y), 2)
+        
+        # THICK ANGRY EYEBROWS
+        pygame.draw.line(screen, (60, 30, 30), (face_x - eye_spacing - 60, face_y - 140), (face_x - eye_spacing + 40, face_y - 100), 18)
+        pygame.draw.line(screen, (60, 30, 30), (face_x + eye_spacing - 40, face_y - 100), (face_x + eye_spacing + 60, face_y - 140), 18)
+        
+        # Wrinkles (angry forehead)
+        for i in range(5):
+            y_pos = face_y - 160 + i * 15
+            pygame.draw.line(screen, (150, 100, 100), (face_x - 80, y_pos), (face_x + 80, y_pos + 5), 3)
+        
+        # HUGE GAPING MOUTH - gets WIDER as she eats you!
+        mouth_width = int(200 + progress * 100)  # Grows wider
+        mouth_height = int(180 + progress * 80)  # Opens more
+        mouth_y = int(face_y + 30 - progress * 20)  # Comes toward you
+        
+        # Dark throat
+        pygame.draw.ellipse(screen, (10, 0, 0), (face_x - mouth_width//2, mouth_y, mouth_width, mouth_height))
+        pygame.draw.ellipse(screen, (5, 0, 0), (face_x - mouth_width//2 + 20, mouth_y + 20, mouth_width - 40, mouth_height - 40))
+        
+        # Tongue (wet and scary)
+        tongue_points = [
+            (face_x - 40, mouth_y + mouth_height - 40),
+            (face_x, mouth_y + mouth_height - 20),
+            (face_x + 40, mouth_y + mouth_height - 40),
+            (face_x + 30, mouth_y + mouth_height - 10),
+            (face_x - 30, mouth_y + mouth_height - 10)
+        ]
+        pygame.draw.polygon(screen, (180, 80, 100), tongue_points)
+        # Saliva drip effect
+        if int(elapsed * 10) % 3 == 0:
+            pygame.draw.line(screen, (200, 200, 255, 150), (face_x - 50, mouth_y + 20), (face_x - 50, mouth_y + 80), 3)
+            pygame.draw.line(screen, (200, 200, 255, 150), (face_x + 50, mouth_y + 20), (face_x + 50, mouth_y + 80), 3)
+        
+        # SHARP TEETH (both top and bottom rows)
+        teeth_count = 14
+        for i in range(teeth_count):
+            # Top teeth
+            tooth_x = face_x - mouth_width//2 + 20 + i * (mouth_width - 40) // teeth_count
+            tooth_width = 15
+            tooth_height = int(35 + progress * 20)
+            pygame.draw.polygon(screen, (255, 255, 220), [
+                (tooth_x, mouth_y),
+                (tooth_x + tooth_width, mouth_y),
+                (tooth_x + tooth_width//2, mouth_y + tooth_height)
+            ])
+            # Yellow stains on teeth
+            pygame.draw.polygon(screen, (240, 240, 180), [
+                (tooth_x + 2, mouth_y),
+                (tooth_x + tooth_width - 2, mouth_y),
+                (tooth_x + tooth_width//2, mouth_y + tooth_height - 5)
+            ])
+            
+            # Bottom teeth
+            tooth_x_bottom = face_x - mouth_width//2 + 30 + i * (mouth_width - 60) // teeth_count
+            pygame.draw.polygon(screen, (255, 255, 220), [
+                (tooth_x_bottom, mouth_y + mouth_height - tooth_height),
+                (tooth_x_bottom + tooth_width, mouth_y + mouth_height - tooth_height),
+                (tooth_x_bottom + tooth_width//2, mouth_y + mouth_height)
+            ])
+        
+        # Blood stains around mouth
+        for i in range(20):
+            stain_x = face_x - mouth_width//2 + random.randint(-20, mouth_width + 20)
+            stain_y = mouth_y + random.randint(-15, mouth_height + 15)
+            pygame.draw.circle(screen, (120, 0, 0), (stain_x, stain_y), random.randint(3, 8))
+        
+        # CRACKS and VEINS all over face
+        for i in range(30):
+            crack_start_x = face_x + random.randint(-face_size//3, face_size//3)
+            crack_start_y = face_y + random.randint(-face_size//3, face_size//3)
+            crack_end_x = crack_start_x + random.randint(-60, 60)
+            crack_end_y = crack_start_y + random.randint(-60, 60)
+            pygame.draw.line(screen, (150, 0, 0), (crack_start_x, crack_start_y), (crack_end_x, crack_end_y), 3)
+        
+        # Hair (messy and scary)
+        for i in range(30):
+            hair_x = face_x + random.randint(-face_size//2, face_size//2)
+            hair_y = face_y - face_size//2 + random.randint(-30, 30)
+            hair_length = random.randint(40, 100)
+            pygame.draw.line(screen, (20, 10, 10), (hair_x, hair_y), (hair_x + random.randint(-20, 20), hair_y - hair_length), 4)
+        
+        # Shake effect - screen trembles
+        shake_intensity = int(10 + progress * 20)
+        shake_x = random.randint(-shake_intensity, shake_intensity)
+        shake_y = random.randint(-shake_intensity, shake_intensity)
+        
+        # Text that changes and shakes
+        if progress < 0.5:
+            jumpscare_text = lobby_font.render("SHE CAUGHT YOU!", True, (255, int(50 + progress * 200), int(50 + progress * 200)))
+        else:
+            jumpscare_text = lobby_font.render("YOU'RE BEING EATEN!", True, (255, 0, 0))
+        screen.blit(jumpscare_text, (WIDTH//2 - jumpscare_text.get_width()//2 + shake_x, 50 + shake_y))
+        
+        # Add more scary text at bottom
+        if progress > 0.6:
+            terror_text = font.render("NO ESCAPE...", True, (200, 0, 0))
+            screen.blit(terror_text, (WIDTH//2 - terror_text.get_width()//2 + shake_x//2, HEIGHT - 100 + shake_y//2))
+        
+        pygame.display.flip()
+        clock.tick(60)
+        
+        # Allow emergency exit
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return 'lobby'
+    
+    # After jumpscare, show normal game over screen
     while True:
         screen.fill((20, 0, 0))  # Red tint
         
