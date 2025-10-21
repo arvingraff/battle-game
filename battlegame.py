@@ -3802,9 +3802,14 @@ def run_escape_mom_mode():
     jumpscare_time = time.time()
     jumpscare_duration = 2.0  # 2 seconds of pure terror
     
-    # Play system beeps for jumpscare sound
-    for _ in range(10):
-        print("\a")  # System beep
+    # Play scary scream sound
+    try:
+        pygame.mixer.music.load("scary-scream.mp3")
+        pygame.mixer.music.play()
+    except:
+        # Fallback to system beeps if sound file not found
+        for _ in range(10):
+            print("\a")  # System beep
     
     while time.time() - jumpscare_time < jumpscare_duration:
         elapsed = time.time() - jumpscare_time
