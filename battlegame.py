@@ -2487,6 +2487,9 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
     # Add weapon selection tracking
     p1_selected_weapon = "default"
     p2_selected_weapon = "default"
+    # Cheat code tracking
+    p1_cheat_code = ""  # Player 1 cheat: xxxzzzccc
+    p2_cheat_code = ""  # Player 2 cheat: lllooolll
     start_countdown()
     while True:
         now = time.time()
@@ -2497,6 +2500,43 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
                 sys.exit()
             if mode == 0:
                 if event.type == pygame.KEYDOWN:
+                    # Cheat code detection
+                    key_name = pygame.key.name(event.key)
+                    
+                    # Player 1 cheat code: xxxzzzccc
+                    if key_name in ['x', 'z', 'c']:
+                        p1_cheat_code += key_name
+                        # Keep only last 9 characters
+                        if len(p1_cheat_code) > 9:
+                            p1_cheat_code = p1_cheat_code[-9:]
+                        # Check if cheat code matches
+                        if p1_cheat_code == "xxxzzzccc":
+                            player2_health = 0  # Player 1 wins!
+                    else:
+                        # Reset if wrong key pressed
+                        if event.key not in [pygame.K_SPACE, pygame.K_w, pygame.K_a, pygame.K_s, pygame.K_d, 
+                                            pygame.K_q, pygame.K_e, pygame.K_r,
+                                            pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT,
+                                            pygame.K_o, pygame.K_p, pygame.K_l, pygame.K_RETURN]:
+                            p1_cheat_code = ""
+                    
+                    # Player 2 cheat code: lllooolll
+                    if key_name in ['l', 'o']:
+                        p2_cheat_code += key_name
+                        # Keep only last 9 characters
+                        if len(p2_cheat_code) > 9:
+                            p2_cheat_code = p2_cheat_code[-9:]
+                        # Check if cheat code matches
+                        if p2_cheat_code == "lllooolll":
+                            player1_health = 0  # Player 2 wins!
+                    else:
+                        # Reset if wrong key pressed (but allow l,o,p for weapon switching)
+                        if event.key not in [pygame.K_SPACE, pygame.K_w, pygame.K_a, pygame.K_s, pygame.K_d, 
+                                            pygame.K_q, pygame.K_e, pygame.K_r,
+                                            pygame.K_UP, pygame.K_DOWN, pygame.K_LEFT, pygame.K_RIGHT,
+                                            pygame.K_o, pygame.K_p, pygame.K_l, pygame.K_RETURN]:
+                            p2_cheat_code = ""
+                    
                     # Player 1 weapon switching
                     if event.key == pygame.K_q:
                         p1_selected_weapon = "default"
@@ -3562,7 +3602,7 @@ def run_makka_pakka_mode(player1_name, player2_name):
         # Draw name tags above their heads (above the antenna bobble)
         p1_text = name_font.render(player1_name, True, (255, 255, 255))
         p2_text = name_font.render(player2_name, True, (255, 255, 255))
-        # Draw background for name tags (positioned above the taller antenna)
+        # Draw background for name ags (positioned above the taller antenna)
         p1_bg = pygame.Rect(player1.x+25-p1_text.get_width()//2-4, player1.y-60, p1_text.get_width()+8, p1_text.get_height()+4)
         p2_bg = pygame.Rect(player2.x+25-p2_text.get_width()//2-4, player2.y-60, p2_text.get_width()+8, p2_text.get_height()+4)
         pygame.draw.rect(screen, (255, 0, 0), p1_bg, border_radius=5)
