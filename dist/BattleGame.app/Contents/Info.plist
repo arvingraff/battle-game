@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDisplayName</key>
+	<string>BattleGame</string>
+	<key>CFBundleExecutable</key>
+	<string>BattleGame</string>
+	<key>CFBundleIconFile</key>
+	<string>generated-5c2dcba28344486131632c244a0df2661ad3aa396e87a12139d2799ef855c97b.icns</string>
+	<key>CFBundleIdentifier</key>
+	<string>BattleGame</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>BattleGame</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.0.0</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+</dict>
+</plist>

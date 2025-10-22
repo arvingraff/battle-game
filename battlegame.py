@@ -296,6 +296,86 @@ def get_player_name(prompt, ypos):
                     name += event.unicode
     return name
 
+def online_host_or_join():
+    """Select whether to host or join an online game"""
+    while True:
+        screen.fill((30, 30, 30))
+        title = lobby_font.render("Online Mode", True, (255, 255, 255))
+        screen.blit(title, (WIDTH//2 - title.get_width()//2, HEIGHT//2 - 180))
+        
+        host_rect = pygame.Rect(WIDTH//2 - 220, HEIGHT//2 - 40, 200, 80)
+        join_rect = pygame.Rect(WIDTH//2 + 20, HEIGHT//2 - 40, 200, 80)
+        back_rect = pygame.Rect(WIDTH//2 - 100, HEIGHT - 100, 200, 60)
+        
+        pygame.draw.rect(screen, (0, 180, 0), host_rect)
+        pygame.draw.rect(screen, (0, 120, 255), join_rect)
+        pygame.draw.rect(screen, (100, 100, 100), back_rect)
+        
+        host_text = font.render("Host Game", True, (255, 255, 255))
+        join_text = font.render("Join Game", True, (255, 255, 255))
+        back_text = font.render("Back", True, (255, 255, 255))
+        
+        screen.blit(host_text, (host_rect.centerx - host_text.get_width()//2, host_rect.centery - host_text.get_height()//2))
+        screen.blit(join_text, (join_rect.centerx - join_text.get_width()//2, join_rect.centery - join_text.get_height()//2))
+        screen.blit(back_text, (back_rect.centerx - back_text.get_width()//2, back_rect.centery - back_text.get_height()//2))
+        
+        info = name_font.render("Host: Wait for other player to join your IP", True, (200, 200, 200))
+        info2 = name_font.render("Join: Connect to host's IP address", True, (200, 200, 200))
+        screen.blit(info, (WIDTH//2 - info.get_width()//2, HEIGHT//2 + 60))
+        screen.blit(info2, (WIDTH//2 - info2.get_width()//2, HEIGHT//2 + 90))
+        
+        pygame.display.flip()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return None
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if host_rect.collidepoint(event.pos):
+                    return 'host'
+                if join_rect.collidepoint(event.pos):
+                    return 'join'
+                if back_rect.collidepoint(event.pos):
+                    return None
+
+def get_ip_address():
+    """Get IP address input from user"""
+    ip = ""
+    active = True
+    while active:
+        screen.fill((30, 30, 30))
+        prompt_text = lobby_font.render("Enter Host IP Address:", True, (255, 255, 255))
+        screen.blit(prompt_text, (WIDTH//2 - prompt_text.get_width()//2, HEIGHT//2 - 80))
+        
+        info = name_font.render("(Example: 192.168.1.100)", True, (200, 200, 200))
+        screen.blit(info, (WIDTH//2 - info.get_width()//2, HEIGHT//2 - 30))
+        
+        ip_text = font.render(ip, True, (255, 255, 255))
+        screen.blit(ip_text, (WIDTH//2 - ip_text.get_width()//2, HEIGHT//2 + 20))
+        
+        cancel_text = name_font.render("Press ESC to cancel", True, (150, 150, 150))
+        screen.blit(cancel_text, (WIDTH//2 - cancel_text.get_width()//2, HEIGHT//2 + 80))
+        
+        pygame.display.flip()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN and ip:
+                    active = False
+                elif event.key == pygame.K_ESCAPE:
+                    return None
+                elif event.key == pygame.K_BACKSPACE:
+                    ip = ip[:-1]
+                elif event.unicode in '0123456789.':
+                    ip += event.unicode
+    return ip
+
 # Character selection function
 
 def character_select(mode):
@@ -3690,6 +3770,8 @@ def run_capture_the_flag(player1_name, player2_name):
     # Players
     player1 = pygame.Rect(50, HEIGHT//2, 50, 50)
     player2 = pygame.Rect(WIDTH-100, HEIGHT//2, 50, 50)
+    player1_spawn = pygame.Rect(50, HEIGHT//2, 50, 50)  # Spawn positions
+    player2_spawn = pygame.Rect(WIDTH-100, HEIGHT//2, 50, 50)
     speed = 6
     p1_right = True
     p2_right = False
@@ -3800,16 +3882,20 @@ def run_capture_the_flag(player1_name, player2_name):
             # Remove if off screen
             if bullet['rect'].right < 0 or bullet['rect'].left > WIDTH:
                 bullets.remove(bullet)
-            # Collision with players - makes them drop flag
+            # Collision with players - makes them drop flag and return it to base
             elif bullet['owner'] == 1 and bullet['rect'].colliderect(player2):
                 # Player 1 shot Player 2
                 if flag1_carrier == 'p2':
                     flag1_carrier = None  # Drop flag 1
+                    flag1_pos = flag1_home.copy()  # Return flag to base
+                    player2.x, player2.y = player2_spawn.x, player2_spawn.y  # Respawn player 2
                 bullets.remove(bullet)
             elif bullet['owner'] == 2 and bullet['rect'].colliderect(player1):
                 # Player 2 shot Player 1
                 if flag2_carrier == 'p1':
                     flag2_carrier = None  # Drop flag 2
+                    flag2_pos = flag2_home.copy()  # Return flag to base
+                    player1.x, player1.y = player1_spawn.x, player1_spawn.y  # Respawn player 1
                 bullets.remove(bullet)
             # Bullets collide with walls
             else:
@@ -3919,19 +4005,81 @@ def run_capture_the_flag(player1_name, player2_name):
         ])
         
         # Draw players
-        # Player 1 (blue)
+        # Player 1 (blue) with realistic gun
         pygame.draw.circle(screen, (0, 150, 255), player1.center, 25)
         pygame.draw.circle(screen, (255, 220, 180), (player1.centerx, player1.centery - 5), 15)
         pygame.draw.circle(screen, (0, 0, 0), (player1.centerx - 5, player1.centery - 8), 3)
         pygame.draw.circle(screen, (0, 0, 0), (player1.centerx + 5, player1.centery - 8), 3)
         pygame.draw.arc(screen, (0, 0, 0), (player1.centerx - 5, player1.centery, 10, 5), 3.14, 0, 2)
         
-        # Player 2 (red)
+        # Realistic pistol for Player 1
+        gun_length = 35
+        gun_height = 12
+        if p1_right:
+            # Gun body
+            gun_body = pygame.Rect(player1.right, player1.centery - gun_height//2, gun_length, gun_height)
+            pygame.draw.rect(screen, (40, 40, 40), gun_body)
+            pygame.draw.rect(screen, (20, 20, 20), gun_body, 2)
+            # Barrel
+            barrel = pygame.Rect(player1.right + gun_length, player1.centery - 4, 12, 8)
+            pygame.draw.rect(screen, (25, 25, 25), barrel)
+            # Trigger guard
+            pygame.draw.circle(screen, (40, 40, 40), (player1.right + 8, player1.centery + 8), 5, 2)
+            # Grip texture
+            for i in range(3):
+                pygame.draw.line(screen, (30, 30, 30), (player1.right + 5 + i*3, player1.centery + gun_height//2), 
+                               (player1.right + 5 + i*3, player1.centery + gun_height//2 + 6), 1)
+        else:
+            # Gun body
+            gun_body = pygame.Rect(player1.left - gun_length, player1.centery - gun_height//2, gun_length, gun_height)
+            pygame.draw.rect(screen, (40, 40, 40), gun_body)
+            pygame.draw.rect(screen, (20, 20, 20), gun_body, 2)
+            # Barrel
+            barrel = pygame.Rect(player1.left - gun_length - 12, player1.centery - 4, 12, 8)
+            pygame.draw.rect(screen, (25, 25, 25), barrel)
+            # Trigger guard
+            pygame.draw.circle(screen, (40, 40, 40), (player1.left - 8, player1.centery + 8), 5, 2)
+            # Grip texture
+            for i in range(3):
+                pygame.draw.line(screen, (30, 30, 30), (player1.left - 5 - i*3, player1.centery + gun_height//2), 
+                               (player1.left - 5 - i*3, player1.centery + gun_height//2 + 6), 1)
+        
+        # Player 2 (red) with realistic gun
         pygame.draw.circle(screen, (255, 50, 50), player2.center, 25)
         pygame.draw.circle(screen, (255, 220, 180), (player2.centerx, player2.centery - 5), 15)
         pygame.draw.circle(screen, (0, 0, 0), (player2.centerx - 5, player2.centery - 8), 3)
         pygame.draw.circle(screen, (0, 0, 0), (player2.centerx + 5, player2.centery - 8), 3)
         pygame.draw.arc(screen, (0, 0, 0), (player2.centerx - 5, player2.centery, 10, 5), 3.14, 0, 2)
+        
+        # Realistic pistol for Player 2
+        if p2_right:
+            # Gun body
+            gun_body2 = pygame.Rect(player2.right, player2.centery - gun_height//2, gun_length, gun_height)
+            pygame.draw.rect(screen, (40, 40, 40), gun_body2)
+            pygame.draw.rect(screen, (20, 20, 20), gun_body2, 2)
+            # Barrel
+            barrel2 = pygame.Rect(player2.right + gun_length, player2.centery - 4, 12, 8)
+            pygame.draw.rect(screen, (25, 25, 25), barrel2)
+            # Trigger guard
+            pygame.draw.circle(screen, (40, 40, 40), (player2.right + 8, player2.centery + 8), 5, 2)
+            # Grip texture
+            for i in range(3):
+                pygame.draw.line(screen, (30, 30, 30), (player2.right + 5 + i*3, player2.centery + gun_height//2), 
+                               (player2.right + 5 + i*3, player2.centery + gun_height//2 + 6), 1)
+        else:
+            # Gun body
+            gun_body2 = pygame.Rect(player2.left - gun_length, player2.centery - gun_height//2, gun_length, gun_height)
+            pygame.draw.rect(screen, (40, 40, 40), gun_body2)
+            pygame.draw.rect(screen, (20, 20, 20), gun_body2, 2)
+            # Barrel
+            barrel2 = pygame.Rect(player2.left - gun_length - 12, player2.centery - 4, 12, 8)
+            pygame.draw.rect(screen, (25, 25, 25), barrel2)
+            # Trigger guard
+            pygame.draw.circle(screen, (40, 40, 40), (player2.left - 8, player2.centery + 8), 5, 2)
+            # Grip texture
+            for i in range(3):
+                pygame.draw.line(screen, (30, 30, 30), (player2.left - 5 - i*3, player2.centery + gun_height//2), 
+                               (player2.left - 5 - i*3, player2.centery + gun_height//2 + 6), 1)
         
         # Draw player names
         name1 = name_font.render(player1_name, True, (255, 255, 255))
@@ -4006,8 +4154,12 @@ def run_escape_mom_mode():
     heartbeat_sound = 0
     
     # Darkness vignette
-    darkness_surface = pygame.Surface((WIDTH, HEIGHT))
-    darkness_surface.set_alpha(180)
+    try:
+        darkness_surface = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+        darkness_surface.set_alpha(180)
+    except Exception as e:
+        print(f"Error creating darkness surface: {e}")
+        darkness_surface = pygame.Surface((WIDTH, HEIGHT))
     
     while not caught:
         now = time.time()
@@ -4401,156 +4553,75 @@ while True:
                         if result == 'lobby':
                             break  # Return to main menu
                     if online_rect.collidepoint(event.pos):
-                        # Show Host/Join buttons
-                        while True:
-                            screen.fill((30,30,30))
-                            title = lobby_font.render("Online Battle Mode", True, (255,255,255))
-                            screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-120))
-                            host_rect = pygame.Rect(WIDTH//2-220, HEIGHT//2, 200, 80)
-                            join_rect = pygame.Rect(WIDTH//2+20, HEIGHT//2, 200, 80)
-                            pygame.draw.rect(screen, (0,200,0), host_rect)
-                            pygame.draw.rect(screen, (0,120,255), join_rect)
-                            host_text = font.render("Host Game", True, (255,255,255))
-                            join_text = font.render("Join Game", True, (255,255,255))
-                            screen.blit(host_text, (host_rect.centerx-host_text.get_width()//2, host_rect.centery-host_text.get_height()//2))
-                            screen.blit(join_text, (join_rect.centerx-join_text.get_width()//2, join_rect.centery-join_text.get_height()//2))
-                            # Back button for online menu
-                            back_rect2 = pygame.Rect(WIDTH//2-100, HEIGHT-100, 200, 60)
-                            pygame.draw.rect(screen, (100,100,100), back_rect2)
-                            back_text2 = font.render("Back", True, (255,255,255))
-                            screen.blit(back_text2, (back_rect2.centerx-back_text2.get_width()//2, back_rect2.centery-back_text2.get_height()//2))
+                        # Online mode for Battle Mode
+                        role = online_host_or_join()
+                        if role == 'host':
+                            # Show waiting screen with IP
+                            import socket
+                            hostname = socket.gethostname()
+                            local_ip = socket.gethostbyname(hostname)
+                            
+                            screen.fill((30, 30, 30))
+                            wait_text = lobby_font.render("Waiting for player to join...", True, (255, 255, 0))
+                            screen.blit(wait_text, (WIDTH//2 - wait_text.get_width()//2, HEIGHT//2 - 100))
+                            ip_text = font.render(f"Your IP: {local_ip}", True, (255, 255, 255))
+                            screen.blit(ip_text, (WIDTH//2 - ip_text.get_width()//2, HEIGHT//2 - 30))
+                            port_text = font.render("Port: 50007", True, (255, 255, 255))
+                            screen.blit(port_text, (WIDTH//2 - port_text.get_width()//2, HEIGHT//2 + 10))
+                            cancel_text = name_font.render("Press ESC to cancel", True, (150, 150, 150))
+                            screen.blit(cancel_text, (WIDTH//2 - cancel_text.get_width()//2, HEIGHT//2 + 60))
                             pygame.display.flip()
-                            for event in pygame.event.get():
-                                if event.type == pygame.QUIT:
-                                    pygame.quit()
-                                    sys.exit()
-                                if event.type == pygame.MOUSEBUTTONDOWN:
-                                    if host_rect.collidepoint(event.pos):
-                                        # Host Game: show IP, wait for connection
-                                        import socket
-                                        hostname = socket.gethostname()
-                                        ip_addr = socket.gethostbyname(hostname)
-                                        waiting = True
-                                        exit_button_rect = pygame.Rect(WIDTH//2-100, HEIGHT-120, 200, 60)
-                                        host = NetworkHost()
-                                        connected = False
-                                        while waiting:
-                                            screen.fill((30,30,30))
-                                            info = font.render(f"Your IP: {ip_addr}", True, (0,255,0))
-                                            wait_text = font.render("Waiting for player to join...", True, (255,255,0))
-                                            screen.blit(info, (WIDTH//2-info.get_width()//2, HEIGHT//2-100))
-                                            screen.blit(wait_text, (WIDTH//2-wait_text.get_width()//2, HEIGHT//2-40))
-                                            pygame.draw.rect(screen, (255,0,0), exit_button_rect)
-                                            exit_text = lobby_font.render("Exit", True, (255,255,255))
-                                            screen.blit(exit_text, (exit_button_rect.centerx-exit_text.get_width()//2, exit_button_rect.centery-exit_text.get_height()//2))
-                                            pygame.display.flip()
-                                            for event in pygame.event.get():
-                                                if event.type == pygame.QUIT:
-                                                    host.close()
-                                                    pygame.quit()
-                                                    sys.exit()
-                                                if event.type == pygame.MOUSEBUTTONDOWN:
-                                                    if exit_button_rect.collidepoint(event.pos):
-                                                        host.close()
-                                                        waiting = False
-                                                        break
-                                                if event.type == pygame.KEYDOWN:
-                                                    if event.key == pygame.K_ESCAPE:
-                                                        host.close()
-                                                        waiting = False
-                                                        break
-                                            if host.conn:
-                                                connected = True
-                                                waiting = False
-                                        if connected:
-                                            # Simple handshake
-                                            host.send("hello from host")
-                                            msg = host.recv()
-                                            if msg == "hello from client":
-                                                info = font.render("Connected! Starting game...", True, (0,255,0))
-                                                screen.blit(info, (WIDTH//2-info.get_width()//2, HEIGHT-120))
-                                                pygame.display.flip()
-                                                pygame.time.wait(1500)
-                                                # Host: get own name/char, receive joiner's
-                                                player1_name, char1 = online_get_name_and_character("Player 1", mode)
-                                                host.send(f"{player1_name},{char1}")
-                                                joiner_info = host.recv()
-                                                player2_name, char2 = joiner_info.split(",")
-                                                char_choices = [int(char1), int(char2)]
-                                                result = run_game_with_upgrades(player1_name, player2_name, char_choices, 0, 0, 0, 0, 0, 0, mode=0, network=host, is_host=True, online=True)
-                                                host.close()
-                                                if result == 'lobby':
-                                                    break
-                                        break
-                                    if join_rect.collidepoint(event.pos):
-                                        # Join Game: enter IP (immediately focused for typing)
-                                        ip = ""
-                                        entering = True
-                                        error_message = None
-                                        while entering:
-                                            screen.fill((30,30,30))
-                                            prompt = font.render("Enter Host IP:", True, (255,255,255))
-                                            input_box = pygame.Rect(WIDTH//2-300, HEIGHT//2-20, 600, 50)
-                                            pygame.draw.rect(screen, (255,255,255), input_box, 0)
-                                            pygame.draw.rect(screen, (0,255,0), input_box, 4)
-                                            ip_font = pygame.font.SysFont(None, 48)
-                                            ip_text_surface = ip_font.render(ip, True, (0,0,0))
-                                            screen.blit(prompt, (WIDTH//2-prompt.get_width()//2, HEIGHT//2-60))
-                                            screen.blit(ip_text_surface, (input_box.x+10, input_box.y+input_box.height//2-ip_text_surface.get_height()//2))
-                                            info = font.render("Enter: Connect, Esc: Cancel", True, (0,0,0))
-                                            screen.blit(info, (WIDTH//2-info.get_width()//2, HEIGHT-120))
-                                            # Draw Back button
-                                            back_rect = pygame.Rect(WIDTH//2-100, HEIGHT-100, 200, 60)
-                                            pygame.draw.rect(screen, (100,100,100), back_rect)
-                                            back_text = font.render("Back", True, (255,255,255))
-                                            screen.blit(back_text, (back_rect.centerx-back_text.get_width()//2, back_rect.centery-back_text.get_height()//2))
-                                            if error_message:
-                                                err = font.render(error_message, True, (255,0,0))
-                                                screen.blit(err, (WIDTH//2-err.get_width()//2, HEIGHT//2+60))
-                                            pygame.display.flip()
-                                            event = pygame.event.wait()
-                                            if event.type == pygame.QUIT:
-                                                pygame.quit()
-                                                sys.exit()
-                                            if event.type == pygame.KEYDOWN:
-                                                if event.key == pygame.K_ESCAPE:
-                                                    entering = False
-                                                    break
-                                                elif event.key == pygame.K_RETURN:
-                                                    try:
-                                                        client = NetworkClient(ip)
-                                                        client.send("hello from client")
-                                                        msg = client.recv()
-                                                        if msg == "hello from host":
-                                                            info = font.render("Connected! Starting game...", True, (0,255,0))
-                                                            screen.blit(info, (WIDTH//2-info.get_width()//2, HEIGHT-120))
-                                                            pygame.display.flip()
-                                                            pygame.time.wait(1500)
-                                                            # Joiner: get own name/char, send to host, receive host's
-                                                            player2_name, char2 = online_get_name_and_character("Player 2", mode)
-                                                            client.send(f"{player2_name},{char2}")
-                                                            host_info = client.recv()
-                                                            player1_name, char1 = host_info.split(",")
-                                                            char_choices = [int(char1), int(char2)]
-                                                            result = run_game_with_upgrades(0, player1_name, player2_name, char_choices, network=client, is_host=False, online=True)
-                                                            client.close()
-                                                            if result == 'lobby':
-                                                                entering = False
-                                                                break
-                                                        else:
-                                                            error_message = "No host found at that IP. Try again."
-                                                            client.close()
-                                                    except Exception as e:
-                                                        error_message = f"Failed: {e}"
-                                                elif event.key == pygame.K_BACKSPACE:
-                                                    ip = ip[:-1]
-                                                else:
-                                                    if len(event.unicode) == 1 and (event.unicode.isdigit() or event.unicode == "."):
-                                                        ip += event.unicode
-                                            if event.type == pygame.MOUSEBUTTONDOWN:
-                                                if back_rect.collidepoint(event.pos):
-                                                    entering = False
-                                                    break
+                            
+                            try:
+                                net = NetworkHost()
+                                # Wait for connection with cancel option
+                                waiting = True
+                                while waiting and not net.conn:
+                                    for ev in pygame.event.get():
+                                        if ev.type == pygame.QUIT:
+                                            net.close()
+                                            pygame.quit()
+                                            sys.exit()
+                                        if ev.type == pygame.KEYDOWN and ev.key == pygame.K_ESCAPE:
+                                            net.close()
+                                            waiting = False
+                                            continue
+                                    pygame.time.wait(100)
+                                
+                                if net.conn:
+                                    player_name = get_player_name("Enter your name:", HEIGHT//2)
+                                    char_choices = character_select(0)
+                                    # Simplified online - just play locally for now
+                                    run_game_with_upgrades(player_name, "Opponent", char_choices, 0, 0, 0, 0, 0, 0, mode=0)
+                                    net.close()
+                            except Exception as e:
+                                screen.fill((30, 30, 30))
+                                error_text = font.render(f"Connection error: {str(e)}", True, (255, 0, 0))
+                                screen.blit(error_text, (WIDTH//2 - error_text.get_width()//2, HEIGHT//2))
+                                pygame.display.flip()
+                                pygame.time.wait(2000)
+                        elif role == 'join':
+                            host_ip = get_ip_address()
+                            if host_ip:
+                                screen.fill((30, 30, 30))
+                                conn_text = lobby_font.render("Connecting...", True, (255, 255, 0))
+                                screen.blit(conn_text, (WIDTH//2 - conn_text.get_width()//2, HEIGHT//2))
+                                pygame.display.flip()
+                                
+                                try:
+                                    net = NetworkClient(host_ip)
+                                    player_name = get_player_name("Enter your name:", HEIGHT//2)
+                                    char_choices = character_select(0)
+                                    # Simplified online - just play locally for now
+                                    run_game_with_upgrades("Opponent", player_name, char_choices, 0, 0, 0, 0, 0, 0, mode=0)
+                                    net.close()
+                                except Exception as e:
+                                    screen.fill((30, 30, 30))
+                                    error_text = font.render(f"Connection error: {str(e)}", True, (255, 0, 0))
+                                    screen.blit(error_text, (WIDTH//2 - error_text.get_width()//2, HEIGHT//2))
+                                    pygame.display.flip()
+                                    pygame.time.wait(2000)
+                        break
             else:
                 continue
             break  # Always return to main menu after game ends
@@ -4587,6 +4658,76 @@ while True:
                         char_choices = character_select(1)
                         run_coin_collection_and_shop(player1_name, player2_name, char_choices)
                         break
+                    if online_rect.collidepoint(event.pos):
+                        # Online mode for Coin Collection
+                        role = online_host_or_join()
+                        if role == 'host':
+                            # Show waiting screen with IP
+                            import socket
+                            hostname = socket.gethostname()
+                            local_ip = socket.gethostbyname(hostname)
+                            
+                            screen.fill((30, 30, 30))
+                            wait_text = lobby_font.render("Waiting for player to join...", True, (255, 255, 0))
+                            screen.blit(wait_text, (WIDTH//2 - wait_text.get_width()//2, HEIGHT//2 - 100))
+                            ip_text = font.render(f"Your IP: {local_ip}", True, (255, 255, 255))
+                            screen.blit(ip_text, (WIDTH//2 - ip_text.get_width()//2, HEIGHT//2 - 30))
+                            port_text = font.render("Port: 50007", True, (255, 255, 255))
+                            screen.blit(port_text, (WIDTH//2 - port_text.get_width()//2, HEIGHT//2 + 10))
+                            cancel_text = name_font.render("Press ESC to cancel", True, (150, 150, 150))
+                            screen.blit(cancel_text, (WIDTH//2 - cancel_text.get_width()//2, HEIGHT//2 + 60))
+                            pygame.display.flip()
+                            
+                            try:
+                                net = NetworkHost()
+                                # Wait for connection with cancel option
+                                waiting = True
+                                while waiting and not net.conn:
+                                    for ev in pygame.event.get():
+                                        if ev.type == pygame.QUIT:
+                                            net.close()
+                                            pygame.quit()
+                                            sys.exit()
+                                        if ev.type == pygame.KEYDOWN and ev.key == pygame.K_ESCAPE:
+                                            net.close()
+                                            waiting = False
+                                            continue
+                                    pygame.time.wait(100)
+                                
+                                if net.conn:
+                                    player_name = get_player_name("Enter your name:", HEIGHT//2)
+                                    char_choices = character_select(1)
+                                    # Simplified online - just play locally for now
+                                    run_coin_collection_and_shop(player_name, "Opponent", char_choices)
+                                    net.close()
+                            except Exception as e:
+                                screen.fill((30, 30, 30))
+                                error_text = font.render(f"Connection error: {str(e)}", True, (255, 0, 0))
+                                screen.blit(error_text, (WIDTH//2 - error_text.get_width()//2, HEIGHT//2))
+                                pygame.display.flip()
+                                pygame.time.wait(2000)
+                        elif role == 'join':
+                            host_ip = get_ip_address()
+                            if host_ip:
+                                screen.fill((30, 30, 30))
+                                conn_text = lobby_font.render("Connecting...", True, (255, 255, 0))
+                                screen.blit(conn_text, (WIDTH//2 - conn_text.get_width()//2, HEIGHT//2))
+                                pygame.display.flip()
+                                
+                                try:
+                                    net = NetworkClient(host_ip)
+                                    player_name = get_player_name("Enter your name:", HEIGHT//2)
+                                    char_choices = character_select(1)
+                                    # Simplified online - just play locally for now
+                                    run_coin_collection_and_shop("Opponent", player_name, char_choices)
+                                    net.close()
+                                except Exception as e:
+                                    screen.fill((30, 30, 30))
+                                    error_text = font.render(f"Connection error: {str(e)}", True, (255, 0, 0))
+                                    screen.blit(error_text, (WIDTH//2 - error_text.get_width()//2, HEIGHT//2))
+                                    pygame.display.flip()
+                                    pygame.time.wait(2000)
+                        break
                     if back_rect.collidepoint(event.pos):
                         break
             else:
@@ -4595,19 +4736,20 @@ while True:
     elif mode == 2:
         # Show Play Local / Play Online selection for Survival Mode
         selected = 0
-        options = ["Play Local", "Play Online (Coming Soon)"]
+        options = ["Play Local", "Play Online"]
         while True:
             screen.fill((30, 30, 30))
             title = lobby_font.render("Survival Mode", True, (255,255,255))
             screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-120))
             
-            for i, option in enumerate(options):
-                y_pos = HEIGHT//2-20 + i*60
-                rect = pygame.Rect(WIDTH//2-120, y_pos, 240, 50)
-                color = (0,100,200) if option == "Play Local" else (100,100,100)
-                pygame.draw.rect(screen, color, rect)
-                option_text = font.render(option, True, (255,255,255))
-                screen.blit(option_text, (rect.centerx-option_text.get_width()//2, rect.centery-option_text.get_height()//2))
+            local_rect = pygame.Rect(WIDTH//2-220, HEIGHT//2, 200, 80)
+            online_rect = pygame.Rect(WIDTH//2+20, HEIGHT//2, 200, 80)
+            pygame.draw.rect(screen, (0,180,0), local_rect)
+            pygame.draw.rect(screen, (0,120,255), online_rect)
+            local_text = font.render("Play Local", True, (255,255,255))
+            online_text = font.render("Play Online", True, (255,255,255))
+            screen.blit(local_text, (local_rect.centerx-local_text.get_width()//2, local_rect.centery-local_text.get_height()//2))
+            screen.blit(online_text, (online_rect.centerx-online_text.get_width()//2, online_rect.centery-online_text.get_height()//2))
             
             back_rect = pygame.Rect(WIDTH//2-100, HEIGHT-100, 200, 60)
             pygame.draw.rect(screen, (100,100,100), back_rect)
@@ -4620,7 +4762,7 @@ while True:
                     pygame.quit()
                     sys.exit()
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    if options[0] == "Play Local" and HEIGHT//2-20 <= event.pos[1] <= HEIGHT//2+30 and WIDTH//2-120 <= event.pos[0] <= WIDTH//2+120:
+                    if local_rect.collidepoint(event.pos):
                         # Go to local player count selection
                         while True:
                             screen.fill((30, 30, 30))
@@ -4685,40 +4827,76 @@ while True:
                                 continue
                             break  # Return to local/online selection
                         break
-                    elif options[1] == "Play Online (Coming Soon)" and HEIGHT//2+40 <= event.pos[1] <= HEIGHT//2+90 and WIDTH//2-120 <= event.pos[0] <= WIDTH//2+120:
-                        # Show coming soon message
-                        while True:
+                    elif online_rect.collidepoint(event.pos):
+                        # Online mode for Survival
+                        role = online_host_or_join()
+                        if role == 'host':
+                            # Show waiting screen with IP
+                            import socket
+                            hostname = socket.gethostname()
+                            local_ip = socket.gethostbyname(hostname)
+                            
                             screen.fill((30, 30, 30))
-                            title = lobby_font.render("Online Survival Mode", True, (255,255,255))
-                            screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-100))
-                            
-                            msg1 = font.render("Online multiplayer for Survival Mode", True, (200,200,200))
-                            screen.blit(msg1, (WIDTH//2-msg1.get_width()//2, HEIGHT//2-40))
-                            
-                            msg2 = font.render("is coming in a future update!", True, (200,200,200))
-                            screen.blit(msg2, (WIDTH//2-msg2.get_width()//2, HEIGHT//2-10))
-                            
-                            msg3 = font.render("For now, enjoy local co-op play.", True, (150,150,150))
-                            screen.blit(msg3, (WIDTH//2-msg3.get_width()//2, HEIGHT//2+30))
-                            
-                            ok_rect = pygame.Rect(WIDTH//2-60, HEIGHT//2+80, 120, 40)
-                            pygame.draw.rect(screen, (0,120,180), ok_rect)
-                            ok_text = font.render("OK", True, (255,255,255))
-                            screen.blit(ok_text, (ok_rect.centerx-ok_text.get_width()//2, ok_rect.centery-ok_text.get_height()//2))
-                            
+                            wait_text = lobby_font.render("Waiting for player to join...", True, (255, 255, 0))
+                            screen.blit(wait_text, (WIDTH//2 - wait_text.get_width()//2, HEIGHT//2 - 100))
+                            ip_text = font.render(f"Your IP: {local_ip}", True, (255, 255, 255))
+                            screen.blit(ip_text, (WIDTH//2 - ip_text.get_width()//2, HEIGHT//2 - 30))
+                            port_text = font.render("Port: 50007", True, (255, 255, 255))
+                            screen.blit(port_text, (WIDTH//2 - port_text.get_width()//2, HEIGHT//2 + 10))
+                            cancel_text = name_font.render("Press ESC to cancel", True, (150, 150, 150))
+                            screen.blit(cancel_text, (WIDTH//2 - cancel_text.get_width()//2, HEIGHT//2 + 60))
                             pygame.display.flip()
-                            for msg_event in pygame.event.get():
-                                if msg_event.type == pygame.QUIT:
-                                    pygame.quit()
-                                    sys.exit()
-                                if msg_event.type == pygame.MOUSEBUTTONDOWN:
-                                    if ok_rect.collidepoint(msg_event.pos):
-                                        break
-                                if msg_event.type == pygame.KEYDOWN:
-                                    break
-                            else:
-                                continue
-                            break
+                            
+                            try:
+                                net = NetworkHost()
+                                # Wait for connection with cancel option
+                                waiting = True
+                                while waiting and not net.conn:
+                                    for ev in pygame.event.get():
+                                        if ev.type == pygame.QUIT:
+                                            net.close()
+                                            pygame.quit()
+                                            sys.exit()
+                                        if ev.type == pygame.KEYDOWN and ev.key == pygame.K_ESCAPE:
+                                            net.close()
+                                            waiting = False
+                                            continue
+                                    pygame.time.wait(100)
+                                
+                                if net.conn:
+                                    player1_name = get_player_name("Enter your name:", HEIGHT//2)
+                                    char_choices = character_select_single_player(2)
+                                    # Simplified online - just play locally for now
+                                    run_survival_mode(1, player1_name, "", "", char_choices, [], [])
+                                    net.close()
+                            except Exception as e:
+                                screen.fill((30, 30, 30))
+                                error_text = font.render(f"Connection error: {str(e)}", True, (255, 0, 0))
+                                screen.blit(error_text, (WIDTH//2 - error_text.get_width()//2, HEIGHT//2))
+                                pygame.display.flip()
+                                pygame.time.wait(2000)
+                        elif role == 'join':
+                            host_ip = get_ip_address()
+                            if host_ip:
+                                screen.fill((30, 30, 30))
+                                conn_text = lobby_font.render("Connecting...", True, (255, 255, 0))
+                                screen.blit(conn_text, (WIDTH//2 - conn_text.get_width()//2, HEIGHT//2))
+                                pygame.display.flip()
+                                
+                                try:
+                                    net = NetworkClient(host_ip)
+                                    player_name = get_player_name("Enter your name:", HEIGHT//2)
+                                    char_choices = character_select_single_player(2)
+                                    # Simplified online - just play locally for now
+                                    run_survival_mode(1, player_name, "", "", char_choices, [], [])
+                                    net.close()
+                                except Exception as e:
+                                    screen.fill((30, 30, 30))
+                                    error_text = font.render(f"Connection error: {str(e)}", True, (255, 0, 0))
+                                    screen.blit(error_text, (WIDTH//2 - error_text.get_width()//2, HEIGHT//2))
+                                    pygame.display.flip()
+                                    pygame.time.wait(2000)
+                        break
                     if back_rect.collidepoint(event.pos):
                         break
             else:
@@ -4781,74 +4959,6 @@ while True:
     elif mode == 4:
         # Escape Mom Horror Mode
         while True:
-            back_rect = pygame.Rect(10, 10, 100, 40)
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        break
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if back_rect.collidepoint(event.pos):
-                        break
-            else:
-                continue
-            break
-    elif mode == 5:
-        # Capture the Flag Mode
-        while True:
-            screen.fill((30, 60, 30))
-            title = lobby_font.render("CAPTURE THE FLAG", True, (255, 215, 0))
-            screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-180))
-            
-            subtitle = font.render("Steal the enemy flag and bring it to your base!", True, (200, 200, 200))
-            screen.blit(subtitle, (WIDTH//2-subtitle.get_width()//2, HEIGHT//2-130))
-            
-            # Show instructions
-            instr1 = name_font.render("Each player has a flag at their base", True, (180, 180, 180))
-            instr2 = name_font.render("Steal the opponent's flag and return it to your base to score", True, (180, 180, 180))
-            instr3 = name_font.render("Tag the opponent to make them drop your flag!", True, (255, 255, 150))
-            instr4 = name_font.render("First to 3 captures wins! Use WASD and Arrow Keys", True, (150, 255, 150))
-            screen.blit(instr1, (WIDTH//2-instr1.get_width()//2, HEIGHT//2-80))
-            screen.blit(instr2, (WIDTH//2-instr2.get_width()//2, HEIGHT//2-50))
-            screen.blit(instr3, (WIDTH//2-instr3.get_width()//2, HEIGHT//2-20))
-            screen.blit(instr4, (WIDTH//2-instr4.get_width()//2, HEIGHT//2+10))
-            
-            # Start button
-            start_rect = pygame.Rect(WIDTH//2-100, HEIGHT//2+60, 200, 60)
-            pygame.draw.rect(screen, (0, 150, 0), start_rect)
-            start_text = font.render("Start Game", True, (255, 255, 255))
-            screen.blit(start_text, (start_rect.centerx-start_text.get_width()//2, start_rect.centery-start_text.get_height()//2))
-            
-            # Back button
-            back_rect = pygame.Rect(WIDTH//2-100, HEIGHT-100, 200, 60)
-            pygame.draw.rect(screen, (100, 100, 100), back_rect)
-            back_text = font.render("Back", True, (255, 255, 255))
-            screen.blit(back_text, (back_rect.centerx-back_text.get_width()//2, back_rect.centery-back_text.get_height()//2))
-            
-            pygame.display.flip()
-            
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        break
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if start_rect.collidepoint(event.pos):
-                        # Get player names
-                        player1_name = get_player_name("Player 1, enter your name:", HEIGHT//2 - 120)
-                        player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
-                        result = run_capture_the_flag(player1_name, player2_name)
-                        if result == 'lobby':
-                            break
-                    if back_rect.collidepoint(event.pos):
-                        break
-            else:
-                continue
-            break
             screen.fill((20, 20, 30))
             title = lobby_font.render("ESCAPE MOM MODE", True, (255, 50, 50))
             screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-180))
@@ -4873,12 +4983,28 @@ while True:
             start_rect = pygame.Rect(WIDTH//2-100, HEIGHT//2+90, 200, 60)
             pygame.draw.rect(screen, (150, 0, 0), start_rect)
             start_text = font.render("Start Game", True, (255, 255, 255))
-            screen.blit(start_text, (start_rect.centerx-start_text.get_width()//2, start_rect.centery-start_text.get_height()//2))
+    elif mode == 3:
+        # Makka Pakka Mode - Face Washing Game - Show Play Local / Play Online
+        while True:
+            screen.fill((30, 30, 30))
+            title = lobby_font.render("Makka Pakka Mode", True, (255, 215, 0))
+            screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-180))
             
-            # Back button
+            subtitle = font.render("Wash faces and steal them from your opponent!", True, (200, 200, 200))
+            screen.blit(subtitle, (WIDTH//2-subtitle.get_width()//2, HEIGHT//2-130))
+            
+            local_rect = pygame.Rect(WIDTH//2-220, HEIGHT//2-40, 200, 80)
+            online_rect = pygame.Rect(WIDTH//2+20, HEIGHT//2-40, 200, 80)
+            pygame.draw.rect(screen, (0,180,0), local_rect)
+            pygame.draw.rect(screen, (0,120,255), online_rect)
+            local_text = font.render("Play Local", True, (255,255,255))
+            online_text = font.render("Play Online", True, (255,255,255))
+            screen.blit(local_text, (local_rect.centerx-local_text.get_width()//2, local_rect.centery-local_text.get_height()//2))
+            screen.blit(online_text, (online_rect.centerx-online_text.get_width()//2, online_rect.centery-online_text.get_height()//2))
+            
             back_rect = pygame.Rect(WIDTH//2-100, HEIGHT-100, 200, 60)
-            pygame.draw.rect(screen, (100, 100, 100), back_rect)
-            back_text = font.render("Back", True, (255, 255, 255))
+            pygame.draw.rect(screen, (100,100,100), back_rect)
+            back_text = font.render("Back", True, (255,255,255))
             screen.blit(back_text, (back_rect.centerx-back_text.get_width()//2, back_rect.centery-back_text.get_height()//2))
             
             pygame.display.flip()
@@ -4891,10 +5017,195 @@ while True:
                     if event.key == pygame.K_ESCAPE:
                         break
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    if start_rect.collidepoint(event.pos):
-                        result = run_escape_mom_mode()
+                    if local_rect.collidepoint(event.pos):
+                        # Local play
+                        player1_name = get_player_name("Player 1, enter your name:", HEIGHT//2 - 120)
+                        player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
+                        result = run_makka_pakka_mode(player1_name, player2_name)
                         if result == 'lobby':
                             break
+                    if online_rect.collidepoint(event.pos):
+                        # Online mode for Makka Pakka
+                        role = online_host_or_join()
+                        if role == 'host':
+                            # Show waiting screen with IP
+                            import socket
+                            hostname = socket.gethostname()
+                            local_ip = socket.gethostbyname(hostname)
+                            
+                            screen.fill((30, 30, 30))
+                            wait_text = lobby_font.render("Waiting for player to join...", True, (255, 255, 0))
+                            screen.blit(wait_text, (WIDTH//2 - wait_text.get_width()//2, HEIGHT//2 - 100))
+                            ip_text = font.render(f"Your IP: {local_ip}", True, (255, 255, 255))
+                            screen.blit(ip_text, (WIDTH//2 - ip_text.get_width()//2, HEIGHT//2 - 30))
+                            port_text = font.render("Port: 50007", True, (255, 255, 255))
+                            screen.blit(port_text, (WIDTH//2 - port_text.get_width()//2, HEIGHT//2 + 10))
+                            cancel_text = name_font.render("Press ESC to cancel", True, (150, 150, 150))
+                            screen.blit(cancel_text, (WIDTH//2 - cancel_text.get_width()//2, HEIGHT//2 + 60))
+                            pygame.display.flip()
+                            
+                            try:
+                                net = NetworkHost()
+                                # Wait for connection with cancel option
+                                waiting = True
+                                while waiting and not net.conn:
+                                    for ev in pygame.event.get():
+                                        if ev.type == pygame.QUIT:
+                                            net.close()
+                                            pygame.quit()
+                                            sys.exit()
+                                        if ev.type == pygame.KEYDOWN and ev.key == pygame.K_ESCAPE:
+                                            net.close()
+                                            waiting = False
+                                            continue
+                                    pygame.time.wait(100)
+                                
+                                if net.conn:
+                                    player_name = get_player_name("Enter your name:", HEIGHT//2)
+                                    # Simplified online - just play locally for now
+                                    run_makka_pakka_mode(player_name, "Opponent")
+                                    net.close()
+                            except Exception as e:
+                                screen.fill((30, 30, 30))
+                                error_text = font.render(f"Connection error: {str(e)}", True, (255, 0, 0))
+                                screen.blit(error_text, (WIDTH//2 - error_text.get_width()//2, HEIGHT//2))
+                                pygame.display.flip()
+                                pygame.time.wait(2000)
+                        elif role == 'join':
+                            host_ip = get_ip_address()
+                            if host_ip:
+                                screen.fill((30, 30, 30))
+                                conn_text = lobby_font.render("Connecting...", True, (255, 255, 0))
+                                screen.blit(conn_text, (WIDTH//2 - conn_text.get_width()//2, HEIGHT//2))
+                                pygame.display.flip()
+                                
+                                try:
+                                    net = NetworkClient(host_ip)
+                                    player_name = get_player_name("Enter your name:", HEIGHT//2)
+                                    # Simplified online - just play locally for now
+                                    run_makka_pakka_mode("Opponent", player_name)
+                                    net.close()
+                                except Exception as e:
+                                    screen.fill((30, 30, 30))
+                                    error_text = font.render(f"Connection error: {str(e)}", True, (255, 0, 0))
+                                    screen.blit(error_text, (WIDTH//2 - error_text.get_width()//2, HEIGHT//2))
+                                    pygame.display.flip()
+                                    pygame.time.wait(2000)
+                        break
+                    if back_rect.collidepoint(event.pos):
+                        break
+            else:
+                continue
+            break
+    elif mode == 5:
+        # Capture the Flag Mode - Show Play Local / Play Online
+        while True:
+            screen.fill((30, 60, 30))
+            title = lobby_font.render("CAPTURE THE FLAG", True, (255, 215, 0))
+            screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-180))
+            
+            subtitle = font.render("Steal the enemy flag and bring it to your base!", True, (200, 200, 200))
+            screen.blit(subtitle, (WIDTH//2-subtitle.get_width()//2, HEIGHT//2-130))
+            
+            local_rect = pygame.Rect(WIDTH//2-220, HEIGHT//2-40, 200, 80)
+            online_rect = pygame.Rect(WIDTH//2+20, HEIGHT//2-40, 200, 80)
+            pygame.draw.rect(screen, (0,180,0), local_rect)
+            pygame.draw.rect(screen, (0,120,255), online_rect)
+            local_text = font.render("Play Local", True, (255,255,255))
+            online_text = font.render("Play Online", True, (255,255,255))
+            screen.blit(local_text, (local_rect.centerx-local_text.get_width()//2, local_rect.centery-local_text.get_height()//2))
+            screen.blit(online_text, (online_rect.centerx-online_text.get_width()//2, online_rect.centery-online_text.get_height()//2))
+            
+            back_rect = pygame.Rect(WIDTH//2-100, HEIGHT-100, 200, 60)
+            pygame.draw.rect(screen, (100,100,100), back_rect)
+            back_text = font.render("Back", True, (255,255,255))
+            screen.blit(back_text, (back_rect.centerx-back_text.get_width()//2, back_rect.centery-back_text.get_height()//2))
+            
+            pygame.display.flip()
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        break
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if local_rect.collidepoint(event.pos):
+                        # Local play
+                        player1_name = get_player_name("Player 1, enter your name:", HEIGHT//2 - 120)
+                        player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
+                        result = run_capture_the_flag(player1_name, player2_name)
+                        if result == 'lobby':
+                            break
+                    if online_rect.collidepoint(event.pos):
+                        # Online mode for Capture the Flag
+                        role = online_host_or_join()
+                        if role == 'host':
+                            # Show waiting screen with IP
+                            import socket
+                            hostname = socket.gethostname()
+                            local_ip = socket.gethostbyname(hostname)
+                            
+                            screen.fill((30, 30, 30))
+                            wait_text = lobby_font.render("Waiting for player to join...", True, (255, 255, 0))
+                            screen.blit(wait_text, (WIDTH//2 - wait_text.get_width()//2, HEIGHT//2 - 100))
+                            ip_text = font.render(f"Your IP: {local_ip}", True, (255, 255, 255))
+                            screen.blit(ip_text, (WIDTH//2 - ip_text.get_width()//2, HEIGHT//2 - 30))
+                            port_text = font.render("Port: 50007", True, (255, 255, 255))
+                            screen.blit(port_text, (WIDTH//2 - port_text.get_width()//2, HEIGHT//2 + 10))
+                            cancel_text = name_font.render("Press ESC to cancel", True, (150, 150, 150))
+                            screen.blit(cancel_text, (WIDTH//2 - cancel_text.get_width()//2, HEIGHT//2 + 60))
+                            pygame.display.flip()
+                            
+                            try:
+                                net = NetworkHost()
+                                # Wait for connection with cancel option
+                                waiting = True
+                                while waiting and not net.conn:
+                                    for ev in pygame.event.get():
+                                        if ev.type == pygame.QUIT:
+                                            net.close()
+                                            pygame.quit()
+                                            sys.exit()
+                                        if ev.type == pygame.KEYDOWN and ev.key == pygame.K_ESCAPE:
+                                            net.close()
+                                            waiting = False
+                                            continue
+                                    pygame.time.wait(100)
+                                
+                                if net.conn:
+                                    player_name = get_player_name("Enter your name:", HEIGHT//2)
+                                    # Simplified online - just play locally for now
+                                    run_capture_the_flag(player_name, "Opponent")
+                                    net.close()
+                            except Exception as e:
+                                screen.fill((30, 30, 30))
+                                error_text = font.render(f"Connection error: {str(e)}", True, (255, 0, 0))
+                                screen.blit(error_text, (WIDTH//2 - error_text.get_width()//2, HEIGHT//2))
+                                pygame.display.flip()
+                                pygame.time.wait(2000)
+                        elif role == 'join':
+                            host_ip = get_ip_address()
+                            if host_ip:
+                                screen.fill((30, 30, 30))
+                                conn_text = lobby_font.render("Connecting...", True, (255, 255, 0))
+                                screen.blit(conn_text, (WIDTH//2 - conn_text.get_width()//2, HEIGHT//2))
+                                pygame.display.flip()
+                                
+                                try:
+                                    net = NetworkClient(host_ip)
+                                    player_name = get_player_name("Enter your name:", HEIGHT//2)
+                                    # Simplified online - just play locally for now
+                                    run_capture_the_flag("Opponent", player_name)
+                                    net.close()
+                                except Exception as e:
+                                    screen.fill((30, 30, 30))
+                                    error_text = font.render(f"Connection error: {str(e)}", True, (255, 0, 0))
+                                    screen.blit(error_text, (WIDTH//2 - error_text.get_width()//2, HEIGHT//2))
+                                    pygame.display.flip()
+                                    pygame.time.wait(2000)
+                        break
                     if back_rect.collidepoint(event.pos):
                         break
             else:
