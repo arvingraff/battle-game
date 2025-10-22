@@ -1,5 +1,6 @@
 import pygame
 import sys
+import os
 import time
 import random
 import threading
@@ -8,9 +9,19 @@ from network import NetworkHost, NetworkClient
 
 pygame.init()
 
+# Helper function to get the correct path for bundled files
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 # Load background image for battle mode
 try:
-    battle_background = pygame.image.load('ball.jpg')
+    battle_background = pygame.image.load(resource_path('ball.jpg'))
     has_battle_background = True
 except:
     has_battle_background = False
@@ -94,17 +105,17 @@ def online_get_name_and_character(player_label, mode):
 
 def mode_lobby():
     selected = 0
-    options = ["Battle Mode", "Coin Collection Mode", "Makka Pakka Mode", "Escape Mom Mode", "Survival Mode", "Play Music", "Stop Music", "Watch Cute Video", "Watch Grandma", "Exit"]
+    options = ["Battle Mode", "Coin Collection Mode", "Makka Pakka Mode", "Escape Mom Mode", "Capture the Flag", "Survival Mode", "Play Music", "Stop Music", "Watch Cute Video", "Watch Grandma", "Exit"]
     music_playing = False
     pygame.mixer.music.stop()  # Ensure no music plays automatically
     while True:
         screen.fill((30, 30, 30))
         title = lobby_font.render("Choose Game Mode", True, (255,255,255))
-        screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-120))
+        screen.blit(title, (WIDTH//2-title.get_width()//2, 50))
         for i, opt in enumerate(options):
             color = (255,255,0) if i==selected else (200,200,200)
             opt_text = font.render(opt, True, color)
-            screen.blit(opt_text, (WIDTH//2-opt_text.get_width()//2, HEIGHT//2-40+i*60))
+            screen.blit(opt_text, (WIDTH//2-opt_text.get_width()//2, 120+i*50))
         pygame.display.flip()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -122,7 +133,7 @@ def mode_lobby():
                     elif options[selected] == "Play Music":
                         try:
                             pygame.mixer.music.stop()
-                            pygame.mixer.music.load('playmusic.mp3')
+                            pygame.mixer.music.load(resource_path('playmusic.mp3'))
                             pygame.mixer.music.play(-1)
                             music_playing = True
                         except Exception as e:
@@ -144,12 +155,14 @@ def mode_lobby():
                             return 3
                         elif options[selected] == "Escape Mom Mode":
                             return 4
+                        elif options[selected] == "Capture the Flag":
+                            return 5
                         elif options[selected] == "Survival Mode":
                             return 2
 
 def watch_cute_video():
     import cv2
-    cap = cv2.VideoCapture('cutevideo.mp4')
+    cap = cv2.VideoCapture(resource_path('cutevideo.mp4'))
     if not cap.isOpened():
         # Show error message in lobby
         screen.fill((30,30,30))
@@ -195,11 +208,11 @@ def watch_grandma():
     import cv2
     try:
         pygame.mixer.music.stop()
-        pygame.mixer.music.load('lala.mp3')
+        pygame.mixer.music.load(resource_path('lala.mp3'))
         pygame.mixer.music.play(-1)
     except Exception as e:
         print(f"Error playing grandma music: {e}")
-    cap = cv2.VideoCapture('grandma.mp4')
+    cap = cv2.VideoCapture(resource_path('grandma.mp4'))
     if not cap.isOpened():
         screen.fill((30,30,30))
         error_text = lobby_font.render("Error: Could not open grandma.mp4", True, (255,0,0))
@@ -1311,7 +1324,7 @@ def run_game(mode, player1_name, player2_name, char_choices, network=None, is_ho
     # Start original background music
     try:
         pygame.mixer.music.stop()
-        pygame.mixer.music.load('fart.mp3')
+        pygame.mixer.music.load(resource_path('fart.mp3'))
         pygame.mixer.music.play(-1)
     except Exception as e:
         print(f"Error playing background music: {e}")
@@ -1934,7 +1947,7 @@ def run_coin_collection_and_shop(player1_name, player2_name, char_choices):
     # Play coin collection music
     try:
         pygame.mixer.music.stop()
-        pygame.mixer.music.load('coin.mp3')
+        pygame.mixer.music.load(resource_path('coin.mp3'))
         pygame.mixer.music.play(-1)
     except Exception as e:
         print(f"Error playing coin collection music: {e}")
@@ -2462,7 +2475,7 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
     # Battle mode with upgrades: bazooka/kannon = 2 shots each, then normal
     try:
         pygame.mixer.music.stop()
-        pygame.mixer.music.load('fart.mp3')
+        pygame.mixer.music.load(resource_path('fart.mp3'))
         pygame.mixer.music.play(-1)
     except Exception as e:
         print(f"Error playing background music: {e}")
@@ -3400,7 +3413,7 @@ def run_makka_pakka_mode(player1_name, player2_name):
     """Makka Pakka Mode: Players run around washing faces to score points!"""
     try:
         pygame.mixer.music.stop()
-        pygame.mixer.music.load('fart.mp3')
+        pygame.mixer.music.load(resource_path('fart.mp3'))
         pygame.mixer.music.play(-1)
     except Exception as e:
         print(f"Error playing Makka Pakka music: {e}")
@@ -3664,6 +3677,297 @@ def run_makka_pakka_mode(player1_name, player2_name):
                 if back_button.collidepoint(event.pos):
                     return 'lobby'
 
+# Capture the Flag Mode
+def run_capture_the_flag(player1_name, player2_name):
+    """Capture the Flag - steal the opponent's flag and bring it to your base!"""
+    try:
+        pygame.mixer.music.stop()
+        pygame.mixer.music.load(resource_path('fart.mp3'))
+        pygame.mixer.music.play(-1)
+    except:
+        pass
+    
+    # Players
+    player1 = pygame.Rect(50, HEIGHT//2, 50, 50)
+    player2 = pygame.Rect(WIDTH-100, HEIGHT//2, 50, 50)
+    speed = 6
+    p1_right = True
+    p2_right = False
+    
+    # Bullets
+    bullets = []
+    player1_shots = 0
+    player2_shots = 0
+    RELOAD_LIMIT = 3
+    player1_reload_time = 0
+    player2_reload_time = 0
+    RELOAD_DURATION = 2
+    
+    # Flags (at each player's base)
+    flag1_home = pygame.Rect(30, HEIGHT//2 - 20, 30, 40)  # Player 1's flag home
+    flag2_home = pygame.Rect(WIDTH-60, HEIGHT//2 - 20, 30, 40)  # Player 2's flag home
+    
+    flag1_pos = flag1_home.copy()  # Current position of flag 1
+    flag2_pos = flag2_home.copy()  # Current position of flag 2
+    
+    flag1_carrier = None  # Who's carrying flag 1 (None, 'p1', or 'p2')
+    flag2_carrier = None  # Who's carrying flag 2
+    
+    # Scores
+    p1_captures = 0
+    p2_captures = 0
+    winning_score = 3  # First to 3 captures wins
+    
+    # Obstacles/walls
+    walls = [
+        pygame.Rect(WIDTH//2 - 20, 100, 40, 200),
+        pygame.Rect(WIDTH//2 - 20, HEIGHT - 300, 40, 200),
+        pygame.Rect(200, HEIGHT//2 - 20, 100, 40),
+        pygame.Rect(WIDTH - 300, HEIGHT//2 - 20, 100, 40),
+    ]
+    
+    while True:
+        now = time.time()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return 'lobby'
+                # Player 1 shoot (SPACE)
+                elif event.key == pygame.K_SPACE:
+                    if player1_shots < RELOAD_LIMIT and now > player1_reload_time:
+                        bx = player1.right if p1_right else player1.left - 10
+                        bullets.append({'rect': pygame.Rect(bx, player1.centery-5, 10, 10), 'dir': 1 if p1_right else -1, 'owner': 1})
+                        player1_shots += 1
+                        if player1_shots >= RELOAD_LIMIT:
+                            player1_reload_time = now + RELOAD_DURATION
+                            player1_shots = 0
+                # Player 2 shoot (ENTER)
+                elif event.key == pygame.K_RETURN:
+                    if player2_shots < RELOAD_LIMIT and now > player2_reload_time:
+                        bx = player2.right if p2_right else player2.left - 10
+                        bullets.append({'rect': pygame.Rect(bx, player2.centery-5, 10, 10), 'dir': 1 if p2_right else -1, 'owner': 2})
+                        player2_shots += 1
+                        if player2_shots >= RELOAD_LIMIT:
+                            player2_reload_time = now + RELOAD_DURATION
+                            player2_shots = 0
+        
+        # Player 1 controls (WASD)
+        keys = pygame.key.get_pressed()
+        old_p1 = player1.copy()
+        if keys[pygame.K_w]:
+            player1.y -= speed
+        if keys[pygame.K_s]:
+            player1.y += speed
+        if keys[pygame.K_a]:
+            player1.x -= speed
+            p1_right = False
+        if keys[pygame.K_d]:
+            player1.x += speed
+            p1_right = True
+        
+        # Player 2 controls (Arrow keys)
+        old_p2 = player2.copy()
+        if keys[pygame.K_UP]:
+            player2.y -= speed
+        if keys[pygame.K_DOWN]:
+            player2.y += speed
+        if keys[pygame.K_LEFT]:
+            player2.x -= speed
+            p2_right = False
+        if keys[pygame.K_RIGHT]:
+            player2.x += speed
+            p2_right = True
+        
+        # Keep players in bounds
+        player1.x = max(0, min(WIDTH-50, player1.x))
+        player1.y = max(0, min(HEIGHT-50, player1.y))
+        player2.x = max(0, min(WIDTH-50, player2.x))
+        player2.y = max(0, min(HEIGHT-50, player2.y))
+        
+        # Wall collisions
+        for wall in walls:
+            if player1.colliderect(wall):
+                player1.x, player1.y = old_p1.x, old_p1.y
+            if player2.colliderect(wall):
+                player2.x, player2.y = old_p2.x, old_p2.y
+        
+        # Move bullets
+        for bullet in bullets[:]:
+            bullet['rect'].x += bullet['dir'] * 12
+            # Remove if off screen
+            if bullet['rect'].right < 0 or bullet['rect'].left > WIDTH:
+                bullets.remove(bullet)
+            # Collision with players - makes them drop flag
+            elif bullet['owner'] == 1 and bullet['rect'].colliderect(player2):
+                # Player 1 shot Player 2
+                if flag1_carrier == 'p2':
+                    flag1_carrier = None  # Drop flag 1
+                bullets.remove(bullet)
+            elif bullet['owner'] == 2 and bullet['rect'].colliderect(player1):
+                # Player 2 shot Player 1
+                if flag2_carrier == 'p1':
+                    flag2_carrier = None  # Drop flag 2
+                bullets.remove(bullet)
+            # Bullets collide with walls
+            else:
+                for wall in walls:
+                    if bullet['rect'].colliderect(wall):
+                        if bullet in bullets:
+                            bullets.remove(bullet)
+                        break
+        
+        # Flag pickup logic
+        # Player 1 trying to pick up Player 2's flag
+        if flag2_carrier is None and player1.colliderect(flag2_pos):
+            flag2_carrier = 'p1'
+        
+        # Player 2 trying to pick up Player 1's flag
+        if flag1_carrier is None and player2.colliderect(flag1_pos):
+            flag1_carrier = 'p2'
+        
+        # Update flag positions if being carried
+        if flag1_carrier == 'p2':
+            flag1_pos.center = player2.center
+        elif flag1_carrier is None:
+            flag1_pos = flag1_home.copy()
+        
+        if flag2_carrier == 'p1':
+            flag2_pos.center = player1.center
+        elif flag2_carrier is None:
+            flag2_pos = flag2_home.copy()
+        
+        # Tagging opponent drops their flag
+        if player1.colliderect(player2):
+            if flag1_carrier == 'p2':
+                flag1_carrier = None  # Drop flag 1
+            if flag2_carrier == 'p1':
+                flag2_carrier = None  # Drop flag 2
+        
+        # Capture scoring
+        # Player 1 scores if they bring flag 2 to their base
+        if flag2_carrier == 'p1' and player1.colliderect(flag1_home):
+            p1_captures += 1
+            flag2_carrier = None
+            flag2_pos = flag2_home.copy()
+        
+        # Player 2 scores if they bring flag 1 to their base
+        if flag1_carrier == 'p2' and player2.colliderect(flag2_home):
+            p2_captures += 1
+            flag1_carrier = None
+            flag1_pos = flag1_home.copy()
+        
+        # Check for winner
+        if p1_captures >= winning_score or p2_captures >= winning_score:
+            # Show winner screen
+            winner = player1_name if p1_captures >= winning_score else player2_name
+            while True:
+                screen.fill((30, 30, 50))
+                winner_text = lobby_font.render(f"{winner} WINS!", True, (255, 215, 0))
+                screen.blit(winner_text, (WIDTH//2 - winner_text.get_width()//2, HEIGHT//2 - 100))
+                
+                score_text = font.render(f"Final Score: {p1_captures} - {p2_captures}", True, (255, 255, 255))
+                screen.blit(score_text, (WIDTH//2 - score_text.get_width()//2, HEIGHT//2 - 30))
+                
+                back_button = pygame.Rect(WIDTH//2-100, HEIGHT//2+40, 200, 60)
+                pygame.draw.rect(screen, (0, 150, 0), back_button)
+                back_text = font.render("Back to Menu", True, (255, 255, 255))
+                screen.blit(back_text, (back_button.centerx-back_text.get_width()//2, back_button.centery-back_text.get_height()//2))
+                
+                pygame.display.flip()
+                
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_ESCAPE or event.key == pygame.K_RETURN:
+                            return 'lobby'
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        if back_button.collidepoint(event.pos):
+                            return 'lobby'
+        
+        # Drawing
+        screen.fill((40, 80, 40))  # Green grass field
+        
+        # Draw bases
+        pygame.draw.rect(screen, (0, 100, 200), (0, 0, 100, HEIGHT))  # Player 1 base (blue)
+        pygame.draw.rect(screen, (200, 0, 0), (WIDTH-100, 0, 100, HEIGHT))  # Player 2 base (red)
+        
+        # Draw walls
+        for wall in walls:
+            pygame.draw.rect(screen, (100, 100, 100), wall)
+            pygame.draw.rect(screen, (70, 70, 70), wall, 3)
+        
+        # Draw flags
+        # Flag 1 (blue flag for player 1's base)
+        pygame.draw.rect(screen, (150, 100, 50), (flag1_pos.x, flag1_pos.y + 20, 5, 20))  # Pole
+        pygame.draw.polygon(screen, (0, 100, 255), [
+            (flag1_pos.x + 5, flag1_pos.y),
+            (flag1_pos.x + 30, flag1_pos.y + 10),
+            (flag1_pos.x + 5, flag1_pos.y + 20)
+        ])
+        
+        # Flag 2 (red flag for player 2's base)
+        pygame.draw.rect(screen, (150, 100, 50), (flag2_pos.x, flag2_pos.y + 20, 5, 20))  # Pole
+        pygame.draw.polygon(screen, (255, 0, 0), [
+            (flag2_pos.x + 5, flag2_pos.y),
+            (flag2_pos.x + 30, flag2_pos.y + 10),
+            (flag2_pos.x + 5, flag2_pos.y + 20)
+        ])
+        
+        # Draw players
+        # Player 1 (blue)
+        pygame.draw.circle(screen, (0, 150, 255), player1.center, 25)
+        pygame.draw.circle(screen, (255, 220, 180), (player1.centerx, player1.centery - 5), 15)
+        pygame.draw.circle(screen, (0, 0, 0), (player1.centerx - 5, player1.centery - 8), 3)
+        pygame.draw.circle(screen, (0, 0, 0), (player1.centerx + 5, player1.centery - 8), 3)
+        pygame.draw.arc(screen, (0, 0, 0), (player1.centerx - 5, player1.centery, 10, 5), 3.14, 0, 2)
+        
+        # Player 2 (red)
+        pygame.draw.circle(screen, (255, 50, 50), player2.center, 25)
+        pygame.draw.circle(screen, (255, 220, 180), (player2.centerx, player2.centery - 5), 15)
+        pygame.draw.circle(screen, (0, 0, 0), (player2.centerx - 5, player2.centery - 8), 3)
+        pygame.draw.circle(screen, (0, 0, 0), (player2.centerx + 5, player2.centery - 8), 3)
+        pygame.draw.arc(screen, (0, 0, 0), (player2.centerx - 5, player2.centery, 10, 5), 3.14, 0, 2)
+        
+        # Draw player names
+        name1 = name_font.render(player1_name, True, (255, 255, 255))
+        screen.blit(name1, (player1.centerx - name1.get_width()//2, player1.y - 30))
+        
+        name2 = name_font.render(player2_name, True, (255, 255, 255))
+        screen.blit(name2, (player2.centerx - name2.get_width()//2, player2.y - 30))
+        
+        # Draw bullets
+        for bullet in bullets:
+            pygame.draw.rect(screen, (255, 255, 0), bullet['rect'])
+        
+        # Draw score
+        score_text = font.render(f"{player1_name}: {p1_captures}  |  {player2_name}: {p2_captures}", True, (255, 255, 255))
+        screen.blit(score_text, (WIDTH//2 - score_text.get_width()//2, 20))
+        
+        # Show shots remaining
+        if player1_shots < RELOAD_LIMIT and now > player1_reload_time:
+            p1_status = f"P1 Shots: {RELOAD_LIMIT - player1_shots}"
+        else:
+            p1_status = "P1 Reloading..."
+        if player2_shots < RELOAD_LIMIT and now > player2_reload_time:
+            p2_status = f"P2 Shots: {RELOAD_LIMIT - player2_shots}"
+        else:
+            p2_status = "P2 Reloading..."
+        
+        shots_text = name_font.render(f"{p1_status}  |  {p2_status}", True, (200, 200, 200))
+        screen.blit(shots_text, (WIDTH//2 - shots_text.get_width()//2, 50))
+        
+        # Instructions
+        inst_text = name_font.render("Shoot (SPACE/ENTER) or Tag opponent to make them drop flag!", True, (255, 255, 150))
+        screen.blit(inst_text, (WIDTH//2 - inst_text.get_width()//2, HEIGHT - 30))
+        
+        pygame.display.flip()
+        clock.tick(60)
+
 # Escape Mom Horror Mode
 def run_escape_mom_mode():
     """Scary horror mode - escape from an angry mother in dark corridors!"""
@@ -3844,7 +4148,7 @@ def run_escape_mom_mode():
     
     # Play scary scream sound
     try:
-        pygame.mixer.music.load("scary-scream.mp3")
+        pygame.mixer.music.load(resource_path("scary-scream.mp3"))
         pygame.mixer.music.play()
     except:
         # Fallback to system beeps if sound file not found
@@ -4477,6 +4781,74 @@ while True:
     elif mode == 4:
         # Escape Mom Horror Mode
         while True:
+            back_rect = pygame.Rect(10, 10, 100, 40)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        break
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if back_rect.collidepoint(event.pos):
+                        break
+            else:
+                continue
+            break
+    elif mode == 5:
+        # Capture the Flag Mode
+        while True:
+            screen.fill((30, 60, 30))
+            title = lobby_font.render("CAPTURE THE FLAG", True, (255, 215, 0))
+            screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-180))
+            
+            subtitle = font.render("Steal the enemy flag and bring it to your base!", True, (200, 200, 200))
+            screen.blit(subtitle, (WIDTH//2-subtitle.get_width()//2, HEIGHT//2-130))
+            
+            # Show instructions
+            instr1 = name_font.render("Each player has a flag at their base", True, (180, 180, 180))
+            instr2 = name_font.render("Steal the opponent's flag and return it to your base to score", True, (180, 180, 180))
+            instr3 = name_font.render("Tag the opponent to make them drop your flag!", True, (255, 255, 150))
+            instr4 = name_font.render("First to 3 captures wins! Use WASD and Arrow Keys", True, (150, 255, 150))
+            screen.blit(instr1, (WIDTH//2-instr1.get_width()//2, HEIGHT//2-80))
+            screen.blit(instr2, (WIDTH//2-instr2.get_width()//2, HEIGHT//2-50))
+            screen.blit(instr3, (WIDTH//2-instr3.get_width()//2, HEIGHT//2-20))
+            screen.blit(instr4, (WIDTH//2-instr4.get_width()//2, HEIGHT//2+10))
+            
+            # Start button
+            start_rect = pygame.Rect(WIDTH//2-100, HEIGHT//2+60, 200, 60)
+            pygame.draw.rect(screen, (0, 150, 0), start_rect)
+            start_text = font.render("Start Game", True, (255, 255, 255))
+            screen.blit(start_text, (start_rect.centerx-start_text.get_width()//2, start_rect.centery-start_text.get_height()//2))
+            
+            # Back button
+            back_rect = pygame.Rect(WIDTH//2-100, HEIGHT-100, 200, 60)
+            pygame.draw.rect(screen, (100, 100, 100), back_rect)
+            back_text = font.render("Back", True, (255, 255, 255))
+            screen.blit(back_text, (back_rect.centerx-back_text.get_width()//2, back_rect.centery-back_text.get_height()//2))
+            
+            pygame.display.flip()
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        break
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if start_rect.collidepoint(event.pos):
+                        # Get player names
+                        player1_name = get_player_name("Player 1, enter your name:", HEIGHT//2 - 120)
+                        player2_name = get_player_name("Player 2, enter your name:", HEIGHT//2 + 40)
+                        result = run_capture_the_flag(player1_name, player2_name)
+                        if result == 'lobby':
+                            break
+                    if back_rect.collidepoint(event.pos):
+                        break
+            else:
+                continue
+            break
             screen.fill((20, 20, 30))
             title = lobby_font.render("ESCAPE MOM MODE", True, (255, 50, 50))
             screen.blit(title, (WIDTH//2-title.get_width()//2, HEIGHT//2-180))
