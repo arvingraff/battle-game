@@ -257,7 +257,7 @@ def watch_grandma():
 
 def start_countdown():
     try:
-        sound = pygame.mixer.Sound('321go.mp3')
+        sound = pygame.mixer.Sound(resource_path('321go.mp3'))
         sound.play()
     except Exception as e:
         print(f"Error playing countdown sound: {e}")
