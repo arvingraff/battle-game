@@ -18,10 +18,10 @@
    '/Users/arvingreenberggraff/code/battlegame/build/BattleGame/PYZ-00.pyz',
    'PYZ'),
   ('python3.9/lib-dynload/_struct.cpython-39-darwin.so',
-   '/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/lib-dynload/_struct.cpython-39-darwin.so',
+   '/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/lib-dynload/_struct.cpython-39-darwin.so',
    'EXTENSION'),
   ('python3.9/lib-dynload/zlib.cpython-39-darwin.so',
-   '/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/lib-dynload/zlib.cpython-39-darwin.so',
+   '/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/lib-dynload/zlib.cpython-39-darwin.so',
    'EXTENSION'),
   ('struct',
    '/Users/arvingreenberggraff/code/battlegame/build/BattleGame/localpycs/struct.pyc',
@@ -56,8 +56,8 @@
  [],
  False,
  False,
- 1761153526,
+ 1761578175,
  [('runw',
    '/Users/arvingreenberggraff/Library/Python/3.9/lib/python/site-packages/PyInstaller/bootloader/Darwin-64bit/runw',
    'EXECUTABLE')],
- '/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/Python3')
+ '/Applications/Xcode.app/Contents/Developer/Library/Frameworks/Python3.framework/Versions/3.9/Python3')

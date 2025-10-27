@@ -376,6 +376,103 @@ def get_ip_address():
                     ip += event.unicode
     return ip
 
+def online_character_select_and_countdown(net, is_host, mode):
+    """Online character selection - each player chooses only their own character"""
+    if mode == 0:
+        options = [0, 1, 2]
+        names = ["Classic Mafia", "Mafia Boss", "Mafia Hitman"]
+        draw_func = draw_mafia_character
+    elif mode == 1:
+        options = [0, 1, 2]
+        names = ["Jungle Explorer", "Desert Adventurer", "Arctic Explorer"]
+        draw_func = draw_explorer_character
+    else:
+        options = [0, 1, 2]
+        names = ["Military", "Scientist", "Apocalypse"]
+        draw_func = draw_survivor_character
+    
+    my_character = None
+    opponent_character = None
+    selected = 0
+    preview_y = HEIGHT//2 + 20
+    preview_xs = [WIDTH//2 - 220, WIDTH//2, WIDTH//2 + 220]
+    name_y_offset = 120
+    clock = pygame.time.Clock()
+    
+    # Character selection phase
+    while my_character is None or opponent_character is None:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    net.close()
+                    return None, None
+                if my_character is None:
+                    if event.key == pygame.K_LEFT:
+                        selected = (selected - 1) % len(options)
+                    if event.key == pygame.K_RIGHT:
+                        selected = (selected + 1) % len(options)
+                    if event.key == pygame.K_RETURN:
+                        my_character = selected
+                        net.send({'type': 'character_choice', 'character': my_character})
+        
+        data = net.recv()
+        if data and data.get('type') == 'character_choice':
+            opponent_character = data.get('character')
+        
+        screen.fill((30, 30, 30))
+        if my_character is None:
+            title = lobby_font.render("Choose Your Character (Enter to confirm)", True, (255, 255, 255))
+            screen.blit(title, (WIDTH//2 - title.get_width()//2, HEIGHT//2 - 160))
+            for i, style in enumerate(options):
+                highlight = (255, 255, 0) if i == selected else (80, 80, 80)
+                pygame.draw.rect(screen, highlight, (preview_xs[i] - 50, preview_y - 70, 100, 140), 4)
+                draw_func(screen, preview_xs[i], preview_y, style)
+                name_text = name_font.render(names[i], True, highlight)
+                screen.blit(name_text, (preview_xs[i] - name_text.get_width()//2, preview_y + name_y_offset))
+        else:
+            chosen_text = lobby_font.render(f"You chose: {names[my_character]}", True, (0, 255, 0))
+            screen.blit(chosen_text, (WIDTH//2 - chosen_text.get_width()//2, HEIGHT//2 - 80))
+            if opponent_character is None:
+                waiting_text = font.render("Waiting for opponent to choose...", True, (255, 255, 0))
+                screen.blit(waiting_text, (WIDTH//2 - waiting_text.get_width()//2, HEIGHT//2))
+            else:
+                ready_text = font.render("Both players ready!", True, (0, 255, 0))
+                screen.blit(ready_text, (WIDTH//2 - ready_text.get_width()//2, HEIGHT//2))
+        pygame.display.flip()
+        clock.tick(60)
+    
+    # Countdown - BOTH players play it simultaneously
+    if is_host:
+        pygame.time.wait(500)
+        net.send({'type': 'start_countdown'})
+        start_countdown()
+    else:
+        # Wait for host signal to start countdown
+        screen.fill((30, 30, 30))
+        waiting_msg = lobby_font.render("Get Ready...", True, (255, 255, 0))
+        screen.blit(waiting_msg, (WIDTH//2 - waiting_msg.get_width()//2, HEIGHT//2))
+        pygame.display.flip()
+        start_time = pygame.time.get_ticks()
+        waiting = True
+        while waiting:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+            data = net.recv()
+            if data and data.get('type') == 'start_countdown':
+                waiting = False
+                # Play countdown immediately
+                start_countdown()
+            if pygame.time.get_ticks() - start_time > 5000:
+                waiting = False
+            pygame.time.wait(50)
+    
+    return my_character, opponent_character
+
 # Character selection function
 
 def character_select(mode):
@@ -1559,29 +1656,58 @@ def run_game(mode, player1_name, player2_name, char_choices, network=None, is_ho
             player2_shots = 0
 
         keys = pygame.key.get_pressed()
-        # Player 1 controls (WASD)
-        if keys[pygame.K_a]:
-            player1.x -= speed
-            p1_right = False
-        if keys[pygame.K_d]:
-            player1.x += speed
-            p1_right = True
-        if keys[pygame.K_w]:
-            player1.y -= speed
-        if keys[pygame.K_s]:
-            player1.y += speed
+        
+        # Online mode: Each player only controls their own character
+        if net is not None:
+            if is_host:
+                # Host controls player1 only (WASD)
+                if keys[pygame.K_a]:
+                    player1.x -= speed
+                    p1_right = False
+                if keys[pygame.K_d]:
+                    player1.x += speed
+                    p1_right = True
+                if keys[pygame.K_w]:
+                    player1.y -= speed
+                if keys[pygame.K_s]:
+                    player1.y += speed
+            else:
+                # Client controls player2 only (Arrow keys)
+                if keys[pygame.K_LEFT]:
+                    player2.x -= speed
+                    p2_right = False
+                if keys[pygame.K_RIGHT]:
+                    player2.x += speed
+                    p2_right = True
+                if keys[pygame.K_UP]:
+                    player2.y -= speed
+                if keys[pygame.K_DOWN]:
+                    player2.y += speed
+        else:
+            # Local mode: Both players can be controlled
+            # Player 1 controls (WASD)
+            if keys[pygame.K_a]:
+                player1.x -= speed
+                p1_right = False
+            if keys[pygame.K_d]:
+                player1.x += speed
+                p1_right = True
+            if keys[pygame.K_w]:
+                player1.y -= speed
+            if keys[pygame.K_s]:
+                player1.y += speed
 
-        # Player 2 controls (Arrow keys)
-        if keys[pygame.K_LEFT]:
-            player2.x -= speed
-            p2_right = False
-        if keys[pygame.K_RIGHT]:
-            player2.x += speed
-            p2_right = True
-        if keys[pygame.K_UP]:
-            player2.y -= speed
-        if keys[pygame.K_DOWN]:
-            player2.y += speed
+            # Player 2 controls (Arrow keys)
+            if keys[pygame.K_LEFT]:
+                player2.x -= speed
+                p2_right = False
+            if keys[pygame.K_RIGHT]:
+                player2.x += speed
+                p2_right = True
+            if keys[pygame.K_UP]:
+                player2.y -= speed
+            if keys[pygame.K_DOWN]:
+                player2.y += speed
 
         # Update bullets
         for bullet in bullets[:]:
@@ -2551,7 +2677,7 @@ def draw_weapon(screen, x, y, right, weapon):
 
 # Main game with upgrades
 
-def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka, p2_bazooka, p1_kannon, p2_kannon, p1_life, p2_life, mode=0):
+def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka, p2_bazooka, p1_kannon, p2_kannon, p1_life, p2_life, mode=0, net=None, is_host=False):
     # Battle mode with upgrades: bazooka/kannon = 2 shots each, then normal
     try:
         pygame.mixer.music.stop()
@@ -2583,9 +2709,92 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
     # Cheat code tracking
     p1_cheat_code = ""  # Player 1 cheat: xxxzzzccc
     p2_cheat_code = ""  # Player 2 cheat: lllooolll
-    start_countdown()
+    
+    # Network sync optimization - track last sent state
+    last_p1_x, last_p1_y, last_p1_health = player1.x, player1.y, player1_health
+    last_p2_x, last_p2_y, last_p2_health = player2.x, player2.y, player2_health
+    last_p1_right, last_p2_right = p1_right, p2_right
+    sync_counter = 0  # Send updates every N frames
+    
+    # Don't play countdown again if coming from online (already played)
+    if net is None:
+        start_countdown()
+    
     while True:
         now = time.time()
+        sync_counter += 1
+        
+        # ONLINE SYNC - Send and receive game state (optimized - every 2 frames)
+        if net is not None and sync_counter % 2 == 0:
+            if is_host:
+                # Only send if something changed
+                if (player1.x != last_p1_x or player1.y != last_p1_y or 
+                    player1_health != last_p1_health or p1_right != last_p1_right or
+                    any(b['owner'] == 1 for b in bullets)):
+                    
+                    net.send({
+                        'type': 'game_state',
+                        'p1_x': player1.x,
+                        'p1_y': player1.y,
+                        'p1_health': player1_health,
+                        'p1_right': p1_right,
+                        'bullets_p1': [(b['rect'].x, b['rect'].y, b['dir'], b.get('weapon', 'default'), b.get('damage', 1)) for b in bullets if b['owner'] == 1]
+                    })
+                    last_p1_x, last_p1_y, last_p1_health, last_p1_right = player1.x, player1.y, player1_health, p1_right
+                
+                # Receive player2 state from client
+                data = net.recv()
+                if data and data.get('type') == 'game_state':
+                    player2.x = data.get('p2_x', player2.x)
+                    player2.y = data.get('p2_y', player2.y)
+                    player2_health = data.get('p2_health', player2_health)
+                    p2_right = data.get('p2_right', p2_right)
+                    # Add client's bullets (filter to prevent duplicates)
+                    for bx, by, bdir, weapon, damage in data.get('bullets_p2', []):
+                        # Simple duplicate check - if no bullet exists at this exact position
+                        if not any(b['owner'] == 2 and abs(b['rect'].x - bx) < 5 and abs(b['rect'].y - by) < 5 for b in bullets):
+                            bullets.append({
+                                'rect': pygame.Rect(bx, by, 10, 10),
+                                'dir': bdir,
+                                'owner': 2,
+                                'weapon': weapon,
+                                'damage': damage
+                            })
+            else:
+                # Client controls player2 - only send if something changed
+                if (player2.x != last_p2_x or player2.y != last_p2_y or 
+                    player2_health != last_p2_health or p2_right != last_p2_right or
+                    any(b['owner'] == 2 for b in bullets)):
+                    
+                    net.send({
+                        'type': 'game_state',
+                        'p2_x': player2.x,
+                        'p2_y': player2.y,
+                        'p2_health': player2_health,
+                        'p2_right': p2_right,
+                        'bullets_p2': [(b['rect'].x, b['rect'].y, b['dir'], b.get('weapon', 'default'), b.get('damage', 1)) for b in bullets if b['owner'] == 2]
+                    })
+                    last_p2_x, last_p2_y, last_p2_health, last_p2_right = player2.x, player2.y, player2_health, p2_right
+                
+                # Receive player1 state from host
+                data = net.recv()
+                if data and data.get('type') == 'game_state':
+                    player1.x = data.get('p1_x', player1.x)
+                    player1.y = data.get('p1_y', player1.y)
+                    player1_health = data.get('p1_health', player1_health)
+                    p1_right = data.get('p1_right', p1_right)
+                    # Add host's bullets (filter to prevent duplicates)
+                    for bx, by, bdir, weapon, damage in data.get('bullets_p1', []):
+                        # Simple duplicate check
+                        if not any(b['owner'] == 1 and abs(b['rect'].x - bx) < 5 and abs(b['rect'].y - by) < 5 for b in bullets):
+                            bullets.append({
+                                'rect': pygame.Rect(bx, by, 10, 10),
+                                'dir': bdir,
+                                'owner': 1,
+                                'weapon': weapon,
+                                'damage': damage
+                            })
+        
         # (No online/network sync in this function)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -4590,9 +4799,10 @@ while True:
                                 
                                 if net.conn:
                                     player_name = get_player_name("Enter your name:", HEIGHT//2)
-                                    char_choices = character_select(0)
-                                    # Simplified online - just play locally for now
-                                    run_game_with_upgrades(player_name, "Opponent", char_choices, 0, 0, 0, 0, 0, 0, mode=0)
+                                    my_char, opp_char = online_character_select_and_countdown(net, True, 0)
+                                    if my_char is not None and opp_char is not None:
+                                        char_choices = [my_char, opp_char]
+                                        run_game_with_upgrades(player_name, "Opponent", char_choices, 0, 0, 0, 0, 0, 0, mode=0, net=net, is_host=True)
                                     net.close()
                             except Exception as e:
                                 screen.fill((30, 30, 30))
@@ -4611,9 +4821,10 @@ while True:
                                 try:
                                     net = NetworkClient(host_ip)
                                     player_name = get_player_name("Enter your name:", HEIGHT//2)
-                                    char_choices = character_select(0)
-                                    # Simplified online - just play locally for now
-                                    run_game_with_upgrades("Opponent", player_name, char_choices, 0, 0, 0, 0, 0, 0, mode=0)
+                                    my_char, opp_char = online_character_select_and_countdown(net, False, 0)
+                                    if my_char is not None and opp_char is not None:
+                                        char_choices = [opp_char, my_char]
+                                        run_game_with_upgrades("Opponent", player_name, char_choices, 0, 0, 0, 0, 0, 0, mode=0, net=net, is_host=False)
                                     net.close()
                                 except Exception as e:
                                     screen.fill((30, 30, 30))
@@ -4983,6 +5194,33 @@ while True:
             start_rect = pygame.Rect(WIDTH//2-100, HEIGHT//2+90, 200, 60)
             pygame.draw.rect(screen, (150, 0, 0), start_rect)
             start_text = font.render("Start Game", True, (255, 255, 255))
+            screen.blit(start_text, (start_rect.centerx-start_text.get_width()//2, start_rect.centery-start_text.get_height()//2))
+            
+            # Back button
+            back_rect = pygame.Rect(WIDTH//2-100, HEIGHT-100, 200, 60)
+            pygame.draw.rect(screen, (100, 100, 100), back_rect)
+            back_text = font.render("Back", True, (255, 255, 255))
+            screen.blit(back_text, (back_rect.centerx-back_text.get_width()//2, back_rect.centery-back_text.get_height()//2))
+            
+            pygame.display.flip()
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        break
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if start_rect.collidepoint(event.pos):
+                        result = run_escape_mom_mode()
+                        if result == 'lobby':
+                            break
+                    if back_rect.collidepoint(event.pos):
+                        break
+            else:
+                continue
+            break
     elif mode == 3:
         # Makka Pakka Mode - Face Washing Game - Show Play Local / Play Online
         while True:
