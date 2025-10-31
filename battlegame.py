@@ -2716,6 +2716,14 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
     last_p1_right, last_p2_right = p1_right, p2_right
     sync_counter = 0  # Send updates every N frames
     
+    # Interpolation for smoother remote player movement
+    target_p1_x, target_p1_y = player1.x, player1.y
+    target_p2_x, target_p2_y = player2.x, player2.y
+    interp_speed = 0.5  # Interpolation factor (0-1, higher = faster catch-up)
+    
+    # Send position updates only when moved significantly
+    position_threshold = 3  # pixels - only send if moved more than this
+    
     # Don't play countdown again if coming from online (already played)
     if net is None:
         start_countdown()
@@ -2724,35 +2732,59 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
         now = time.time()
         sync_counter += 1
         
-        # ONLINE SYNC - Send and receive game state (optimized - every 2 frames)
-        if net is not None and sync_counter % 2 == 0:
+        # ONLINE SYNC - Send and receive game state (optimized - reduced frequency + delta threshold)
+        if net is not None:
             if is_host:
-                # Only send if something changed
-                if (player1.x != last_p1_x or player1.y != last_p1_y or 
-                    player1_health != last_p1_health or p1_right != last_p1_right or
-                    any(b['owner'] == 1 for b in bullets)):
-                    
-                    net.send({
-                        'type': 'game_state',
-                        'p1_x': player1.x,
-                        'p1_y': player1.y,
-                        'p1_health': player1_health,
-                        'p1_right': p1_right,
-                        'bullets_p1': [(b['rect'].x, b['rect'].y, b['dir'], b.get('weapon', 'default'), b.get('damage', 1)) for b in bullets if b['owner'] == 1]
-                    })
-                    last_p1_x, last_p1_y, last_p1_health, last_p1_right = player1.x, player1.y, player1_health, p1_right
+                # Only send if something changed significantly (every 3 frames OR significant movement)
+                moved_significantly = (abs(player1.x - last_p1_x) > position_threshold or 
+                                      abs(player1.y - last_p1_y) > position_threshold)
+                health_changed = player1_health != last_p1_health
+                direction_changed = p1_right != last_p1_right
+                has_new_bullets = any(b['owner'] == 1 for b in bullets)
                 
-                # Receive player2 state from client
+                if (sync_counter % 3 == 0 and (moved_significantly or health_changed or direction_changed)) or has_new_bullets:
+                    # Send only changed data (delta compression concept)
+                    update = {'type': 'game_state'}
+                    if moved_significantly:
+                        update['p1_x'] = player1.x
+                        update['p1_y'] = player1.y
+                    if health_changed:
+                        update['p1_health'] = player1_health
+                    if direction_changed:
+                        update['p1_right'] = p1_right
+                    if has_new_bullets:
+                        # Only send new bullets (those created this frame)
+                        new_bullets = []
+                        for b in bullets:
+                            if b['owner'] == 1:
+                                bx, by = b['rect'].x, b['rect'].y
+                                # Check if this bullet is "new" (near player position)
+                                if abs(bx - player1.x) < 60 and abs(by - player1.y) < 60:
+                                    new_bullets.append((bx, by, b['dir'], b.get('weapon', 'default'), b.get('damage', 1)))
+                        if new_bullets:
+                            update['bullets_p1'] = new_bullets
+                    
+                    if len(update) > 1:  # Only send if there's actual data
+                        net.send(update)
+                        last_p1_x, last_p1_y, last_p1_health, last_p1_right = player1.x, player1.y, player1_health, p1_right
+                
+                # Receive player2 state from client (check every frame for responsiveness)
                 data = net.recv()
                 if data and data.get('type') == 'game_state':
-                    player2.x = data.get('p2_x', player2.x)
-                    player2.y = data.get('p2_y', player2.y)
-                    player2_health = data.get('p2_health', player2_health)
-                    p2_right = data.get('p2_right', p2_right)
-                    # Add client's bullets (filter to prevent duplicates)
+                    # Use interpolation for smooth movement
+                    if 'p2_x' in data:
+                        target_p2_x = data['p2_x']
+                        player2.x = int(player2.x + (target_p2_x - player2.x) * interp_speed)
+                    if 'p2_y' in data:
+                        target_p2_y = data['p2_y']
+                        player2.y = int(player2.y + (target_p2_y - player2.y) * interp_speed)
+                    if 'p2_health' in data:
+                        player2_health = data['p2_health']
+                    if 'p2_right' in data:
+                        p2_right = data['p2_right']
+                    # Add client's bullets
                     for bx, by, bdir, weapon, damage in data.get('bullets_p2', []):
-                        # Simple duplicate check - if no bullet exists at this exact position
-                        if not any(b['owner'] == 2 and abs(b['rect'].x - bx) < 5 and abs(b['rect'].y - by) < 5 for b in bullets):
+                        if not any(b['owner'] == 2 and abs(b['rect'].x - bx) < 10 and abs(b['rect'].y - by) < 10 for b in bullets):
                             bullets.append({
                                 'rect': pygame.Rect(bx, by, 10, 10),
                                 'dir': bdir,
@@ -2761,32 +2793,55 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
                                 'damage': damage
                             })
             else:
-                # Client controls player2 - only send if something changed
-                if (player2.x != last_p2_x or player2.y != last_p2_y or 
-                    player2_health != last_p2_health or p2_right != last_p2_right or
-                    any(b['owner'] == 2 for b in bullets)):
-                    
-                    net.send({
-                        'type': 'game_state',
-                        'p2_x': player2.x,
-                        'p2_y': player2.y,
-                        'p2_health': player2_health,
-                        'p2_right': p2_right,
-                        'bullets_p2': [(b['rect'].x, b['rect'].y, b['dir'], b.get('weapon', 'default'), b.get('damage', 1)) for b in bullets if b['owner'] == 2]
-                    })
-                    last_p2_x, last_p2_y, last_p2_health, last_p2_right = player2.x, player2.y, player2_health, p2_right
+                # Client controls player2 - only send if something changed significantly
+                moved_significantly = (abs(player2.x - last_p2_x) > position_threshold or 
+                                      abs(player2.y - last_p2_y) > position_threshold)
+                health_changed = player2_health != last_p2_health
+                direction_changed = p2_right != last_p2_right
+                has_new_bullets = any(b['owner'] == 2 for b in bullets)
                 
-                # Receive player1 state from host
+                if (sync_counter % 3 == 0 and (moved_significantly or health_changed or direction_changed)) or has_new_bullets:
+                    # Send only changed data
+                    update = {'type': 'game_state'}
+                    if moved_significantly:
+                        update['p2_x'] = player2.x
+                        update['p2_y'] = player2.y
+                    if health_changed:
+                        update['p2_health'] = player2_health
+                    if direction_changed:
+                        update['p2_right'] = p2_right
+                    if has_new_bullets:
+                        # Only send new bullets
+                        new_bullets = []
+                        for b in bullets:
+                            if b['owner'] == 2:
+                                bx, by = b['rect'].x, b['rect'].y
+                                if abs(bx - player2.x) < 60 and abs(by - player2.y) < 60:
+                                    new_bullets.append((bx, by, b['dir'], b.get('weapon', 'default'), b.get('damage', 1)))
+                        if new_bullets:
+                            update['bullets_p2'] = new_bullets
+                    
+                    if len(update) > 1:
+                        net.send(update)
+                        last_p2_x, last_p2_y, last_p2_health, last_p2_right = player2.x, player2.y, player2_health, p2_right
+                
+                # Receive player1 state from host (check every frame)
                 data = net.recv()
                 if data and data.get('type') == 'game_state':
-                    player1.x = data.get('p1_x', player1.x)
-                    player1.y = data.get('p1_y', player1.y)
-                    player1_health = data.get('p1_health', player1_health)
-                    p1_right = data.get('p1_right', p1_right)
-                    # Add host's bullets (filter to prevent duplicates)
+                    # Use interpolation for smooth movement
+                    if 'p1_x' in data:
+                        target_p1_x = data['p1_x']
+                        player1.x = int(player1.x + (target_p1_x - player1.x) * interp_speed)
+                    if 'p1_y' in data:
+                        target_p1_y = data['p1_y']
+                        player1.y = int(player1.y + (target_p1_y - player1.y) * interp_speed)
+                    if 'p1_health' in data:
+                        player1_health = data['p1_health']
+                    if 'p1_right' in data:
+                        p1_right = data['p1_right']
+                    # Add host's bullets
                     for bx, by, bdir, weapon, damage in data.get('bullets_p1', []):
-                        # Simple duplicate check
-                        if not any(b['owner'] == 1 and abs(b['rect'].x - bx) < 5 and abs(b['rect'].y - by) < 5 for b in bullets):
+                        if not any(b['owner'] == 1 and abs(b['rect'].x - bx) < 10 and abs(b['rect'].y - by) < 10 for b in bullets):
                             bullets.append({
                                 'rect': pygame.Rect(bx, by, 10, 10),
                                 'dir': bdir,
