@@ -168,12 +168,401 @@ def show_leaderboard(mode='survival'):
                 sys.exit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    return
+                    running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if back_button.collidepoint(event.pos):
-                    return
-        
-        clock.tick(60)
+                    running = False
+
+def adventure_3d_mode():
+            """Complex 3D adventure mode with exploration, combat, quests, and items"""
+            
+            # Player state
+            player = {
+                'x': 5.0,
+                'y': 5.0,
+                'angle': 0.0,
+                'health': 100,
+                'max_health': 100,
+                'mana': 50,
+                'max_mana': 50,
+                'inventory': [],
+                'equipped_weapon': 'sword',
+                'gold': 0,
+                'level': 1,
+                'exp': 0,
+                'quests': []
+            }
+            
+            # World map (1 = wall, 0 = floor, 2 = door, 3 = treasure, 4 = enemy, 5 = NPC, 6 = portal)
+            world_map = [
+                [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+                [1,0,0,0,0,0,1,0,0,0,0,0,0,0,3,1],
+                [1,0,5,0,1,0,1,0,1,1,1,1,1,0,0,1],
+                [1,0,0,0,1,0,0,0,0,0,0,0,1,0,0,1],
+                [1,1,2,1,1,0,1,1,1,0,4,0,1,0,0,1],
+                [1,0,0,0,0,0,1,0,0,0,1,1,1,0,0,1],
+                [1,0,3,0,1,0,2,0,1,0,0,0,0,0,4,1],
+                [1,0,0,0,1,0,1,0,1,1,1,1,1,1,1,1],
+                [1,1,1,0,1,0,0,0,0,0,0,0,0,0,0,1],
+                [1,4,0,0,0,0,1,1,1,0,3,0,1,0,0,1],
+                [1,0,0,1,1,0,1,0,0,0,1,0,1,0,5,1],
+                [1,0,0,0,0,0,2,0,1,0,1,0,0,0,0,1],
+                [1,0,4,0,1,0,1,0,1,0,0,0,1,1,1,1],
+                [1,0,0,0,1,0,0,0,0,0,1,0,0,0,6,1],
+                [1,0,0,0,1,0,3,0,1,0,1,0,4,0,0,1],
+                [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+            ]
+            
+            # Enemies
+            enemies = [
+                {'x': 10.5, 'y': 4.5, 'health': 30, 'type': 'goblin', 'alive': True},
+                {'x': 14.5, 'y': 6.5, 'health': 40, 'type': 'orc', 'alive': True},
+                {'x': 1.5, 'y': 9.5, 'health': 25, 'type': 'skeleton', 'alive': True},
+                {'x': 12.5, 'y': 12.5, 'health': 50, 'type': 'dragon', 'alive': True}
+            ]
+            
+            # NPCs
+            npcs = [
+                {'x': 2.5, 'y': 2.5, 'name': 'Elder', 'dialogue': 'Welcome hero! Seek the ancient treasures.'},
+                {'x': 14.5, 'y': 10.5, 'name': 'Merchant', 'dialogue': 'I have potions for sale!'}
+            ]
+            
+            # Treasures
+            treasures = [
+                {'x': 14.5, 'y': 1.5, 'opened': False, 'contents': 'Gold Sword'},
+                {'x': 2.5, 'y': 6.5, 'opened': False, 'contents': '50 Gold'},
+                {'x': 10.5, 'y': 9.5, 'opened': False, 'contents': 'Health Potion'},
+                {'x': 6.5, 'y': 14.5, 'opened': False, 'contents': 'Magic Staff'}
+            ]
+            
+            clock = pygame.time.Clock()
+            move_speed = 3.0
+            rot_speed = 3.0
+            fov = math.pi / 3
+            max_depth = 16.0
+            
+            # UI colors
+            ui_bg = (20, 20, 30)
+            ui_border = (100, 100, 150)
+            health_color = (200, 50, 50)
+            mana_color = (50, 100, 200)
+            
+            running = True
+            show_map = False
+            message = ""
+            message_timer = 0
+            combat_target = None
+            
+            while running:
+                dt = clock.tick(60) / 1000.0
+                
+                if message_timer > 0:
+                    message_timer -= dt
+                    if message_timer <= 0:
+                        message = ""
+                
+                # Handle input
+                keys = pygame.key.get_pressed()
+                
+                # Movement
+                move_x, move_y = 0, 0
+                if keys[pygame.K_w]:
+                    move_x = math.cos(player['angle']) * move_speed * dt
+                    move_y = math.sin(player['angle']) * move_speed * dt
+                if keys[pygame.K_s]:
+                    move_x = -math.cos(player['angle']) * move_speed * dt
+                    move_y = -math.sin(player['angle']) * move_speed * dt
+                if keys[pygame.K_a]:
+                    player['angle'] -= rot_speed * dt
+                if keys[pygame.K_d]:
+                    player['angle'] += rot_speed * dt
+                
+                # Collision detection
+                new_x = player['x'] + move_x
+                new_y = player['y'] + move_y
+                map_x = int(new_x)
+                map_y = int(new_y)
+                
+                if 0 <= map_x < len(world_map[0]) and 0 <= map_y < len(world_map):
+                    if world_map[map_y][map_x] not in [1, 2]:  # Not a wall or door
+                        player['x'] = new_x
+                        player['y'] = new_y
+                
+                # Events
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        return
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_ESCAPE:
+                            return
+                        if event.key == pygame.K_m:
+                            show_map = not show_map
+                        if event.key == pygame.K_e:
+                            # Interact with objects
+                            check_x = player['x'] + math.cos(player['angle']) * 1.5
+                            check_y = player['y'] + math.sin(player['angle']) * 1.5
+                            cx, cy = int(check_x), int(check_y)
+                            
+                            if 0 <= cx < len(world_map[0]) and 0 <= cy < len(world_map):
+                                tile = world_map[cy][cx]
+                                if tile == 2:  # Door
+                                    world_map[cy][cx] = 0
+                                    message = "Door opened!"
+                                    message_timer = 2.0
+                                elif tile == 3:  # Treasure
+                                    for treasure in treasures:
+                                        if int(treasure['x']) == cx and int(treasure['y']) == cy and not treasure['opened']:
+                                            treasure['opened'] = True
+                                            player['inventory'].append(treasure['contents'])
+                                            if 'Gold' in treasure['contents']:
+                                                player['gold'] += int(treasure['contents'].split()[0])
+                                            message = f"Found: {treasure['contents']}!"
+                                            message_timer = 3.0
+                                            world_map[cy][cx] = 0
+                                elif tile == 5:  # NPC
+                                    for npc in npcs:
+                                        if int(npc['x']) == cx and int(npc['y']) == cy:
+                                            message = f"{npc['name']}: {npc['dialogue']}"
+                                            message_timer = 4.0
+                        
+                        if event.key == pygame.K_SPACE:
+                            # Attack
+                            if combat_target and combat_target['alive']:
+                                damage = 10 + player['level'] * 5
+                                combat_target['health'] -= damage
+                                message = f"Hit {combat_target['type']} for {damage} damage!"
+                                message_timer = 2.0
+                                if combat_target['health'] <= 0:
+                                    combat_target['alive'] = False
+                                    player['exp'] += 20
+                                    player['gold'] += 10
+                                    message = f"Defeated {combat_target['type']}! +20 EXP, +10 Gold"
+                                    message_timer = 3.0
+                                    combat_target = None
+                                    # Level up check
+                                    if player['exp'] >= player['level'] * 100:
+                                        player['level'] += 1
+                                        player['max_health'] += 20
+                                        player['health'] = player['max_health']
+                                        message = f"LEVEL UP! Now level {player['level']}!"
+                                        message_timer = 3.0
+                
+                # Check for nearby enemies
+                combat_target = None
+                for enemy in enemies:
+                    if enemy['alive']:
+                        dist = math.sqrt((enemy['x'] - player['x'])**2 + (enemy['y'] - player['y'])**2)
+                        if dist < 2.0:
+                            combat_target = enemy
+                            break
+                
+                # === RENDER 3D VIEW ===
+                screen.fill((50, 50, 80))  # Ceiling
+                pygame.draw.rect(screen, (40, 60, 40), (0, HEIGHT//2, WIDTH, HEIGHT//2))  # Floor
+                
+                # Ray casting
+                num_rays = 120
+                for ray in range(num_rays):
+                    ray_angle = player['angle'] - fov / 2 + (ray / num_rays) * fov
+                    
+                    # Cast ray
+                    for depth in range(int(max_depth * 10)):
+                        test_depth = depth / 10.0
+                        test_x = player['x'] + math.cos(ray_angle) * test_depth
+                        test_y = player['y'] + math.sin(ray_angle) * test_depth
+                        
+                        tx, ty = int(test_x), int(test_y)
+                        
+                        if 0 <= tx < len(world_map[0]) and 0 <= ty < len(world_map):
+                            if world_map[ty][tx] == 1:  # Wall
+                                # Calculate wall height
+                                distance = test_depth * math.cos(ray_angle - player['angle'])
+                                wall_height = min(HEIGHT, int(HEIGHT / (distance + 0.0001) * 0.5))
+                                
+                                # Wall shading based on distance
+                                shade = max(0, 255 - int(distance * 20))
+                                color = (shade // 2, shade // 2, shade)
+                                
+                                wall_top = HEIGHT // 2 - wall_height // 2
+                                wall_bottom = HEIGHT // 2 + wall_height // 2
+                                
+                                x_pos = int(ray * (WIDTH / num_rays))
+                                pygame.draw.line(screen, color, (x_pos, wall_top), (x_pos, wall_bottom), int(WIDTH / num_rays) + 1)
+                                break
+                            elif world_map[ty][tx] == 2:  # Door
+                                distance = test_depth * math.cos(ray_angle - player['angle'])
+                                wall_height = min(HEIGHT, int(HEIGHT / (distance + 0.0001) * 0.5))
+                                shade = max(0, 200 - int(distance * 20))
+                                color = (shade // 3, shade // 3, shade // 2)
+                                
+                                wall_top = HEIGHT // 2 - wall_height // 2
+                                wall_bottom = HEIGHT // 2 + wall_height // 2
+                                x_pos = int(ray * (WIDTH / num_rays))
+                                pygame.draw.line(screen, color, (x_pos, wall_top), (x_pos, wall_bottom), int(WIDTH / num_rays) + 1)
+                                break
+                
+                # Draw sprites (enemies, treasures, NPCs)
+                sprites = []
+                
+                # Add enemies
+                for enemy in enemies:
+                    if enemy['alive']:
+                        sprites.append({
+                            'x': enemy['x'],
+                            'y': enemy['y'],
+                            'type': 'enemy',
+                            'color': (200, 50, 50),
+                            'data': enemy
+                        })
+                
+                # Add treasures
+                for treasure in treasures:
+                    if not treasure['opened']:
+                        sprites.append({
+                            'x': treasure['x'],
+                            'y': treasure['y'],
+                            'type': 'treasure',
+                            'color': (255, 215, 0),
+                            'data': treasure
+                        })
+                
+                # Add NPCs
+                for npc in npcs:
+                    sprites.append({
+                        'x': npc['x'],
+                        'y': npc['y'],
+                        'type': 'npc',
+                        'color': (100, 200, 100),
+                        'data': npc
+                    })
+                
+                # Sort sprites by distance (painter's algorithm)
+                for sprite in sprites:
+                    dx = sprite['x'] - player['x']
+                    dy = sprite['y'] - player['y']
+                    sprite['distance'] = math.sqrt(dx*dx + dy*dy)
+                    sprite['angle'] = math.atan2(dy, dx) - player['angle']
+                
+                sprites.sort(key=lambda s: s['distance'], reverse=True)
+                
+                # Draw sprites
+                for sprite in sprites:
+                    if sprite['distance'] < max_depth:
+                        # Normalize angle
+                        angle = sprite['angle']
+                        while angle < -math.pi: angle += 2 * math.pi
+                        while angle > math.pi: angle -= 2 * math.pi
+                        
+                        if abs(angle) < fov / 2 + 0.5:
+                            size = min(HEIGHT, int(HEIGHT / (sprite['distance'] + 0.0001) * 0.3))
+                            screen_x = WIDTH // 2 + int((angle / (fov / 2)) * (WIDTH // 2))
+                            screen_y = HEIGHT // 2
+                            
+                            shade = max(50, 255 - int(sprite['distance'] * 20))
+                            color = tuple(int(c * shade / 255) for c in sprite['color'])
+                            
+                            pygame.draw.rect(screen, color, (screen_x - size//2, screen_y - size, size, size * 2))
+                            
+                            # Draw indicator
+                            if sprite['type'] == 'enemy':
+                                pygame.draw.circle(screen, (255, 0, 0), (screen_x, screen_y - size - 10), 5)
+                            elif sprite['type'] == 'treasure':
+                                pygame.draw.circle(screen, (255, 215, 0), (screen_x, screen_y - size - 10), 5)
+                            elif sprite['type'] == 'npc':
+                                pygame.draw.circle(screen, (100, 255, 100), (screen_x, screen_y - size - 10), 5)
+                
+                # === DRAW UI ===
+                # Health bar
+                pygame.draw.rect(screen, ui_bg, (10, 10, 200, 30))
+                pygame.draw.rect(screen, ui_border, (10, 10, 200, 30), 2)
+                health_width = int(180 * (player['health'] / player['max_health']))
+                pygame.draw.rect(screen, health_color, (15, 15, health_width, 20))
+                health_text = font.render(f"HP: {player['health']}/{player['max_health']}", True, (255, 255, 255))
+                screen.blit(health_text, (15, 15))
+                
+                # Mana bar
+                pygame.draw.rect(screen, ui_bg, (10, 45, 200, 30))
+                pygame.draw.rect(screen, ui_border, (10, 45, 200, 30), 2)
+                mana_width = int(180 * (player['mana'] / player['max_mana']))
+                pygame.draw.rect(screen, mana_color, (15, 50, mana_width, 20))
+                mana_text = font.render(f"MP: {player['mana']}/{player['max_mana']}", True, (255, 255, 255))
+                screen.blit(mana_text, (15, 50))
+                
+                # Player stats
+                stats_text = [
+                    f"Level: {player['level']}",
+                    f"EXP: {player['exp']}/{player['level'] * 100}",
+                    f"Gold: {player['gold']}",
+                    f"Weapon: {player['equipped_weapon']}"
+                ]
+                for i, text in enumerate(stats_text):
+                    stat = font.render(text, True, (255, 255, 200))
+                    screen.blit(stat, (WIDTH - 200, 10 + i * 25))
+                
+                # Combat indicator
+                if combat_target:
+                    combat_text = font.render(f"Enemy: {combat_target['type']} HP: {combat_target['health']}", True, (255, 100, 100))
+                    screen.blit(combat_text, (WIDTH // 2 - combat_text.get_width() // 2, 10))
+                    hint = font.render("Press SPACE to attack!", True, (255, 255, 100))
+                    screen.blit(hint, (WIDTH // 2 - hint.get_width() // 2, 40))
+                
+                # Message
+                if message:
+                    msg_surface = lobby_font.render(message, True, (255, 255, 100))
+                    pygame.draw.rect(screen, (0, 0, 0, 180), 
+                                   (WIDTH // 2 - msg_surface.get_width() // 2 - 10, HEIGHT - 100,
+                                    msg_surface.get_width() + 20, 50))
+                    screen.blit(msg_surface, (WIDTH // 2 - msg_surface.get_width() // 2, HEIGHT - 90))
+                
+                # Controls
+                controls = font.render("WASD:Move | E:Interact | M:Map | SPACE:Attack | ESC:Exit", True, (150, 150, 200))
+                screen.blit(controls, (WIDTH // 2 - controls.get_width() // 2, HEIGHT - 30))
+                
+                # Mini map
+                if show_map:
+                    map_size = 200
+                    map_scale = map_size / len(world_map)
+                    pygame.draw.rect(screen, (0, 0, 0, 180), (WIDTH - map_size - 20, 100, map_size, map_size))
+                    
+                    for y in range(len(world_map)):
+                        for x in range(len(world_map[0])):
+                            if world_map[y][x] == 1:
+                                color = (100, 100, 100)
+                            elif world_map[y][x] == 2:
+                                color = (150, 100, 50)
+                            elif world_map[y][x] == 3:
+                                color = (255, 215, 0)
+                            elif world_map[y][x] == 5:
+                                color = (100, 200, 100)
+                            else:
+                                color = (30, 30, 40)
+                            
+                            pygame.draw.rect(screen, color, 
+                                           (WIDTH - map_size - 20 + x * map_scale, 
+                                            100 + y * map_scale, 
+                                            map_scale, map_scale))
+                    
+                    # Draw player
+                    player_map_x = WIDTH - map_size - 20 + player['x'] * map_scale
+                    player_map_y = 100 + player['y'] * map_scale
+                    pygame.draw.circle(screen, (255, 0, 0), (int(player_map_x), int(player_map_y)), 3)
+                    
+                    # Draw direction
+                    dir_x = player_map_x + math.cos(player['angle']) * 10
+                    dir_y = player_map_y + math.sin(player['angle']) * 10
+                    pygame.draw.line(screen, (255, 0, 0), (player_map_x, player_map_y), (dir_x, dir_y), 2)
+                    
+                    # Draw enemies
+                    for enemy in enemies:
+                        if enemy['alive']:
+                            ex = WIDTH - map_size - 20 + enemy['x'] * map_scale
+                            ey = 100 + enemy['y'] * map_scale
+                            pygame.draw.circle(screen, (255, 0, 0), (int(ex), int(ey)), 2)
+                
+                pygame.display.flip()
+
+# Countdown and player name input functions remain the same...
+
 
 # Load background image for battle mode
 try:
@@ -261,7 +650,7 @@ def online_get_name_and_character(player_label, mode):
 
 def mode_lobby():
     selected = 0
-    options = ["Battle Mode", "Coin Collection Mode", "Makka Pakka Mode", "Escape Mom Mode", "Capture the Flag", "Survival Mode", "Relax Mode", "Survival Leaderboard", "Mom Mode Leaderboard", "Play Music", "Stop Music", "Watch Cute Video", "Watch Grandma", "Exit"]
+    options = ["Battle Mode", "Coin Collection Mode", "Makka Pakka Mode", "Escape Mom Mode", "Capture the Flag", "Survival Mode", "3D Adventure", "Relax Mode", "Survival Leaderboard", "Mom Mode Leaderboard", "Play Music", "Stop Music", "Watch Cute Video", "Watch Grandma", "Exit"]
     music_playing = False
     pygame.mixer.music.stop()  # Ensure no music plays automatically
     while True:
@@ -307,6 +696,8 @@ def mode_lobby():
                         watch_grandma()
                     elif options[selected] == "Relax Mode":
                         relax_mode()
+                    elif options[selected] == "3D Adventure":
+                        adventure_3d_mode()
                     else:
                         pygame.mixer.music.stop()
                         if options[selected] == "Battle Mode":
@@ -878,6 +1269,128 @@ def get_letter_formation_points(letter, center_x, center_y, size):
     
     return points
 
+def draw_realistic_sheep(surface, x, y, leg_phase, rotation=0):
+    """Draw a more realistic sheep with wool texture, proper proportions, and animated legs"""
+    # Sheep colors
+    wool_color = (245, 245, 240)  # Off-white wool
+    wool_shadow = (220, 220, 215)
+    face_color = (40, 35, 35)  # Dark grey/black face
+    leg_color = (35, 30, 30)
+    
+    # Create a temporary surface for rotation
+    sheep_surface = pygame.Surface((100, 80), pygame.SRCALPHA)
+    
+    # Draw on temporary surface (centered at 50, 40)
+    center_x, center_y = 50, 40
+    
+    # Body - woolly texture with multiple circles
+    body_x = center_x - 5
+    body_y = center_y - 10
+    
+    # Main body ellipse with wool puffs
+    for i in range(8):
+        angle = (i / 8) * 2 * math.pi
+        puff_x = body_x + 18 * math.cos(angle)
+        puff_y = body_y + 12 * math.sin(angle)
+        pygame.draw.circle(sheep_surface, wool_shadow, (int(puff_x), int(puff_y)), 10)
+    
+    # Core body
+    pygame.draw.ellipse(sheep_surface, wool_color, (body_x - 20, body_y - 15, 40, 30))
+    
+    # Add wool texture details
+    for _ in range(12):
+        offset_x = random.randint(-15, 15)
+        offset_y = random.randint(-10, 10)
+        pygame.draw.circle(sheep_surface, wool_shadow, 
+                         (body_x + offset_x, body_y + offset_y), random.randint(3, 6))
+    
+    # Legs with joints and walking animation
+    leg_positions = [
+        (body_x - 12, body_y + 15),  # Front left
+        (body_x + 8, body_y + 15),   # Front right
+        (body_x - 8, body_y + 15),   # Back left
+        (body_x + 12, body_y + 15)   # Back right
+    ]
+    
+    for i, (leg_x, leg_y) in enumerate(leg_positions):
+        # Alternate leg movement
+        if i % 2 == 0:
+            leg_swing = 8 * math.sin(leg_phase)
+        else:
+            leg_swing = 8 * math.sin(leg_phase + math.pi)
+        
+        # Upper leg
+        upper_end_x = leg_x + leg_swing // 2
+        upper_end_y = leg_y + 10
+        pygame.draw.line(sheep_surface, leg_color, (leg_x, leg_y), 
+                        (upper_end_x, upper_end_y), 4)
+        
+        # Lower leg
+        lower_end_x = upper_end_x + leg_swing // 2
+        lower_end_y = upper_end_y + 12
+        pygame.draw.line(sheep_surface, leg_color, (upper_end_x, upper_end_y), 
+                        (lower_end_x, lower_end_y), 3)
+        
+        # Hoof
+        pygame.draw.circle(sheep_surface, (20, 20, 20), (lower_end_x, lower_end_y), 2)
+    
+    # Head
+    head_x = center_x + 20
+    head_y = center_y - 15
+    
+    # Wool on head (top of head)
+    pygame.draw.circle(sheep_surface, wool_color, (head_x - 5, head_y - 8), 8)
+    pygame.draw.circle(sheep_surface, wool_shadow, (head_x - 8, head_y - 6), 5)
+    
+    # Face (elongated)
+    pygame.draw.ellipse(sheep_surface, face_color, (head_x - 2, head_y - 5, 14, 18))
+    
+    # Ears
+    # Left ear
+    ear_points_l = [
+        (head_x - 2, head_y - 3),
+        (head_x - 6, head_y - 6),
+        (head_x - 3, head_y + 2)
+    ]
+    pygame.draw.polygon(sheep_surface, face_color, ear_points_l)
+    pygame.draw.polygon(sheep_surface, (60, 50, 50), 
+                       [(p[0]+1, p[1]+1) for p in ear_points_l[:-1]] + [ear_points_l[-1]])
+    
+    # Right ear
+    ear_points_r = [
+        (head_x + 12, head_y - 3),
+        (head_x + 16, head_y - 6),
+        (head_x + 13, head_y + 2)
+    ]
+    pygame.draw.polygon(sheep_surface, face_color, ear_points_r)
+    
+    # Eyes
+    pygame.draw.circle(sheep_surface, (255, 255, 255), (head_x + 2, head_y + 2), 3)
+    pygame.draw.circle(sheep_surface, (0, 0, 0), (head_x + 3, head_y + 2), 2)
+    pygame.draw.circle(sheep_surface, (255, 255, 255), (head_x + 8, head_y + 2), 3)
+    pygame.draw.circle(sheep_surface, (0, 0, 0), (head_x + 9, head_y + 2), 2)
+    
+    # Nose
+    pygame.draw.circle(sheep_surface, (20, 20, 20), (head_x + 5, head_y + 10), 2)
+    
+    # Mouth - gentle smile
+    pygame.draw.arc(sheep_surface, (60, 50, 50), 
+                   (head_x + 2, head_y + 8, 8, 6), 0, math.pi, 1)
+    
+    # Tail - small wool puff
+    tail_x = body_x - 22
+    tail_y = body_y - 5
+    pygame.draw.circle(sheep_surface, wool_shadow, (tail_x, tail_y), 6)
+    pygame.draw.circle(sheep_surface, wool_color, (tail_x - 1, tail_y - 1), 5)
+    
+    # Rotate the surface if needed
+    if abs(rotation) > 0.1:
+        sheep_surface = pygame.transform.rotate(sheep_surface, rotation)
+    
+    # Blit to main surface
+    rect = sheep_surface.get_rect(center=(x, y))
+    surface.blit(sheep_surface, rect)
+
 def counting_sheep_mode():
     """Peaceful counting sheep game - watch sheep jump over a fence"""
     clock = pygame.time.Clock()
@@ -886,116 +1399,200 @@ def counting_sheep_mode():
     sheep_list = []
     count = 0
     spawn_timer = 0
-    spawn_interval = 2.0  # Seconds between sheep
+    spawn_interval = 2.5  # Seconds between sheep
+    animation_time = 0
     
     # Fence position
     fence_x = WIDTH // 2
     fence_y = HEIGHT // 2 + 50
     fence_height = 100
     
+    # Moon
+    moon_x = WIDTH - 150
+    moon_y = 100
+    
+    # Stars - fixed positions for consistency
+    stars = []
+    random.seed(42)  # Fixed seed for consistent star positions
+    for _ in range(80):
+        stars.append({
+            'x': random.randint(0, WIDTH),
+            'y': random.randint(0, HEIGHT // 2 + 50),
+            'brightness': random.randint(150, 255),
+            'twinkle_speed': random.uniform(1, 3),
+            'size': random.choice([1, 1, 1, 2])  # Mostly small, some bigger
+        })
+    random.seed()  # Reset seed
+    
     # Cloud decorations
     clouds = []
-    for _ in range(5):
+    for _ in range(7):
         clouds.append({
             'x': random.randint(0, WIDTH),
-            'y': random.randint(50, 200),
-            'size': random.randint(30, 60),
-            'speed': random.uniform(10, 30)
+            'y': random.randint(40, 180),
+            'size': random.randint(40, 80),
+            'speed': random.uniform(8, 20),
+            'puffiness': random.uniform(0.8, 1.2)
         })
     
     running = True
     while running:
         dt = clock.tick(60) / 1000.0
         spawn_timer += dt
+        animation_time += dt
         
-        # Draw night sky background with stars
-        screen.fill((10, 10, 40))
+        # Draw gradient night sky
+        for y in range(HEIGHT):
+            if y < HEIGHT // 2:
+                # Sky gradient from dark blue to lighter blue
+                ratio = y / (HEIGHT // 2)
+                r = int(10 + 20 * ratio)
+                g = int(10 + 30 * ratio)
+                b = int(40 + 50 * ratio)
+                pygame.draw.line(screen, (r, g, b), (0, y), (WIDTH, y))
+            else:
+                # Ground area
+                screen.fill((15, 60, 15), (0, y, WIDTH, 1))
         
-        # Draw stars
-        for _ in range(50):
-            star_x = random.randint(0, WIDTH)
-            star_y = random.randint(0, HEIGHT // 2)
-            brightness = random.randint(100, 255)
-            pygame.draw.circle(screen, (brightness, brightness, brightness), (star_x, star_y), 1)
+        # Draw twinkling stars
+        for star in stars:
+            twinkle = abs(math.sin(animation_time * star['twinkle_speed']))
+            brightness = int(star['brightness'] * (0.5 + 0.5 * twinkle))
+            blue_tint = min(255, brightness + 20)  # Clamp to 255
+            color = (brightness, brightness, blue_tint)
+            if star['size'] == 2:
+                # Draw bigger stars as small crosses
+                pygame.draw.circle(screen, color, (star['x'], star['y']), 2)
+                pygame.draw.line(screen, color, (star['x']-2, star['y']), (star['x']+2, star['y']))
+                pygame.draw.line(screen, color, (star['x'], star['y']-2), (star['x'], star['y']+2))
+            else:
+                pygame.draw.circle(screen, color, (star['x'], star['y']), star['size'])
+        
+        # Draw moon with glow
+        for i in range(5, 0, -1):
+            glow_brightness = 240 - i*10
+            pygame.draw.circle(screen, (glow_brightness, glow_brightness, max(0, 200 - i*5)), 
+                             (moon_x, moon_y), 35 + i*3)
+        pygame.draw.circle(screen, (240, 240, 220), (moon_x, moon_y), 35)
+        # Moon craters
+        pygame.draw.circle(screen, (220, 220, 200), (moon_x - 8, moon_y - 5), 8)
+        pygame.draw.circle(screen, (220, 220, 200), (moon_x + 10, moon_y + 8), 6)
+        pygame.draw.circle(screen, (220, 220, 200), (moon_x + 5, moon_y - 12), 5)
         
         # Draw and update clouds
         for cloud in clouds:
             cloud['x'] += cloud['speed'] * dt
-            if cloud['x'] > WIDTH + cloud['size']:
-                cloud['x'] = -cloud['size']
+            if cloud['x'] > WIDTH + cloud['size'] * 2:
+                cloud['x'] = -cloud['size'] * 2
             
-            # Draw cloud as overlapping circles
-            for i in range(3):
-                offset_x = (i - 1) * cloud['size'] // 3
-                pygame.draw.circle(screen, (230, 230, 250), 
-                                 (int(cloud['x'] + offset_x), int(cloud['y'])), 
-                                 cloud['size'] // 2)
+            # Draw cloud as multiple overlapping circles for fluffy effect
+            base_color = (200, 200, 230)
+            for i in range(5):
+                offset_x = (i - 2) * cloud['size'] // 4
+                offset_y = random.randint(-5, 5) if i % 2 == 0 else 0
+                puff_size = int(cloud['size'] // 2 * cloud['puffiness'])
+                pygame.draw.circle(screen, base_color, 
+                                 (int(cloud['x'] + offset_x), int(cloud['y'] + offset_y)), 
+                                 puff_size)
         
-        # Draw ground
-        pygame.draw.rect(screen, (20, 80, 20), (0, HEIGHT // 2 + 100, WIDTH, HEIGHT))
+        # Draw rolling hills in background
+        hill_color = (25, 90, 25)
+        for i in range(3):
+            hill_y = HEIGHT // 2 + 80 + i * 30
+            points = []
+            for x in range(0, WIDTH + 100, 50):
+                y_offset = 30 * math.sin((x + animation_time * 20) / 100 + i)
+                points.append((x, hill_y + y_offset))
+            points.append((WIDTH, HEIGHT))
+            points.append((0, HEIGHT))
+            if len(points) > 2:
+                pygame.draw.polygon(screen, hill_color, points)
         
-        # Draw fence
-        fence_color = (139, 90, 43)  # Brown
+        # Draw ground with grass texture
+        ground_y = HEIGHT // 2 + 100
+        pygame.draw.rect(screen, (20, 80, 20), (0, ground_y, WIDTH, HEIGHT))
+        # Grass blades
+        for i in range(0, WIDTH, 10):
+            grass_height = random.randint(3, 8)
+            pygame.draw.line(screen, (30, 100, 30), 
+                           (i, ground_y), (i, ground_y - grass_height), 1)
+        
+        # Draw wooden fence with more detail
+        fence_color = (101, 67, 33)  # Dark brown
+        fence_light = (139, 90, 43)  # Light brown
+        # Posts with 3D effect
         for i in range(5):
             post_x = fence_x - 60 + i * 30
+            # Shadow
+            pygame.draw.rect(screen, (60, 40, 20), (post_x + 2, fence_y + 2, 8, fence_height))
+            # Post
             pygame.draw.rect(screen, fence_color, (post_x, fence_y, 8, fence_height))
-        # Horizontal bars
-        pygame.draw.rect(screen, fence_color, (fence_x - 60, fence_y + 20, 140, 8))
-        pygame.draw.rect(screen, fence_color, (fence_x - 60, fence_y + 50, 140, 8))
-        pygame.draw.rect(screen, fence_color, (fence_x - 60, fence_y + 80, 140, 8))
+            # Highlight
+            pygame.draw.rect(screen, fence_light, (post_x, fence_y, 2, fence_height))
+        # Horizontal bars with 3D effect
+        for bar_y in [fence_y + 20, fence_y + 50, fence_y + 80]:
+            # Shadow
+            pygame.draw.rect(screen, (60, 40, 20), (fence_x - 60 + 2, bar_y + 2, 140, 8))
+            # Bar
+            pygame.draw.rect(screen, fence_color, (fence_x - 60, bar_y, 140, 8))
+            # Highlight
+            pygame.draw.rect(screen, fence_light, (fence_x - 60, bar_y, 140, 2))
         
         # Spawn new sheep
         if spawn_timer >= spawn_interval:
             spawn_timer = 0
             count += 1
             sheep_list.append({
-                'x': -50,
+                'x': -80,
                 'y': fence_y + 80,  # Start on ground
                 'jump_phase': 0,  # 0=walking, 1=jumping, 2=landed
                 'target_y': fence_y + 80,
-                'speed': 150,
-                'num': count
+                'speed': 120,
+                'num': count,
+                'leg_phase': random.uniform(0, math.pi * 2),  # For walking animation
+                'body_bob': 0,  # Bobbing up and down while walking
+                'rotation': 0  # For mid-air rotation
             })
         
         # Update and draw sheep
         for sheep in sheep_list[:]:
             sheep['x'] += sheep['speed'] * dt
             
+            # Walking leg animation
+            if sheep['jump_phase'] == 0:
+                sheep['leg_phase'] += 8 * dt
+                sheep['body_bob'] = 2 * math.sin(sheep['leg_phase'] * 2)
+            
             # Jumping animation
             if sheep['jump_phase'] == 0:  # Walking to fence
-                if sheep['x'] > fence_x - 100:
+                if sheep['x'] > fence_x - 120:
                     sheep['jump_phase'] = 1
                     sheep['jump_start_x'] = sheep['x']
+                    sheep['jump_start_y'] = sheep['y']
             elif sheep['jump_phase'] == 1:  # Jumping over fence
                 # Arc motion
-                progress = (sheep['x'] - sheep['jump_start_x']) / 200
+                progress = (sheep['x'] - sheep['jump_start_x']) / 220
                 if progress < 1.0:
-                    sheep['y'] = fence_y + 80 - 120 * math.sin(progress * math.pi)
+                    # Parabolic arc
+                    sheep['y'] = sheep['jump_start_y'] - 140 * math.sin(progress * math.pi)
+                    # Slight rotation during jump
+                    sheep['rotation'] = -15 * math.sin(progress * math.pi)
+                    sheep['body_bob'] = 0
                 else:
                     sheep['jump_phase'] = 2
                     sheep['y'] = fence_y + 80
+                    sheep['rotation'] = 0
+                    sheep['leg_phase'] = 0
+            elif sheep['jump_phase'] == 2:  # Landed, walking away
+                sheep['leg_phase'] += 8 * dt
+                sheep['body_bob'] = 2 * math.sin(sheep['leg_phase'] * 2)
             
-            # Draw sheep (simple cute design)
-            sheep_x = int(sheep['x'])
-            sheep_y = int(sheep['y'])
-            
-            # Body (white fluffy circle)
-            pygame.draw.circle(screen, (255, 255, 255), (sheep_x, sheep_y - 20), 20)
-            # Head (smaller white circle)
-            pygame.draw.circle(screen, (255, 255, 255), (sheep_x + 15, sheep_y - 30), 12)
-            # Face (black)
-            pygame.draw.circle(screen, (40, 40, 40), (sheep_x + 20, sheep_y - 30), 8)
-            # Eyes
-            pygame.draw.circle(screen, (0, 0, 0), (sheep_x + 18, sheep_y - 33), 2)
-            pygame.draw.circle(screen, (0, 0, 0), (sheep_x + 24, sheep_y - 33), 2)
-            # Legs (black lines)
-            for leg_offset in [-8, 0, 8]:
-                pygame.draw.line(screen, (40, 40, 40), 
-                               (sheep_x + leg_offset, sheep_y - 5), 
-                               (sheep_x + leg_offset, sheep_y), 3)
+            # Draw realistic sheep
+            draw_realistic_sheep(screen, int(sheep['x']), int(sheep['y'] + sheep['body_bob']), 
+                               sheep['leg_phase'], sheep['rotation'])
             
             # Remove sheep that are off screen
-            if sheep['x'] > WIDTH + 50:
+            if sheep['x'] > WIDTH + 100:
                 sheep_list.remove(sheep)
         
         # Draw count
@@ -6832,6 +7429,8 @@ while True:
                 continue
             break
     elif mode == 5:
+        # 3D Adventure Mode
+        adventure_3d_mode()
         # Capture the Flag Mode - Show Play Local / Play Online
         while True:
             screen.fill((30, 60, 30))
