@@ -174,392 +174,867 @@ def show_leaderboard(mode='survival'):
                     running = False
 
 def adventure_3d_mode():
-            """Complex 3D adventure mode with exploration, combat, quests, and items"""
-            
-            # Player state
-            player = {
-                'x': 5.0,
-                'y': 5.0,
-                'angle': 0.0,
-                'health': 100,
-                'max_health': 100,
-                'mana': 50,
-                'max_mana': 50,
-                'inventory': [],
-                'equipped_weapon': 'sword',
-                'gold': 0,
-                'level': 1,
-                'exp': 0,
-                'quests': []
-            }
-            
-            # World map (1 = wall, 0 = floor, 2 = door, 3 = treasure, 4 = enemy, 5 = NPC, 6 = portal)
-            world_map = [
-                [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-                [1,0,0,0,0,0,1,0,0,0,0,0,0,0,3,1],
-                [1,0,5,0,1,0,1,0,1,1,1,1,1,0,0,1],
-                [1,0,0,0,1,0,0,0,0,0,0,0,1,0,0,1],
-                [1,1,2,1,1,0,1,1,1,0,4,0,1,0,0,1],
-                [1,0,0,0,0,0,1,0,0,0,1,1,1,0,0,1],
-                [1,0,3,0,1,0,2,0,1,0,0,0,0,0,4,1],
-                [1,0,0,0,1,0,1,0,1,1,1,1,1,1,1,1],
-                [1,1,1,0,1,0,0,0,0,0,0,0,0,0,0,1],
-                [1,4,0,0,0,0,1,1,1,0,3,0,1,0,0,1],
-                [1,0,0,1,1,0,1,0,0,0,1,0,1,0,5,1],
-                [1,0,0,0,0,0,2,0,1,0,1,0,0,0,0,1],
-                [1,0,4,0,1,0,1,0,1,0,0,0,1,1,1,1],
-                [1,0,0,0,1,0,0,0,0,0,1,0,0,0,6,1],
-                [1,0,0,0,1,0,3,0,1,0,1,0,4,0,0,1],
-                [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    """Complex 3D adventure mode with exploration, combat, quests, and items"""
+    
+    # Show tutorial/intro first
+    show_tutorial = True
+    tutorial_page = 0
+    tutorial_pages = [
+        {
+            'title': 'WELCOME TO THE DUNGEON',
+            'text': [
+                'You are a brave hero who has entered',
+                'the cursed dungeon of the Dark Lord.',
+                '',
+                'Your quest: Defeat all 4 evil creatures,',
+                'collect the 4 ancient treasures,',
+                'and escape through the magic portal!',
+                '',
+                'Press ENTER to continue...'
             ]
-            
-            # Enemies
-            enemies = [
-                {'x': 10.5, 'y': 4.5, 'health': 30, 'type': 'goblin', 'alive': True},
-                {'x': 14.5, 'y': 6.5, 'health': 40, 'type': 'orc', 'alive': True},
-                {'x': 1.5, 'y': 9.5, 'health': 25, 'type': 'skeleton', 'alive': True},
-                {'x': 12.5, 'y': 12.5, 'health': 50, 'type': 'dragon', 'alive': True}
+        },
+        {
+            'title': 'CONTROLS',
+            'text': [
+                'W - Move Forward',
+                'S - Move Backward',
+                'A - Turn Left',
+                'D - Turn Right',
+                '',
+                'E - Interact (doors, chests, NPCs)',
+                'SPACE - Attack enemies',
+                'M - Toggle Map',
+                '',
+                'Press ENTER to start adventure...'
             ]
+        }
+    ]
+    
+    while show_tutorial:
+        screen.fill((10, 10, 20))
+        
+        page = tutorial_pages[tutorial_page]
+        
+        # Title
+        title = lobby_font.render(page['title'], True, (255, 200, 100))
+        screen.blit(title, (WIDTH//2 - title.get_width()//2, 100))
+        
+        # Text content
+        y_offset = 220
+        for line in page['text']:
+            if line:
+                text = font.render(line, True, (220, 220, 220))
+                screen.blit(text, (WIDTH//2 - text.get_width()//2, y_offset))
+            y_offset += 40
+        
+        pygame.display.flip()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    tutorial_page += 1
+                    if tutorial_page >= len(tutorial_pages):
+                        show_tutorial = False
+                if event.key == pygame.K_ESCAPE:
+                    return
+    
+    # Player state
+    player = {
+        'x': 5.0,
+        'y': 5.0,
+        'angle': 0.0,
+        'health': 100,
+        'max_health': 100,
+        'mana': 50,
+        'max_mana': 50,
+        'inventory': [],
+        'equipped_weapon': 'Rusty Sword',
+        'gold': 0,
+        'level': 1,
+        'exp': 0,
+        'quests': [
+            {'name': 'Defeat 4 Monsters', 'progress': 0, 'target': 4, 'complete': False},
+            {'name': 'Collect 4 Treasures', 'progress': 0, 'target': 4, 'complete': False},
+            {'name': 'Find the Portal', 'progress': 0, 'target': 1, 'complete': False}
+        ]
+    }
             
-            # NPCs
-            npcs = [
-                {'x': 2.5, 'y': 2.5, 'name': 'Elder', 'dialogue': 'Welcome hero! Seek the ancient treasures.'},
-                {'x': 14.5, 'y': 10.5, 'name': 'Merchant', 'dialogue': 'I have potions for sale!'}
-            ]
-            
-            # Treasures
-            treasures = [
-                {'x': 14.5, 'y': 1.5, 'opened': False, 'contents': 'Gold Sword'},
-                {'x': 2.5, 'y': 6.5, 'opened': False, 'contents': '50 Gold'},
-                {'x': 10.5, 'y': 9.5, 'opened': False, 'contents': 'Health Potion'},
-                {'x': 6.5, 'y': 14.5, 'opened': False, 'contents': 'Magic Staff'}
-            ]
-            
-            clock = pygame.time.Clock()
-            move_speed = 3.0
-            rot_speed = 3.0
-            fov = math.pi / 3
-            max_depth = 16.0
-            
-            # UI colors
-            ui_bg = (20, 20, 30)
-            ui_border = (100, 100, 150)
-            health_color = (200, 50, 50)
-            mana_color = (50, 100, 200)
-            
-            running = True
-            show_map = False
-            message = ""
-            message_timer = 0
-            combat_target = None
-            
-            while running:
-                dt = clock.tick(60) / 1000.0
-                
-                if message_timer > 0:
-                    message_timer -= dt
-                    if message_timer <= 0:
-                        message = ""
-                
-                # Handle input
-                keys = pygame.key.get_pressed()
-                
-                # Movement
-                move_x, move_y = 0, 0
-                if keys[pygame.K_w]:
-                    move_x = math.cos(player['angle']) * move_speed * dt
-                    move_y = math.sin(player['angle']) * move_speed * dt
-                if keys[pygame.K_s]:
-                    move_x = -math.cos(player['angle']) * move_speed * dt
-                    move_y = -math.sin(player['angle']) * move_speed * dt
-                if keys[pygame.K_a]:
-                    player['angle'] -= rot_speed * dt
-                if keys[pygame.K_d]:
-                    player['angle'] += rot_speed * dt
-                
-                # Collision detection
-                new_x = player['x'] + move_x
-                new_y = player['y'] + move_y
-                map_x = int(new_x)
-                map_y = int(new_y)
-                
-                if 0 <= map_x < len(world_map[0]) and 0 <= map_y < len(world_map):
-                    if world_map[map_y][map_x] not in [1, 2]:  # Not a wall or door
-                        player['x'] = new_x
-                        player['y'] = new_y
-                
-                # Events
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        return
-                    if event.type == pygame.KEYDOWN:
-                        if event.key == pygame.K_ESCAPE:
-                            return
-                        if event.key == pygame.K_m:
-                            show_map = not show_map
-                        if event.key == pygame.K_e:
-                            # Interact with objects
-                            check_x = player['x'] + math.cos(player['angle']) * 1.5
-                            check_y = player['y'] + math.sin(player['angle']) * 1.5
-                            cx, cy = int(check_x), int(check_y)
-                            
-                            if 0 <= cx < len(world_map[0]) and 0 <= cy < len(world_map):
-                                tile = world_map[cy][cx]
-                                if tile == 2:  # Door
-                                    world_map[cy][cx] = 0
-                                    message = "Door opened!"
-                                    message_timer = 2.0
-                                elif tile == 3:  # Treasure
-                                    for treasure in treasures:
-                                        if int(treasure['x']) == cx and int(treasure['y']) == cy and not treasure['opened']:
-                                            treasure['opened'] = True
-                                            player['inventory'].append(treasure['contents'])
-                                            if 'Gold' in treasure['contents']:
-                                                player['gold'] += int(treasure['contents'].split()[0])
-                                            message = f"Found: {treasure['contents']}!"
-                                            message_timer = 3.0
-                                            world_map[cy][cx] = 0
-                                elif tile == 5:  # NPC
-                                    for npc in npcs:
-                                        if int(npc['x']) == cx and int(npc['y']) == cy:
-                                            message = f"{npc['name']}: {npc['dialogue']}"
-                                            message_timer = 4.0
-                        
-                        if event.key == pygame.K_SPACE:
-                            # Attack
-                            if combat_target and combat_target['alive']:
-                                damage = 10 + player['level'] * 5
-                                combat_target['health'] -= damage
-                                message = f"Hit {combat_target['type']} for {damage} damage!"
-                                message_timer = 2.0
-                                if combat_target['health'] <= 0:
-                                    combat_target['alive'] = False
-                                    player['exp'] += 20
-                                    player['gold'] += 10
-                                    message = f"Defeated {combat_target['type']}! +20 EXP, +10 Gold"
+    # World map (1 = wall, 0 = floor, 2 = door, 3 = treasure, 4 = enemy, 5 = NPC, 6 = portal)
+    world_map = [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,0,0,0,0,0,1,0,0,0,0,0,0,0,3,1],
+        [1,0,5,0,1,0,1,0,1,1,1,1,1,0,0,1],
+        [1,0,0,0,1,0,0,0,0,0,0,0,1,0,0,1],
+        [1,1,2,1,1,0,1,1,1,0,4,0,1,0,0,1],
+        [1,0,0,0,0,0,1,0,0,0,1,1,1,0,0,1],
+        [1,0,3,0,1,0,2,0,1,0,0,0,0,0,4,1],
+        [1,0,0,0,1,0,1,0,1,1,1,1,1,1,1,1],
+        [1,1,1,0,1,0,0,0,0,0,0,0,0,0,0,1],
+        [1,4,0,0,0,0,1,1,1,0,3,0,1,0,0,1],
+        [1,0,0,1,1,0,1,0,0,0,1,0,1,0,5,1],
+        [1,0,0,0,0,0,2,0,1,0,1,0,0,0,0,1],
+        [1,0,4,0,1,0,1,0,1,0,0,0,1,1,1,1],
+        [1,0,0,0,1,0,0,0,0,0,1,0,0,0,6,1],
+        [1,0,0,0,1,0,3,0,1,0,1,0,4,0,0,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    ]
+    
+    # Enemies with detailed stats
+    enemies = [
+        {
+            'x': 10.5, 'y': 4.5, 'health': 30, 'max_health': 30,
+            'type': 'goblin', 'alive': True, 'name': 'Cave Goblin',
+            'color': (100, 180, 100), 'damage': 8, 'gold_drop': 15,
+            'description': 'A small but fierce creature'
+        },
+        {
+            'x': 14.5, 'y': 6.5, 'health': 50, 'max_health': 50,
+            'type': 'orc', 'alive': True, 'name': 'Brutal Orc',
+            'color': (150, 100, 80), 'damage': 12, 'gold_drop': 25,
+            'description': 'A powerful warrior from the north'
+        },
+        {
+            'x': 1.5, 'y': 9.5, 'health': 35, 'max_health': 35,
+            'type': 'skeleton', 'alive': True, 'name': 'Undead Warrior',
+            'color': (200, 200, 200), 'damage': 10, 'gold_drop': 20,
+            'description': 'An ancient skeleton brought to life'
+        },
+        {
+            'x': 12.5, 'y': 12.5, 'health': 80, 'max_health': 80,
+            'type': 'dragon', 'alive': True, 'name': 'Shadow Dragon',
+            'color': (180, 50, 50), 'damage': 20, 'gold_drop': 50,
+            'description': 'The dungeon boss - approach with caution!'
+        }
+    ]
+    
+    # NPCs with quests
+    npcs = [
+        {
+            'x': 2.5, 'y': 2.5, 'name': 'Wise Elder', 
+            'dialogue': [
+                'Greetings, brave hero!',
+                'Four evil creatures plague this dungeon.',
+                'Defeat them all and find the treasures.',
+                'Only then can you escape through the portal!',
+                'May fortune guide your blade.'
+            ],
+            'talked': False
+        },
+        {
+            'x': 14.5, 'y': 10.5, 'name': 'Mysterious Merchant',
+            'dialogue': [
+                'Ah, a customer in this dark place!',
+                'I would sell you potions, but alas...',
+                'The monsters took all my wares!',
+                'Find the health potions in the chests.',
+                'Good luck, you will need it!'
+            ],
+            'talked': False
+        }
+    ]
+    
+    # Treasures with better descriptions
+    treasures = [
+        {
+            'x': 14.5, 'y': 1.5, 'opened': False, 
+            'contents': 'Golden Sword', 'type': 'weapon',
+            'description': 'A magnificent blade that glows with power!',
+            'bonus': 'Damage +10'
+        },
+        {
+            'x': 2.5, 'y': 6.5, 'opened': False,
+            'contents': '50 Gold', 'type': 'gold',
+            'description': 'A chest full of ancient coins!',
+            'bonus': '+50 Gold'
+        },
+        {
+            'x': 10.5, 'y': 9.5, 'opened': False,
+            'contents': 'Health Potion', 'type': 'potion',
+            'description': 'A glowing red potion that restores vitality!',
+            'bonus': 'HP +30 immediately'
+        },
+        {
+            'x': 6.5, 'y': 14.5, 'opened': False,
+            'contents': 'Mystic Staff', 'type': 'weapon',
+            'description': 'A staff crackling with magical energy!',
+            'bonus': 'Damage +15, Mana +20'
+        }
+    ]
+    
+    clock = pygame.time.Clock()
+    move_speed = 3.5
+    rot_speed = 3.0
+    fov = math.pi / 3
+    max_depth = 20.0
+    
+    # Enhanced UI colors
+    ui_bg = (15, 15, 25)
+    ui_border = (120, 120, 180)
+    health_color = (220, 40, 40)
+    mana_color = (40, 120, 220)
+    exp_color = (255, 200, 50)
+    
+    # Visual effects
+    damage_numbers = []  # Floating damage numbers
+    hit_flash = 0  # Screen flash on hit
+    footstep_sound_timer = 0
+    
+    # Quest tracking
+    show_quest_panel = False
+    portal_revealed = False
+    
+    running = True
+    show_map = False
+    message = ""
+    message_timer = 0
+    combat_target = None
+    dialogue_lines = []
+    dialogue_timer = 0
+    
+    while running:
+        dt = clock.tick(60) / 1000.0
+        
+        # Update timers
+        if message_timer > 0:
+            message_timer -= dt
+            if message_timer <= 0:
+                message = ""
+        
+        if dialogue_timer > 0:
+            dialogue_timer -= dt
+            if dialogue_timer <= 0:
+                dialogue_lines = []
+        
+        if hit_flash > 0:
+            hit_flash -= dt * 5
+        
+        # Update damage numbers
+        for dmg in damage_numbers[:]:
+            dmg['timer'] -= dt
+            dmg['y'] -= dt * 50
+            if dmg['timer'] <= 0:
+                damage_numbers.remove(dmg)
+        
+        # Handle input
+        keys = pygame.key.get_pressed()
+        
+        # Movement with collision
+        move_x, move_y = 0, 0
+        moved = False
+        if keys[pygame.K_w]:
+            move_x = math.cos(player['angle']) * move_speed * dt
+            move_y = math.sin(player['angle']) * move_speed * dt
+            moved = True
+        if keys[pygame.K_s]:
+            move_x = -math.cos(player['angle']) * move_speed * dt
+            move_y = -math.sin(player['angle']) * move_speed * dt
+            moved = True
+        if keys[pygame.K_a]:
+            player['angle'] -= rot_speed * dt
+        if keys[pygame.K_d]:
+            player['angle'] += rot_speed * dt
+        
+        # Collision detection
+        new_x = player['x'] + move_x
+        new_y = player['y'] + move_y
+        map_x = int(new_x)
+        map_y = int(new_y)
+        
+        if 0 <= map_x < len(world_map[0]) and 0 <= map_y < len(world_map):
+            if world_map[map_y][map_x] not in [1, 2]:  # Not a wall or door
+                player['x'] = new_x
+                player['y'] = new_y
+        
+        # Events
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return
+                if event.key == pygame.K_m:
+                    show_map = not show_map
+                if event.key == pygame.K_q:
+                    show_quest_panel = not show_quest_panel
+                if event.key == pygame.K_e:
+                    # Interact with objects
+                    check_x = player['x'] + math.cos(player['angle']) * 1.5
+                    check_y = player['y'] + math.sin(player['angle']) * 1.5
+                    cx, cy = int(check_x), int(check_y)
+                    
+                    if 0 <= cx < len(world_map[0]) and 0 <= cy < len(world_map):
+                        tile = world_map[cy][cx]
+                        if tile == 2:  # Door
+                            world_map[cy][cx] = 0
+                            message = "✓ Unlocked a mysterious door!"
+                            message_timer = 2.0
+                        elif tile == 3:  # Treasure
+                            for treasure in treasures:
+                                if int(treasure['x']) == cx and int(treasure['y']) == cy and not treasure['opened']:
+                                    treasure['opened'] = True
+                                    
+                                    # Apply treasure effects
+                                    if treasure['type'] == 'weapon':
+                                        player['equipped_weapon'] = treasure['contents']
+                                        message = f"⚔ Equipped: {treasure['contents']}!"
+                                    elif treasure['type'] == 'gold':
+                                        amount = int(treasure['contents'].split()[0])
+                                        player['gold'] += amount
+                                        message = f"💰 Found {amount} Gold!"
+                                    elif treasure['type'] == 'potion':
+                                        player['health'] = min(player['max_health'], player['health'] + 30)
+                                        message = f"❤ Health Restored! Found {treasure['contents']}"
+                                    
+                                    player['inventory'].append(treasure['contents'])
+                                    
+                                    # Update quest
+                                    for quest in player['quests']:
+                                        if 'Treasure' in quest['name'] and not quest['complete']:
+                                            quest['progress'] += 1
+                                            if quest['progress'] >= quest['target']:
+                                                quest['complete'] = True
+                                                message = "🎉 Quest Complete: Collect 4 Treasures!"
+                                                message_timer = 4.0
+                                    
                                     message_timer = 3.0
-                                    combat_target = None
-                                    # Level up check
-                                    if player['exp'] >= player['level'] * 100:
-                                        player['level'] += 1
-                                        player['max_health'] += 20
-                                        player['health'] = player['max_health']
-                                        message = f"LEVEL UP! Now level {player['level']}!"
-                                        message_timer = 3.0
-                
-                # Check for nearby enemies
-                combat_target = None
-                for enemy in enemies:
-                    if enemy['alive']:
-                        dist = math.sqrt((enemy['x'] - player['x'])**2 + (enemy['y'] - player['y'])**2)
-                        if dist < 2.0:
-                            combat_target = enemy
-                            break
-                
-                # === RENDER 3D VIEW ===
-                screen.fill((50, 50, 80))  # Ceiling
-                pygame.draw.rect(screen, (40, 60, 40), (0, HEIGHT//2, WIDTH, HEIGHT//2))  # Floor
-                
-                # Ray casting
-                num_rays = 120
-                for ray in range(num_rays):
-                    ray_angle = player['angle'] - fov / 2 + (ray / num_rays) * fov
-                    
-                    # Cast ray
-                    for depth in range(int(max_depth * 10)):
-                        test_depth = depth / 10.0
-                        test_x = player['x'] + math.cos(ray_angle) * test_depth
-                        test_y = player['y'] + math.sin(ray_angle) * test_depth
-                        
-                        tx, ty = int(test_x), int(test_y)
-                        
-                        if 0 <= tx < len(world_map[0]) and 0 <= ty < len(world_map):
-                            if world_map[ty][tx] == 1:  # Wall
-                                # Calculate wall height
-                                distance = test_depth * math.cos(ray_angle - player['angle'])
-                                wall_height = min(HEIGHT, int(HEIGHT / (distance + 0.0001) * 0.5))
-                                
-                                # Wall shading based on distance
-                                shade = max(0, 255 - int(distance * 20))
-                                color = (shade // 2, shade // 2, shade)
-                                
-                                wall_top = HEIGHT // 2 - wall_height // 2
-                                wall_bottom = HEIGHT // 2 + wall_height // 2
-                                
-                                x_pos = int(ray * (WIDTH / num_rays))
-                                pygame.draw.line(screen, color, (x_pos, wall_top), (x_pos, wall_bottom), int(WIDTH / num_rays) + 1)
-                                break
-                            elif world_map[ty][tx] == 2:  # Door
-                                distance = test_depth * math.cos(ray_angle - player['angle'])
-                                wall_height = min(HEIGHT, int(HEIGHT / (distance + 0.0001) * 0.5))
-                                shade = max(0, 200 - int(distance * 20))
-                                color = (shade // 3, shade // 3, shade // 2)
-                                
-                                wall_top = HEIGHT // 2 - wall_height // 2
-                                wall_bottom = HEIGHT // 2 + wall_height // 2
-                                x_pos = int(ray * (WIDTH / num_rays))
-                                pygame.draw.line(screen, color, (x_pos, wall_top), (x_pos, wall_bottom), int(WIDTH / num_rays) + 1)
-                                break
-                
-                # Draw sprites (enemies, treasures, NPCs)
-                sprites = []
-                
-                # Add enemies
-                for enemy in enemies:
-                    if enemy['alive']:
-                        sprites.append({
-                            'x': enemy['x'],
-                            'y': enemy['y'],
-                            'type': 'enemy',
-                            'color': (200, 50, 50),
-                            'data': enemy
-                        })
-                
-                # Add treasures
-                for treasure in treasures:
-                    if not treasure['opened']:
-                        sprites.append({
-                            'x': treasure['x'],
-                            'y': treasure['y'],
-                            'type': 'treasure',
-                            'color': (255, 215, 0),
-                            'data': treasure
-                        })
-                
-                # Add NPCs
-                for npc in npcs:
-                    sprites.append({
-                        'x': npc['x'],
-                        'y': npc['y'],
-                        'type': 'npc',
-                        'color': (100, 200, 100),
-                        'data': npc
-                    })
-                
-                # Sort sprites by distance (painter's algorithm)
-                for sprite in sprites:
-                    dx = sprite['x'] - player['x']
-                    dy = sprite['y'] - player['y']
-                    sprite['distance'] = math.sqrt(dx*dx + dy*dy)
-                    sprite['angle'] = math.atan2(dy, dx) - player['angle']
-                
-                sprites.sort(key=lambda s: s['distance'], reverse=True)
-                
-                # Draw sprites
-                for sprite in sprites:
-                    if sprite['distance'] < max_depth:
-                        # Normalize angle
-                        angle = sprite['angle']
-                        while angle < -math.pi: angle += 2 * math.pi
-                        while angle > math.pi: angle -= 2 * math.pi
-                        
-                        if abs(angle) < fov / 2 + 0.5:
-                            size = min(HEIGHT, int(HEIGHT / (sprite['distance'] + 0.0001) * 0.3))
-                            screen_x = WIDTH // 2 + int((angle / (fov / 2)) * (WIDTH // 2))
-                            screen_y = HEIGHT // 2
-                            
-                            shade = max(50, 255 - int(sprite['distance'] * 20))
-                            color = tuple(int(c * shade / 255) for c in sprite['color'])
-                            
-                            pygame.draw.rect(screen, color, (screen_x - size//2, screen_y - size, size, size * 2))
-                            
-                            # Draw indicator
-                            if sprite['type'] == 'enemy':
-                                pygame.draw.circle(screen, (255, 0, 0), (screen_x, screen_y - size - 10), 5)
-                            elif sprite['type'] == 'treasure':
-                                pygame.draw.circle(screen, (255, 215, 0), (screen_x, screen_y - size - 10), 5)
-                            elif sprite['type'] == 'npc':
-                                pygame.draw.circle(screen, (100, 255, 100), (screen_x, screen_y - size - 10), 5)
-                
-                # === DRAW UI ===
-                # Health bar
-                pygame.draw.rect(screen, ui_bg, (10, 10, 200, 30))
-                pygame.draw.rect(screen, ui_border, (10, 10, 200, 30), 2)
-                health_width = int(180 * (player['health'] / player['max_health']))
-                pygame.draw.rect(screen, health_color, (15, 15, health_width, 20))
-                health_text = font.render(f"HP: {player['health']}/{player['max_health']}", True, (255, 255, 255))
-                screen.blit(health_text, (15, 15))
-                
-                # Mana bar
-                pygame.draw.rect(screen, ui_bg, (10, 45, 200, 30))
-                pygame.draw.rect(screen, ui_border, (10, 45, 200, 30), 2)
-                mana_width = int(180 * (player['mana'] / player['max_mana']))
-                pygame.draw.rect(screen, mana_color, (15, 50, mana_width, 20))
-                mana_text = font.render(f"MP: {player['mana']}/{player['max_mana']}", True, (255, 255, 255))
-                screen.blit(mana_text, (15, 50))
-                
-                # Player stats
-                stats_text = [
-                    f"Level: {player['level']}",
-                    f"EXP: {player['exp']}/{player['level'] * 100}",
-                    f"Gold: {player['gold']}",
-                    f"Weapon: {player['equipped_weapon']}"
-                ]
-                for i, text in enumerate(stats_text):
-                    stat = font.render(text, True, (255, 255, 200))
-                    screen.blit(stat, (WIDTH - 200, 10 + i * 25))
-                
-                # Combat indicator
-                if combat_target:
-                    combat_text = font.render(f"Enemy: {combat_target['type']} HP: {combat_target['health']}", True, (255, 100, 100))
-                    screen.blit(combat_text, (WIDTH // 2 - combat_text.get_width() // 2, 10))
-                    hint = font.render("Press SPACE to attack!", True, (255, 255, 100))
-                    screen.blit(hint, (WIDTH // 2 - hint.get_width() // 2, 40))
-                
-                # Message
-                if message:
-                    msg_surface = lobby_font.render(message, True, (255, 255, 100))
-                    pygame.draw.rect(screen, (0, 0, 0, 180), 
-                                   (WIDTH // 2 - msg_surface.get_width() // 2 - 10, HEIGHT - 100,
-                                    msg_surface.get_width() + 20, 50))
-                    screen.blit(msg_surface, (WIDTH // 2 - msg_surface.get_width() // 2, HEIGHT - 90))
-                
-                # Controls
-                controls = font.render("WASD:Move | E:Interact | M:Map | SPACE:Attack | ESC:Exit", True, (150, 150, 200))
-                screen.blit(controls, (WIDTH // 2 - controls.get_width() // 2, HEIGHT - 30))
-                
-                # Mini map
-                if show_map:
-                    map_size = 200
-                    map_scale = map_size / len(world_map)
-                    pygame.draw.rect(screen, (0, 0, 0, 180), (WIDTH - map_size - 20, 100, map_size, map_size))
-                    
-                    for y in range(len(world_map)):
-                        for x in range(len(world_map[0])):
-                            if world_map[y][x] == 1:
-                                color = (100, 100, 100)
-                            elif world_map[y][x] == 2:
-                                color = (150, 100, 50)
-                            elif world_map[y][x] == 3:
-                                color = (255, 215, 0)
-                            elif world_map[y][x] == 5:
-                                color = (100, 200, 100)
+                                    world_map[cy][cx] = 0
+                                    
+                                    # Show treasure details
+                                    dialogue_lines = [
+                                        f"═══ {treasure['contents'].upper()} ═══",
+                                        treasure['description'],
+                                        f"Bonus: {treasure['bonus']}"
+                                    ]
+                                    dialogue_timer = 5.0
+                        elif tile == 5:  # NPC
+                            for npc in npcs:
+                                if int(npc['x']) == cx and int(npc['y']) == cy:
+                                    if not npc['talked']:
+                                        npc['talked'] = True
+                                        dialogue_lines = [f"═══ {npc['name']} ═══"] + npc['dialogue']
+                                        dialogue_timer = 8.0
+                                    else:
+                                        message = f"{npc['name']}: Good luck on your journey!"
+                                        message_timer = 2.0
+                        elif tile == 6:  # Portal
+                            # Check if all quests complete
+                            all_complete = all(q['complete'] for q in player['quests'])
+                            if all_complete:
+                                dialogue_lines = [
+                                    "═══ VICTORY! ═══",
+                                    "You have completed all quests!",
+                                    "The portal glows with energy...",
+                                    "You escape the cursed dungeon!",
+                                    "",
+                                    "Press ESC to return to menu"
+                                ]
+                                dialogue_timer = 999
                             else:
-                                color = (30, 30, 40)
-                            
-                            pygame.draw.rect(screen, color, 
-                                           (WIDTH - map_size - 20 + x * map_scale, 
-                                            100 + y * map_scale, 
-                                            map_scale, map_scale))
-                    
-                    # Draw player
-                    player_map_x = WIDTH - map_size - 20 + player['x'] * map_scale
-                    player_map_y = 100 + player['y'] * map_scale
-                    pygame.draw.circle(screen, (255, 0, 0), (int(player_map_x), int(player_map_y)), 3)
-                    
-                    # Draw direction
-                    dir_x = player_map_x + math.cos(player['angle']) * 10
-                    dir_y = player_map_y + math.sin(player['angle']) * 10
-                    pygame.draw.line(screen, (255, 0, 0), (player_map_x, player_map_y), (dir_x, dir_y), 2)
-                    
-                    # Draw enemies
-                    for enemy in enemies:
-                        if enemy['alive']:
-                            ex = WIDTH - map_size - 20 + enemy['x'] * map_scale
-                            ey = 100 + enemy['y'] * map_scale
-                            pygame.draw.circle(screen, (255, 0, 0), (int(ex), int(ey)), 2)
+                                message = "⚠ The portal is sealed! Complete all quests first."
+                                message_timer = 3.0
                 
-                pygame.display.flip()
+                if event.key == pygame.K_SPACE:
+                    # Attack
+                    if combat_target and combat_target['alive']:
+                        # Calculate damage based on weapon
+                        base_damage = 10 + player['level'] * 5
+                        if 'Golden Sword' in player['equipped_weapon']:
+                            base_damage += 10
+                        elif 'Mystic Staff' in player['equipped_weapon']:
+                            base_damage += 15
+                        
+                        damage = base_damage + random.randint(-2, 5)
+                        combat_target['health'] -= damage
+                        
+                        # Add floating damage number
+                        damage_numbers.append({
+                            'x': WIDTH // 2,
+                            'y': HEIGHT // 3,
+                            'damage': damage,
+                            'timer': 1.5,
+                            'color': (255, 100, 100)
+                        })
+                        
+                        hit_flash = 0.3
+                        
+                        message = f"⚔ Hit {combat_target['name']} for {damage} damage!"
+                        message_timer = 1.5
+                        
+                        if combat_target['health'] <= 0:
+                            combat_target['alive'] = False
+                            exp_gain = 20 + player['level'] * 5
+                            gold_gain = combat_target.get('gold_drop', 10)
+                            player['exp'] += exp_gain
+                            player['gold'] += gold_gain
+                            
+                            message = f"💀 Defeated {combat_target['name']}! +{exp_gain} EXP, +{gold_gain} Gold"
+                            message_timer = 3.0
+                            combat_target = None
+                            
+                            # Update quest
+                            for quest in player['quests']:
+                                if 'Monster' in quest['name'] and not quest['complete']:
+                                    quest['progress'] += 1
+                                    if quest['progress'] >= quest['target']:
+                                        quest['complete'] = True
+                                        message = "🎉 Quest Complete: Defeat 4 Monsters!"
+                                        message_timer = 4.0
+                                        # Reveal portal
+                                        portal_revealed = True
+                                        for quest2 in player['quests']:
+                                            if 'Portal' in quest2['name']:
+                                                quest2['progress'] = 1
+                            
+                            # Level up check
+                            if player['exp'] >= player['level'] * 100:
+                                player['level'] += 1
+                                player['max_health'] += 20
+                                player['health'] = player['max_health']
+                                dialogue_lines = [
+                                    "✨ LEVEL UP! ✨",
+                                    f"You are now Level {player['level']}!",
+                                    f"Max Health: {player['max_health']}",
+                                    "You feel stronger!"
+                                ]
+                                dialogue_timer = 4.0
+                        else:
+                            # Enemy counter-attack
+                            enemy_damage = combat_target.get('damage', 5)
+                            player['health'] -= enemy_damage
+                            damage_numbers.append({
+                                'x': WIDTH // 2,
+                                'y': HEIGHT // 2,
+                                'damage': enemy_damage,
+                                'timer': 1.5,
+                                'color': (255, 50, 50)
+                            })
+                            hit_flash = 0.5
+                            
+                            if player['health'] <= 0:
+                                dialogue_lines = [
+                                    "💀 GAME OVER 💀",
+                                    "You have been defeated...",
+                                    "The dungeon claims another victim.",
+                                    "",
+                                    "Press ESC to return to menu"
+                                ]
+                                dialogue_timer = 999
+        
+        # Check for nearby enemies
+        combat_target = None
+        for enemy in enemies:
+            if enemy['alive']:
+                dist = math.sqrt((enemy['x'] - player['x'])**2 + (enemy['y'] - player['y'])**2)
+                if dist < 2.5:
+                    combat_target = enemy
+                    break
+        
+        # === RENDER 3D VIEW ===
+        # Draw gradient sky/ceiling
+        for i in range(HEIGHT//2):
+            shade = int(30 + (i / (HEIGHT//2)) * 50)
+            pygame.draw.line(screen, (shade, shade, shade + 30), (0, i), (WIDTH, i))
+        
+        # Draw gradient floor
+        for i in range(HEIGHT//2):
+            shade = int(20 + (i / (HEIGHT//2)) * 40)
+            pygame.draw.line(screen, (shade, shade + 20, shade), (0, HEIGHT//2 + i), (WIDTH, HEIGHT//2 + i))
+        
+        # Ray casting with enhanced graphics
+        num_rays = 150
+        for ray in range(num_rays):
+            ray_angle = player['angle'] - fov / 2 + (ray / num_rays) * fov
+            
+            # Cast ray
+            for depth in range(int(max_depth * 10)):
+                test_depth = depth / 10.0
+                test_x = player['x'] + math.cos(ray_angle) * test_depth
+                test_y = player['y'] + math.sin(ray_angle) * test_depth
+                
+                tx, ty = int(test_x), int(test_y)
+                
+                if 0 <= tx < len(world_map[0]) and 0 <= ty < len(world_map):
+                    if world_map[ty][tx] == 1:  # Wall
+                        # Calculate wall height
+                        distance = test_depth * math.cos(ray_angle - player['angle'])
+                        wall_height = min(HEIGHT, int(HEIGHT / (distance + 0.0001) * 0.6))
+                        
+                        # Enhanced wall shading with texture-like effect
+                        shade = max(30, 255 - int(distance * 15))
+                        
+                        # Add fake brick pattern
+                        brick_offset = int((test_x + test_y) * 2) % 2
+                        brick_shade = shade - brick_offset * 20
+                        
+                        # Different shades for N/S vs E/W walls
+                        if abs(math.cos(ray_angle)) > abs(math.sin(ray_angle)):
+                            color = (brick_shade // 2, brick_shade // 2, brick_shade // 1.5)
+                        else:
+                            color = (brick_shade // 2.5, brick_shade // 2.5, brick_shade // 1.8)
+                        
+                        wall_top = HEIGHT // 2 - wall_height // 2
+                        wall_bottom = HEIGHT // 2 + wall_height // 2
+                        
+                        x_pos = int(ray * (WIDTH / num_rays))
+                        pygame.draw.line(screen, color, (x_pos, wall_top), (x_pos, wall_bottom), max(1, int(WIDTH / num_rays) + 1))
+                        
+                        # Add shadow at top and bottom of walls
+                        shadow_color = tuple(c // 3 for c in color)
+                        pygame.draw.line(screen, shadow_color, (x_pos, wall_top), (x_pos, wall_top + 2))
+                        pygame.draw.line(screen, shadow_color, (x_pos, wall_bottom - 2), (x_pos, wall_bottom))
+                        break
+                    elif world_map[ty][tx] == 2:  # Door
+                        distance = test_depth * math.cos(ray_angle - player['angle'])
+                        wall_height = min(HEIGHT, int(HEIGHT / (distance + 0.0001) * 0.6))
+                        shade = max(30, 220 - int(distance * 15))
+                        # Wooden door color
+                        color = (shade // 2, shade // 3, shade // 6)
+                        
+                        wall_top = HEIGHT // 2 - wall_height // 2
+                        wall_bottom = HEIGHT // 2 + wall_height // 2
+                        x_pos = int(ray * (WIDTH / num_rays))
+                        pygame.draw.line(screen, color, (x_pos, wall_top), (x_pos, wall_bottom), max(1, int(WIDTH / num_rays) + 1))
+                        
+                        # Door handle in middle
+                        if ray % 10 == 5:
+                            handle_y = HEIGHT // 2
+                            pygame.draw.circle(screen, (180, 150, 50), (x_pos, handle_y), 2)
+                        break
+        
+        # Draw sprites (enemies, treasures, NPCs) with realistic colors
+        sprites = []
+        
+        # Add enemies with their custom colors
+        for enemy in enemies:
+            if enemy['alive']:
+                sprites.append({
+                    'x': enemy['x'],
+                    'y': enemy['y'],
+                    'type': 'enemy',
+                    'color': enemy['color'],
+                    'data': enemy
+                })
+        
+        # Add treasures
+        for treasure in treasures:
+            if not treasure['opened']:
+                sprites.append({
+                    'x': treasure['x'],
+                    'y': treasure['y'],
+                    'type': 'treasure',
+                    'color': (255, 215, 0),
+                    'data': treasure
+                })
+        
+        # Add NPCs
+        for npc in npcs:
+            sprites.append({
+                'x': npc['x'],
+                'y': npc['y'],
+                'type': 'npc',
+                'color': (100, 200, 255),
+                'data': npc
+            })
+        
+        # Add portal if revealed
+        if portal_revealed:
+            sprites.append({
+                'x': 14.5,
+                'y': 13.5,
+                'type': 'portal',
+                'color': (150, 100, 255),
+                'data': {'name': 'Portal'}
+            })
+        
+        # Sort sprites by distance (painter's algorithm)
+        for sprite in sprites:
+            dx = sprite['x'] - player['x']
+            dy = sprite['y'] - player['y']
+            sprite['distance'] = math.sqrt(dx*dx + dy*dy)
+            sprite['angle'] = math.atan2(dy, dx) - player['angle']
+        
+        sprites.sort(key=lambda s: s['distance'], reverse=True)
+        
+        # Draw sprites with enhanced realism
+        for sprite in sprites:
+            if sprite['distance'] < max_depth:
+                # Normalize angle
+                angle = sprite['angle']
+                while angle < -math.pi: angle += 2 * math.pi
+                while angle > math.pi: angle -= 2 * math.pi
+                
+                if abs(angle) < fov / 2 + 0.5:
+                    size = min(HEIGHT, int(HEIGHT / (sprite['distance'] + 0.0001) * 0.4))
+                    screen_x = WIDTH // 2 + int((angle / (fov / 2)) * (WIDTH // 2))
+                    screen_y = HEIGHT // 2
+                    
+                    shade = max(40, 255 - int(sprite['distance'] * 12))
+                    color = tuple(int(c * shade / 255) for c in sprite['color'])
+                    
+                    # Draw sprite with more detail
+                    if sprite['type'] == 'enemy':
+                        # Body
+                        pygame.draw.ellipse(screen, color, (screen_x - size//2, screen_y - size, size, size * 1.5))
+                        # Head
+                        head_color = tuple(min(255, c + 20) for c in color)
+                        pygame.draw.circle(screen, head_color, (screen_x, screen_y - size - size//4), size//3)
+                        # Eyes (red glow)
+                        eye_size = max(2, size // 15)
+                        pygame.draw.circle(screen, (255, 50, 50), (screen_x - size//8, screen_y - size - size//4), eye_size)
+                        pygame.draw.circle(screen, (255, 50, 50), (screen_x + size//8, screen_y - size - size//4), eye_size)
+                        # Health bar above enemy
+                        if 'health' in sprite['data'] and 'max_health' in sprite['data']:
+                            bar_width = size
+                            bar_height = 4
+                            bar_x = screen_x - bar_width // 2
+                            bar_y = screen_y - size - size//2 - 15
+                            # Background
+                            pygame.draw.rect(screen, (60, 60, 60), (bar_x, bar_y, bar_width, bar_height))
+                            # Health
+                            health_pct = sprite['data']['health'] / sprite['data']['max_health']
+                            health_width = int(bar_width * health_pct)
+                            health_bar_color = (255, 50, 50) if health_pct < 0.3 else (255, 200, 50) if health_pct < 0.7 else (50, 255, 50)
+                            pygame.draw.rect(screen, health_bar_color, (bar_x, bar_y, health_width, bar_height))
+                    
+                    elif sprite['type'] == 'treasure':
+                        # Chest shape with glow
+                        glow_color = tuple(min(255, c + 50) for c in color)
+                        pygame.draw.circle(screen, glow_color, (screen_x, screen_y - size//2), size//2 + 5, 2)
+                        pygame.draw.rect(screen, color, (screen_x - size//2, screen_y - size//2, size, size//2))
+                        pygame.draw.rect(screen, tuple(c // 2 for c in color), (screen_x - size//2, screen_y - size//2, size, size//2), 2)
+                        # Lock
+                        pygame.draw.circle(screen, (200, 180, 100), (screen_x, screen_y - size//4), max(2, size//10))
+                    
+                    elif sprite['type'] == 'npc':
+                        # Friendly character
+                        pygame.draw.ellipse(screen, color, (screen_x - size//3, screen_y - size, size//1.5, size * 1.5))
+                        head_color = tuple(min(255, c + 30) for c in color)
+                        pygame.draw.circle(screen, head_color, (screen_x, screen_y - size - size//4), size//3)
+                        # Friendly eyes
+                        pygame.draw.circle(screen, (50, 50, 50), (screen_x - size//10, screen_y - size - size//4), max(2, size//20))
+                        pygame.draw.circle(screen, (50, 50, 50), (screen_x + size//10, screen_y - size - size//4), max(2, size//20))
+                        # Speech bubble indicator
+                        pygame.draw.circle(screen, (255, 255, 255), (screen_x + size//2, screen_y - size), max(3, size//8))
+                        pygame.draw.circle(screen, color, (screen_x + size//2, screen_y - size), max(2, size//10))
+                    
+                    elif sprite['type'] == 'portal':
+                        # Swirling portal effect
+                        time_offset = pygame.time.get_ticks() / 500
+                        for i in range(3):
+                            radius = size // 2 + int(math.sin(time_offset + i) * 10)
+                            portal_color = tuple(int(c * (0.5 + i * 0.2)) for c in sprite['color'])
+                            pygame.draw.circle(screen, portal_color, (screen_x, screen_y - size//2), radius, 3)
+                        # Center glow
+                        pygame.draw.circle(screen, (200, 150, 255), (screen_x, screen_y - size//2), size//4)
+        
+        # Apply hit flash effect
+        if hit_flash > 0:
+            flash_surface = pygame.Surface((WIDTH, HEIGHT))
+            flash_surface.fill((255, 0, 0))
+            flash_surface.set_alpha(int(hit_flash * 100))
+            screen.blit(flash_surface, (0, 0))
+        
+        # === DRAW UI ===
+        # Health bar with gradient
+        pygame.draw.rect(screen, ui_bg, (10, 10, 220, 35))
+        pygame.draw.rect(screen, ui_border, (10, 10, 220, 35), 3)
+        health_pct = player['health'] / player['max_health']
+        health_width = int(200 * health_pct)
+        # Color changes based on health
+        if health_pct > 0.6:
+            bar_color = (50, 220, 50)
+        elif health_pct > 0.3:
+            bar_color = (220, 200, 50)
+        else:
+            bar_color = (220, 50, 50)
+        pygame.draw.rect(screen, bar_color, (15, 15, health_width, 25))
+        health_text = font.render(f"❤ {player['health']}/{player['max_health']}", True, (255, 255, 255))
+        screen.blit(health_text, (20, 17))
+        
+        # Mana bar
+        pygame.draw.rect(screen, ui_bg, (10, 50, 220, 30))
+        pygame.draw.rect(screen, ui_border, (10, 50, 220, 30), 3)
+        mana_width = int(200 * (player['mana'] / player['max_mana']))
+        pygame.draw.rect(screen, mana_color, (15, 55, mana_width, 20))
+        mana_text = font.render(f"✦ {player['mana']}/{player['max_mana']}", True, (255, 255, 255))
+        screen.blit(mana_text, (20, 55))
+        
+        # EXP bar
+        pygame.draw.rect(screen, ui_bg, (10, 85, 220, 25))
+        pygame.draw.rect(screen, ui_border, (10, 85, 220, 25), 3)
+        exp_width = int(200 * (player['exp'] % (player['level'] * 100)) / (player['level'] * 100))
+        pygame.draw.rect(screen, exp_color, (15, 90, exp_width, 15))
+        exp_text = name_font.render(f"EXP: {player['exp']}/{player['level'] * 100}", True, (255, 255, 255))
+        screen.blit(exp_text, (20, 90))
+        
+        # Player stats panel (top right)
+        stats_bg = pygame.Rect(WIDTH - 250, 10, 240, 140)
+        pygame.draw.rect(screen, ui_bg, stats_bg)
+        pygame.draw.rect(screen, ui_border, stats_bg, 3)
+        
+        stats_text = [
+            f"⭐ Level: {player['level']}",
+            f"💰 Gold: {player['gold']}",
+            f"⚔ Weapon:",
+            f"  {player['equipped_weapon']}",
+            f"📦 Items: {len(player['inventory'])}"
+        ]
+        for i, text in enumerate(stats_text):
+            color = (255, 255, 200) if i < 2 else (200, 200, 255) if i > 2 else (255, 200, 100)
+            stat = name_font.render(text, True, color)
+            screen.blit(stat, (WIDTH - 240, 20 + i * 25))
+        
+        # Combat indicator with enemy details
+        if combat_target:
+            combat_bg = pygame.Rect(WIDTH // 2 - 200, 10, 400, 90)
+            pygame.draw.rect(screen, (60, 20, 20), combat_bg)
+            pygame.draw.rect(screen, (200, 50, 50), combat_bg, 3)
+            
+            enemy_name = combat_target.get('name', combat_target['type'])
+            combat_text = font.render(f"⚠ {enemy_name.upper()} ⚠", True, (255, 200, 100))
+            screen.blit(combat_text, (WIDTH // 2 - combat_text.get_width() // 2, 15))
+            
+            # Enemy health bar
+            enemy_health_pct = combat_target['health'] / combat_target.get('max_health', combat_target['health'])
+            enemy_bar_width = 300
+            enemy_bar_x = WIDTH // 2 - enemy_bar_width // 2
+            pygame.draw.rect(screen, (40, 40, 40), (enemy_bar_x, 50, enemy_bar_width, 15))
+            pygame.draw.rect(screen, (200, 50, 50), (enemy_bar_x, 50, int(enemy_bar_width * enemy_health_pct), 15))
+            pygame.draw.rect(screen, (255, 100, 100), (enemy_bar_x, 50, enemy_bar_width, 15), 2)
+            
+            enemy_hp = name_font.render(f"HP: {combat_target['health']}/{combat_target.get('max_health', combat_target['health'])}", True, (255, 255, 255))
+            screen.blit(enemy_hp, (WIDTH // 2 - enemy_hp.get_width() // 2, 52))
+            
+            hint = name_font.render("Press SPACE to attack!", True, (255, 255, 100))
+            screen.blit(hint, (WIDTH // 2 - hint.get_width() // 2, 73))
+        
+        # Draw floating damage numbers
+        for dmg in damage_numbers:
+            alpha = int(255 * dmg['timer'] / 1.5)
+            dmg_text = lobby_font.render(f"-{dmg['damage']}", True, dmg['color'])
+            dmg_text.set_alpha(alpha)
+            screen.blit(dmg_text, (dmg['x'] - dmg_text.get_width() // 2, int(dmg['y'])))
+        
+        # Quest panel (press Q to toggle)
+        if show_quest_panel:
+            panel_width = 400
+            panel_height = 300
+            panel_x = WIDTH // 2 - panel_width // 2
+            panel_y = HEIGHT // 2 - panel_height // 2
+            
+            pygame.draw.rect(screen, (20, 20, 40), (panel_x, panel_y, panel_width, panel_height))
+            pygame.draw.rect(screen, (150, 150, 200), (panel_x, panel_y, panel_width, panel_height), 4)
+            
+            title = lobby_font.render("QUEST LOG", True, (255, 200, 100))
+            screen.blit(title, (panel_x + panel_width // 2 - title.get_width() // 2, panel_y + 20))
+            
+            y_offset = panel_y + 80
+            for quest in player['quests']:
+                status = "✓" if quest['complete'] else "○"
+                color = (100, 255, 100) if quest['complete'] else (255, 255, 255)
+                
+                quest_text = font.render(f"{status} {quest['name']}", True, color)
+                screen.blit(quest_text, (panel_x + 30, y_offset))
+                
+                progress_text = name_font.render(f"   Progress: {quest['progress']}/{quest['target']}", True, (200, 200, 200))
+                screen.blit(progress_text, (panel_x + 30, y_offset + 30))
+                
+                y_offset += 70
+            
+            close_text = name_font.render("Press Q to close", True, (150, 150, 150))
+            screen.blit(close_text, (panel_x + panel_width // 2 - close_text.get_width() // 2, panel_y + panel_height - 35))
+        
+        # Dialogue box
+        if dialogue_lines:
+            box_width = min(800, WIDTH - 100)
+            box_height = 60 + len(dialogue_lines) * 35
+            box_x = WIDTH // 2 - box_width // 2
+            box_y = HEIGHT // 2 - box_height // 2
+            
+            pygame.draw.rect(screen, (10, 10, 30), (box_x, box_y, box_width, box_height))
+            pygame.draw.rect(screen, (180, 180, 220), (box_x, box_y, box_width, box_height), 4)
+            
+            y_offset = box_y + 20
+            for i, line in enumerate(dialogue_lines):
+                if i == 0:  # Title
+                    line_text = lobby_font.render(line, True, (255, 200, 100))
+                else:
+                    line_text = name_font.render(line, True, (220, 220, 220))
+                screen.blit(line_text, (box_x + box_width // 2 - line_text.get_width() // 2, y_offset))
+                y_offset += 35 if i == 0 else 30
+        
+        # Message
+        if message and not dialogue_lines:
+            msg_surface = font.render(message, True, (255, 255, 150))
+            msg_bg = pygame.Rect(WIDTH // 2 - msg_surface.get_width() // 2 - 15, HEIGHT - 100,
+                               msg_surface.get_width() + 30, 50)
+            pygame.draw.rect(screen, (30, 30, 50), msg_bg)
+            pygame.draw.rect(screen, (150, 150, 200), msg_bg, 2)
+            screen.blit(msg_surface, (WIDTH // 2 - msg_surface.get_width() // 2, HEIGHT - 87))
+        
+        # Controls hint (bottom)
+        controls = name_font.render("WASD:Move | E:Interact | M:Map | Q:Quests | SPACE:Attack | ESC:Exit", True, (130, 130, 180))
+        screen.blit(controls, (WIDTH // 2 - controls.get_width() // 2, HEIGHT - 30))
+        
+        # Mini map (enhanced)
+        if show_map:
+            map_size = 250
+            map_scale = map_size / len(world_map)
+            map_x = WIDTH - map_size - 30
+            map_y = 120
+            
+            # Map background
+            pygame.draw.rect(screen, (15, 15, 30), (map_x - 5, map_y - 25, map_size + 10, map_size + 30))
+            pygame.draw.rect(screen, (120, 120, 180), (map_x - 5, map_y - 25, map_size + 10, map_size + 30), 3)
+            
+            # Map title
+            map_title = name_font.render("DUNGEON MAP", True, (200, 200, 255))
+            screen.blit(map_title, (map_x + map_size // 2 - map_title.get_width() // 2, map_y - 20))
+            
+            # Draw tiles
+            for y in range(len(world_map)):
+                for x in range(len(world_map[0])):
+                    tile_x = map_x + x * map_scale
+                    tile_y = map_y + y * map_scale
+                    
+                    if world_map[y][x] == 1:
+                        color = (80, 80, 80)  # Walls
+                    elif world_map[y][x] == 2:
+                        color = (120, 80, 40)  # Doors
+                    elif world_map[y][x] == 3:
+                        color = (255, 215, 0)  # Treasures
+                    elif world_map[y][x] == 5:
+                        color = (100, 200, 255)  # NPCs
+                    elif world_map[y][x] == 6:
+                        color = (150, 100, 255)  # Portal
+                    else:
+                        color = (30, 30, 40)  # Floor
+                    
+                    pygame.draw.rect(screen, color, (tile_x, tile_y, map_scale, map_scale))
+                    pygame.draw.rect(screen, (50, 50, 60), (tile_x, tile_y, map_scale, map_scale), 1)
+            
+            # Draw player
+            player_map_x = map_x + player['x'] * map_scale
+            player_map_y = map_y + player['y'] * map_scale
+            pygame.draw.circle(screen, (255, 255, 0), (int(player_map_x), int(player_map_y)), 5)
+            pygame.draw.circle(screen, (255, 200, 0), (int(player_map_x), int(player_map_y)), 3)
+            
+            # Draw direction indicator
+            dir_x = player_map_x + math.cos(player['angle']) * 15
+            dir_y = player_map_y + math.sin(player['angle']) * 15
+            pygame.draw.line(screen, (255, 255, 100), (player_map_x, player_map_y), (dir_x, dir_y), 3)
+            
+            # Draw enemies
+            for enemy in enemies:
+                if enemy['alive']:
+                    ex = map_x + enemy['x'] * map_scale
+                    ey = map_y + enemy['y'] * map_scale
+                    pygame.draw.circle(screen, (255, 100, 100), (int(ex), int(ey)), 4)
+                    pygame.draw.circle(screen, (200, 50, 50), (int(ex), int(ey)), 2)
+        
+        pygame.display.flip()
 
 # Countdown and player name input functions remain the same...
 
