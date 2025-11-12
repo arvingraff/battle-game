@@ -5,7 +5,7 @@ a = Analysis(
     ['battlegame.py'],
     pathex=[],
     binaries=[],
-    datas=[('321go.mp3', '.'), ('scary-scream.mp3', '.'), ('lala.mp3', '.'), ('coin.mp3', '.'), ('coolwav.mp3', '.'), ('fart.mp3', '.'), ('funk.mp3', '.'), ('playmusic.mp3', '.'), ('ball.jpg', '.'), ('grandma.mp4', '.'), ('icon.png', '.'), ('network.py', '.'), ('survival_highscores.json', '.')],
+    datas=[('321go.mp3', '.'), ('scary-scream.mp3', '.'), ('lala.mp3', '.'), ('coin.mp3', '.'), ('coolwav.mp3', '.'), ('fart.mp3', '.'), ('funk.mp3', '.'), ('playmusic.mp3', '.'), ('ball.jpg', '.'), ('cutevideo.mp4', '.'), ('grandma.mp4', '.'), ('icon.png', '.'), ('network.py', '.'), ('survival_highscores.json', '.'), ('mom_mode_highscores.json', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

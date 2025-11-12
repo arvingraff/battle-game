@@ -1,7 +1,8 @@
 #!/bin/bash
 cd /Users/arvingreenberggraff/code/battlegame
 echo "🔨 Building optimized BattleGame..."
-/Users/arvingreenberggraff/Library/Python/3.9/bin/pyinstaller BattleGame.spec --noconfirm
+source venv-mobile/bin/activate
+pyinstaller BattleGame.spec --noconfirm
 echo "✅ Build complete!"
 echo "🧹 Removing quarantine..."
 xattr -cr dist/BattleGame.app

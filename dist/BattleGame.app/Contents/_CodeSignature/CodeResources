@@ -14,7 +14,7 @@
 		</data>
 		<key>Resources/base_library.zip</key>
 		<data>
-		7b9C4wnHlRBOjQxSQrxW1i/FirM=
+		zkA3gDqEp76MMMpFMl6lhD7XNw4=
 		</data>
 		<key>Resources/coin.mp3</key>
 		<data>
@@ -24,53 +24,9 @@
 		<data>
 		pO3nqXMb4CHf4cbOR633mAJZqrw=
 		</data>
-		<key>Resources/cv2/__init__.py</key>
+		<key>Resources/cutevideo.mp4</key>
 		<data>
-		FAO5i8HyGaCOLVQYKj47baC/z1Y=
-		</data>
-		<key>Resources/cv2/config-3.py</key>
-		<data>
-		wDDFld3l4KQDD4t4geASbEYozSA=
-		</data>
-		<key>Resources/cv2/config.py</key>
-		<data>
-		mLYbUmS/i60p6y/AhLxSLBdDziU=
-		</data>
-		<key>Resources/cv2/data/__init__.py</key>
-		<data>
-		sGoNuFQR5LM+CkRx3BsCAyLQXh0=
-		</data>
-		<key>Resources/cv2/gapi/__init__.py</key>
-		<data>
-		bdvdF23YNKN8n77Ty2V0s9jAdPU=
-		</data>
-		<key>Resources/cv2/load_config_py3.py</key>
-		<data>
-		FxsQKmhMAb+MIVwuoKb+XQRDuTo=
-		</data>
-		<key>Resources/cv2/mat_wrapper/__init__.py</key>
-		<data>
-		K+OhgMUVqWENbojTNz52c5JrJtw=
-		</data>
-		<key>Resources/cv2/misc/__init__.py</key>
-		<data>
-		olttLXUB2H3134sKznqhqU5EQi8=
-		</data>
-		<key>Resources/cv2/misc/version.py</key>
-		<data>
-		tTsMxDo9GFyBSTclzlsblMiMxlo=
-		</data>
-		<key>Resources/cv2/typing/__init__.py</key>
-		<data>
-		3PRpGeqwXAwOgPXygSrE2sSIkFg=
-		</data>
-		<key>Resources/cv2/utils/__init__.py</key>
-		<data>
-		b+YD5wwEdnVs8ZS9wSa6jYd1Jgc=
-		</data>
-		<key>Resources/cv2/version.py</key>
-		<data>
-		TcRy8441LgFj+sj/HyrgFye5C34=
+		UneHya+xNqis1swhgiO2iK9CTnY=
 		</data>
 		<key>Resources/fart.mp3</key>
 		<data>
@@ -92,9 +48,37 @@
 		<data>
 		vfYjPQmaAIo4nM95v3xZvgs86H4=
 		</data>
+		<key>Resources/importlib_metadata-8.7.0.dist-info/INSTALLER</key>
+		<data>
+		16AxQdXWseiLa1nvCLZoHfISxZk=
+		</data>
+		<key>Resources/importlib_metadata-8.7.0.dist-info/METADATA</key>
+		<data>
+		/ESmJL+uvXUU/6cnv1Jbac0K5B8=
+		</data>
+		<key>Resources/importlib_metadata-8.7.0.dist-info/RECORD</key>
+		<data>
+		pB86uoeEYdP4D55BW9R5OVJBnxk=
+		</data>
+		<key>Resources/importlib_metadata-8.7.0.dist-info/WHEEL</key>
+		<data>
+		a2YEZZeV3SDT0QootBdfm0dzAIk=
+		</data>
+		<key>Resources/importlib_metadata-8.7.0.dist-info/licenses/LICENSE</key>
+		<data>
+		K4uBUimqimHkg/tLoFiLi2xJGJA=
+		</data>
+		<key>Resources/importlib_metadata-8.7.0.dist-info/top_level.txt</key>
+		<data>
+		TmH5Jk3nR4O1kkJJvP4bBvF4ua0=
+		</data>
 		<key>Resources/lala.mp3</key>
 		<data>
 		Yq2Pg2brBBfunG4xIYmKyphZjEc=
+		</data>
+		<key>Resources/mom_mode_highscores.json</key>
+		<data>
+		zQ1MwyNGdQQI99T1547JpuW3mg0=
 		</data>
 		<key>Resources/network.py</key>
 		<data>
@@ -115,6 +99,10 @@
 		<key>Resources/scary-scream.mp3</key>
 		<data>
 		0RQoDpRCEVcvTPXRWIG07u8uQN4=
+		</data>
+		<key>Resources/setuptools/_vendor/jaraco/text/Lorem ipsum.txt</key>
+		<data>
+		eDY2ciZNnNP3LVwdNmXhZXsaUHE=
 		</data>
 		<key>Resources/survival_highscores.json</key>
 		<data>
@@ -156,19 +144,19 @@
 		<dict>
 			<key>cdhash</key>
 			<data>
-			GVBFdJRKWsSwbpzB9KZ36NIwdBg=
+			6/MIOHbNIe9tKd9FLzz2/j8ULtg=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"6834f9d5824aa45083acf98297f3ade9477cef41" or cdhash H"19504574944a5ac4b06e9cc1f4a677e8d2307418"</string>
+			<string>cdhash H"a1393adead9c47a145c9096e77bb518ba29d4474" or cdhash H"ebf3083876cd21ef6d29df452f3cf6fe3f142ed8"</string>
 		</dict>
 		<key>Frameworks/charset_normalizer/md__mypyc.cpython-39-darwin.so</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			4lV/r8Jjfwl2nLEXq99V4J175Xo=
+			f0ZGUsRJVaQmEmp6VlPArfgNoh8=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"a976b74b6b76f801ab6e3aefe4ca5b2353862a72" or cdhash H"e2557fafc2637f09769cb117abdf55e09d7be57a"</string>
+			<string>cdhash H"e7276ca2e13dd808fede7c0ed9a1cf19b6428947" or cdhash H"7f464652c44955a426126a7a5653c0adf80da21f"</string>
 		</dict>
 		<key>Frameworks/coin.mp3</key>
 		<dict>
@@ -180,668 +168,10 @@
 			<key>symlink</key>
 			<string>../Resources/coolwav.mp3</string>
 		</dict>
-		<key>Frameworks/cv2/.dylibs</key>
+		<key>Frameworks/cutevideo.mp4</key>
 		<dict>
 			<key>symlink</key>
-			<string>__dot__dylibs</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libSvtAv1Enc.3.0.2.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			rslSYxOVli1KJhiMVLrTF5gXzm4=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"aec952631395962d4a26188c54bad3179817ce6e"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libX11.6.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			u3ziPLLo8Hyi2arH+BfluNs1s2k=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"bb7ce23cb2e8f07ca2d9aac7f817e5b8db35b369"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libXau.6.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			yvsave/ow0zNiLNupx8eZlaGmt4=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"cafb1abdefe8c34ccd88b36ea71f1e6656869ade"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libXdmcp.6.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			Cc6OiGGRnI7cjbBOW3iT/vpztIs=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"09ce8e8861919c8edc8db04e5b7893fefa73b48b"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libaom.3.12.1.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			GFMbhmrCSRJd1sH4KXEVqXw1Zj0=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"18531b866ac249125dd6c1f8297115a97c35663d"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libaribb24.0.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			fbpA/O0fFTxv/9OAI3fVe17vN4o=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"7dba40fced1f153c6fffd3802377d57b5eef378a"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libavcodec.61.19.101.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			1avVsYyn/1czoAgSn1VhLGTY18I=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"d5abd5b18ca7ff5733a008129f55612c64d8d7c2"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libavformat.61.7.100.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			NY9pLw1OMPUNMd6nkH3U2UCL4AE=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"358f692f0d4e30f50d31dea7907dd4d9408be001"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libavif.16.3.0.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			5KFfjOMhbatjzR0z/HV96tBHAXc=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"e4a15f8ce3216dab63cd1d33fc757dead0470177"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libavutil.59.39.100.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			QAq+HvZfD3XfxWuoOBUanIhwxgY=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"400abe1ef65f0f75dfc56ba838151a9c8870c606"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libbluray.2.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			HVf8JZoZ/4JAoJtRZPj5Z4G/xMA=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"1d57fc259a19ff8240a09b5164f8f96781bfc4c0"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libbrotlicommon.1.1.0.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			JHTI8E3NGqb9IoGermVXFnhHvCU=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"2474c8f04dcd1aa6fd22819eae6557167847bc25"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libbrotlidec.1.1.0.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			38IOf0VNc1xGHha/roBfOVqALg0=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"dfc20e7f454d735c461e16bfae805f395a802e0d"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libbrotlienc.1.1.0.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			op7okzmh/jU5nQU7NSK9EdJMYNU=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"a29ee89339a1fe35399d053b3522bd11d24c60d5"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libcjson.1.7.18.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			Cwg8ocDZHMKuOawMTUi32pYOTxc=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"0b083ca1c0d91cc2ae39ac0c4d48b7da960e4f17"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libcrypto.3.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			v/iNIGjApRve/54fXgooCjisftQ=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"bff88d2068c0a51bdeff9e1f5e0a280a38ac7ed4"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libdav1d.7.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			U3XtQlQS0nd3FpP2lvaa9KVnkDY=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"5375ed425412d277771693f696f69af4a5679036"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libfontconfig.1.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			DWDeJB4OoSNQE/imxH3sGV/NMXk=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"0d60de241e0ea1235013f8a6c47dec195fcd3179"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libfreetype.6.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			cBx10+dVndXV9iyaS9M7hplP0CE=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"701c75d3e7559dd5d5f62c9a4bd33b86994fd021"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libgmp.10.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			74K0vryIwMXqqFqyGTxZninfhbY=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"ef82b4bebc88c0c5eaa85ab2193c599e29df85b6"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libgnutls.30.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			spdUmItG7/zW0BffJXTlgqiI7Pk=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"b29754988b46effcd6d017df2574e582a888ecf9"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libhogweed.6.11.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			XBB7XmXWXr/LksWLGBoW9uXB2AM=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"5c107b5e65d65ebfcb92c58b181a16f6e5c1d803"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libhwy.1.2.0.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			8a1txgX2vmUvjL0UfTAVevpAcT0=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"f1ad6dc605f6be652f8cbd147d30157afa40713d"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libidn2.0.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			3G7i863IA9QphGC5Vq4mEPOujgs=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"dc6ee2f3adc803d4298460b956ae2610f3ae8e0b"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libintl.8.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			6v0kgMiqobVSuyRx0w3pdRVjWjE=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"eafd2480c8aaa1b552bb2471d30de97515635a31"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libjxl.0.11.1.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			/iGwl5luRELML6Ii7NRT8qcWLKY=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"fe21b097996e4442cc2fa222ecd453f2a7162ca6"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libjxl_cms.0.11.1.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			ygbZ8m39MRqNwgo2/hawHPpqNPo=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"ca06d9f26dfd311a8dc20a36fe16b01cfa6a34fa"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libjxl_threads.0.11.1.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			FdRqzoh/hNoNZOqz/V4M0C3twaU=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"15d46ace887f84da0d64eab3fd5e0cd02dedc1a5"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/liblcms2.2.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			e3RImkjFAIXphWEi+JH9isb3Bf8=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"7b74489a48c50085e9856122f891fd8ac6f705ff"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/liblzma.5.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			/OA+XSiO/x2hxcz6l4V/eRGKbpI=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"fce03e5d288eff1da1c5ccfa97857f79118a6e92"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libmbedcrypto.3.6.4.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			/rhjwR7RmLH8c3Y+tP+mbLRMfJA=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"feb863c11ed198b1fc73763eb4ffa66cb44c7c90"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libmp3lame.0.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			gAvfTNy8qS0Z6mEQ0MGbbw/WQ94=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"800bdf4cdcbca92d19ea6110d0c19b6f0fd643de"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libnettle.8.11.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			p0sqOd9W5evKKzifvXPIWhW9Mhk=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"a74b2a39df56e5ebca2b389fbd73c85a15bd3219"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libogg.0.8.6.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			9306/TqyYwPClKOm2A0rrXI6ioo=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"f77d3afd3ab26303c294a3a6d80d2bad723a8a8a"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libopencore-amrnb.0.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			MD3DVATQVn7LG9ZCzxoubAmOo4Q=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"303dc35404d0567ecb1bd642cf1a2e6c098ea384"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libopencore-amrwb.0.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			GKL6EI5V9oHpMx00sQnmy/i4uOE=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"18a2fa108e55f681e9331d34b109e6cbf8b8b8e1"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libopenjp2.2.5.3.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			g2aJKOhioLzk/SGfgem3whC3zNg=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"83668928e862a0bce4fd219f81e9b7c210b7ccd8"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libopus.0.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			kxNmSN0DPa39denrmDy7JZowM4s=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"93136648dd033dadfd75e9eb983cbb259a30338b"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libp11-kit.0.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			7S1q2QIXKBbY4vGyOPMkPvImrVU=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"ed2d6ad902172816d8e2f1b238f3243ef226ad55"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libpng16.16.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			oCo0A1PaehGN19tw1f96JxT+fus=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"a02a340353da7a118dd7db70d5ff7a2714fe7eeb"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/librav1e.0.8.1.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			tUTXTKrZ0pCzTQDuEc+v/lmKFsY=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"b544d74caad9d290b34d00ee11cfaffe598a16c6"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/librist.4.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			gMZUSIp40tAGH1lrpOeWSWvUeZk=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"80c654488a78d2d0061f596ba4e796496bd47999"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libsharpyuv.0.1.1.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			hG1/RDypGWLqRZI0+bmwOfTNKBU=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"846d7f443ca91962ea459234f9b9b039f4cd2815"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libsnappy.1.2.2.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			KCwFSsROdEvpPewEL6Zz/kjbj08=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"282c054ac44e744be93dec042fa673fe48db8f4f"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libsodium.26.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			6lXz23Rtz6oqwZfijUAMPy8UPEM=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"ea55f3db746dcfaa2ac197e28d400c3f2f143c43"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libsoxr.0.1.2.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			67TqWkY6gBZVkSYTeIJfze7Qafc=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"ebb4ea5a463a80165591261378825fcdeed069f7"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libspeex.1.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			prikizo0HbH9YyKnTN2uh9ylbc8=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"a6b8a48b3a341db1fd6322a74cddae87dca56dcf"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libsrt.1.5.4.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			SgEojCcsH+zEBOw8VjFjLMojUdI=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"4a01288c272c1fecc404ec3c5631632cca2351d2"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libssh.4.10.2.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			f61HtMZ5bnuIQ2m+JuIb3FgWbDw=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"7fad47b4c6796e7b884369be26e21bdc58166c3c"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libssl.3.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			62q8UCXobOMCwSKpWau4lSHVDJw=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"eb6abc5025e86ce302c122a959abb89521d50c9c"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libswresample.5.3.100.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			oeHgU30z0INVFeLxMsRrWJTOvxM=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"a1e1e0537d33d0835515e2f132c46b5894cebf13"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libswscale.8.3.100.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			76GtF03s6L1YKMEGC661/a3nWz0=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"efa1ad174dece8bd5828c1060baeb5fdade75b3d"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libtasn1.6.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			wXi/t8InJnWnCETkml310swS0fM=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"c178bfb7c2272675a70844e49a5df5d2cc12d1f3"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libtheoradec.1.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			wXNCveoANEHx3Tl0EAIYHh3Xj+4=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"c17342bdea003441f1dd39741002181e1dd78fee"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libtheoraenc.1.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			2NEoZugj1Wq3d1wXsiVT0Th1zso=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"d8d12866e823d56ab7775c17b22553d13875ceca"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libunistring.5.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			58pd9pwTDc19f7+EBjIjhmjkviI=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"e7ca5df69c130dcd7d7fbf840632238668e4be22"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libvmaf.3.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			RmT89ktTdld0roVuzDOBqS9SaLI=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"4664fcf64b53765774ae856ecc3381a92f5268b2"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libvorbis.0.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			45kttjdlfUEkNjD8qGAPePGgVCQ=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"e3992db637657d41243630fca8600f78f1a05424"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libvorbisenc.2.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			/ND4ok2jancoMHK/9lqh1ATrEws=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"fcd0f8a24da36a77283072bff65aa1d404eb130b"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libvpx.11.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			Oc7vFw+7XCkBTsFOXyp1Igunj5M=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"39ceef170fbb5c29014ec14e5f2a75220ba78f93"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libwebp.7.1.10.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			B3MxGNrgHR5V/hd3u4xjPL45ESM=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"07733118dae01d1e55fe1777bb8c633cbe391123"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libwebpmux.3.1.1.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			NXBfw+Sbm2mJSwb3xR+fBvbRGD4=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"35705fc3e49b9b69894b06f7c51f9f06f6d1183e"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libx264.164.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			Q7Zc0US6VIsfnCHHj7V7qtYdE8U=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"43b65cd144ba548b1f9c21c78fb57baad61d13c5"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libx265.215.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			GiutUxDEV/nQnfY0XkJaYiQdmwc=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"1a2bad5310c457f9d09df6345e425a62241d9b07"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libxcb.1.1.0.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			MH2ZIlja2QDvydlVYgzcOSps38Y=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"307d992258dad900efc9d955620cdc392a6cdfc6"</string>
-		</dict>
-		<key>Frameworks/cv2/__dot__dylibs/libzmq.5.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			wus6kByct4eNe74HvO3N9Lh2Mkc=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"c2eb3a901c9cb7878d7bbe07bcedcdf4b8763247"</string>
-		</dict>
-		<key>Frameworks/cv2/__init__.py</key>
-		<dict>
-			<key>symlink</key>
-			<string>../../Resources/cv2/__init__.py</string>
-		</dict>
-		<key>Frameworks/cv2/config-3.py</key>
-		<dict>
-			<key>symlink</key>
-			<string>../../Resources/cv2/config-3.py</string>
-		</dict>
-		<key>Frameworks/cv2/config.py</key>
-		<dict>
-			<key>symlink</key>
-			<string>../../Resources/cv2/config.py</string>
-		</dict>
-		<key>Frameworks/cv2/cv2.abi3.so</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			ICdZvo7DfTaAdmOqfzuyOLT2vKU=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"202759be8ec37d36807663aa7f3bb238b4f6bca5"</string>
-		</dict>
-		<key>Frameworks/cv2/data</key>
-		<dict>
-			<key>symlink</key>
-			<string>../../Resources/cv2/data</string>
-		</dict>
-		<key>Frameworks/cv2/gapi</key>
-		<dict>
-			<key>symlink</key>
-			<string>../../Resources/cv2/gapi</string>
-		</dict>
-		<key>Frameworks/cv2/load_config_py3.py</key>
-		<dict>
-			<key>symlink</key>
-			<string>../../Resources/cv2/load_config_py3.py</string>
-		</dict>
-		<key>Frameworks/cv2/mat_wrapper</key>
-		<dict>
-			<key>symlink</key>
-			<string>../../Resources/cv2/mat_wrapper</string>
-		</dict>
-		<key>Frameworks/cv2/misc</key>
-		<dict>
-			<key>symlink</key>
-			<string>../../Resources/cv2/misc</string>
-		</dict>
-		<key>Frameworks/cv2/typing</key>
-		<dict>
-			<key>symlink</key>
-			<string>../../Resources/cv2/typing</string>
-		</dict>
-		<key>Frameworks/cv2/utils</key>
-		<dict>
-			<key>symlink</key>
-			<string>../../Resources/cv2/utils</string>
-		</dict>
-		<key>Frameworks/cv2/version.py</key>
-		<dict>
-			<key>symlink</key>
-			<string>../../Resources/cv2/version.py</string>
+			<string>../Resources/cutevideo.mp4</string>
 		</dict>
 		<key>Frameworks/fart.mp3</key>
 		<dict>
@@ -862,6 +192,11 @@
 		<dict>
 			<key>symlink</key>
 			<string>../Resources/icon.png</string>
+		</dict>
+		<key>Frameworks/importlib_metadata-8.7.0.dist-info</key>
+		<dict>
+			<key>symlink</key>
+			<string>../Resources/importlib_metadata-8.7.0.dist-info</string>
 		</dict>
 		<key>Frameworks/lala.mp3</key>
 		<dict>
@@ -893,603 +228,237 @@
 			<key>symlink</key>
 			<string>pygame/.dylibs/libSDL2_ttf-2.0.0.dylib</string>
 		</dict>
-		<key>Frameworks/libSvtAv1Enc.3.0.2.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libSvtAv1Enc.3.0.2.dylib</string>
-		</dict>
-		<key>Frameworks/libX11.6.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libX11.6.dylib</string>
-		</dict>
-		<key>Frameworks/libXau.6.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libXau.6.dylib</string>
-		</dict>
-		<key>Frameworks/libXdmcp.6.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libXdmcp.6.dylib</string>
-		</dict>
-		<key>Frameworks/libaom.3.12.1.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libaom.3.12.1.dylib</string>
-		</dict>
-		<key>Frameworks/libaribb24.0.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libaribb24.0.dylib</string>
-		</dict>
-		<key>Frameworks/libavcodec.61.19.101.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libavcodec.61.19.101.dylib</string>
-		</dict>
-		<key>Frameworks/libavformat.61.7.100.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libavformat.61.7.100.dylib</string>
-		</dict>
-		<key>Frameworks/libavif.16.3.0.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libavif.16.3.0.dylib</string>
-		</dict>
-		<key>Frameworks/libavutil.59.39.100.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libavutil.59.39.100.dylib</string>
-		</dict>
-		<key>Frameworks/libbluray.2.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libbluray.2.dylib</string>
-		</dict>
 		<key>Frameworks/libbrotlicommon.1.0.9.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libbrotlicommon.1.0.9.dylib</string>
-		</dict>
-		<key>Frameworks/libbrotlicommon.1.1.0.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libbrotlicommon.1.1.0.dylib</string>
 		</dict>
 		<key>Frameworks/libbrotlidec.1.0.9.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libbrotlidec.1.0.9.dylib</string>
 		</dict>
-		<key>Frameworks/libbrotlidec.1.1.0.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libbrotlidec.1.1.0.dylib</string>
-		</dict>
-		<key>Frameworks/libbrotlienc.1.1.0.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libbrotlienc.1.1.0.dylib</string>
-		</dict>
-		<key>Frameworks/libcjson.1.7.18.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libcjson.1.7.18.dylib</string>
-		</dict>
-		<key>Frameworks/libcrypto.3.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libcrypto.3.dylib</string>
-		</dict>
-		<key>Frameworks/libdav1d.7.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libdav1d.7.dylib</string>
-		</dict>
 		<key>Frameworks/libfluidsynth.3.1.1.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libfluidsynth.3.1.1.dylib</string>
-		</dict>
-		<key>Frameworks/libfontconfig.1.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libfontconfig.1.dylib</string>
 		</dict>
 		<key>Frameworks/libfreetype.6.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libfreetype.6.dylib</string>
 		</dict>
-		<key>Frameworks/libgcc_s.1.1.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>numpy/.dylibs/libgcc_s.1.1.dylib</string>
-		</dict>
-		<key>Frameworks/libgfortran.5.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>numpy/.dylibs/libgfortran.5.dylib</string>
-		</dict>
 		<key>Frameworks/libglib-2.0.0.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libglib-2.0.0.dylib</string>
-		</dict>
-		<key>Frameworks/libgmp.10.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libgmp.10.dylib</string>
-		</dict>
-		<key>Frameworks/libgnutls.30.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libgnutls.30.dylib</string>
 		</dict>
 		<key>Frameworks/libgthread-2.0.0.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libgthread-2.0.0.dylib</string>
 		</dict>
-		<key>Frameworks/libhogweed.6.11.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libhogweed.6.11.dylib</string>
-		</dict>
-		<key>Frameworks/libhwy.1.2.0.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libhwy.1.2.0.dylib</string>
-		</dict>
-		<key>Frameworks/libidn2.0.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libidn2.0.dylib</string>
-		</dict>
 		<key>Frameworks/libintl.8.dylib</key>
 		<dict>
 			<key>symlink</key>
-			<string>cv2/.dylibs/libintl.8.dylib</string>
+			<string>pygame/.dylibs/libintl.8.dylib</string>
 		</dict>
 		<key>Frameworks/libjpeg.62.3.0.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libjpeg.62.3.0.dylib</string>
 		</dict>
-		<key>Frameworks/libjxl.0.11.1.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libjxl.0.11.1.dylib</string>
-		</dict>
-		<key>Frameworks/libjxl_cms.0.11.1.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libjxl_cms.0.11.1.dylib</string>
-		</dict>
-		<key>Frameworks/libjxl_threads.0.11.1.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libjxl_threads.0.11.1.dylib</string>
-		</dict>
-		<key>Frameworks/liblcms2.2.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/liblcms2.2.dylib</string>
-		</dict>
-		<key>Frameworks/liblzma.5.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/liblzma.5.dylib</string>
-		</dict>
-		<key>Frameworks/libmbedcrypto.3.6.4.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libmbedcrypto.3.6.4.dylib</string>
-		</dict>
-		<key>Frameworks/libmp3lame.0.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libmp3lame.0.dylib</string>
-		</dict>
 		<key>Frameworks/libmpg123.0.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libmpg123.0.dylib</string>
-		</dict>
-		<key>Frameworks/libnettle.8.11.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libnettle.8.11.dylib</string>
 		</dict>
 		<key>Frameworks/libogg.0.8.5.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libogg.0.8.5.dylib</string>
 		</dict>
-		<key>Frameworks/libogg.0.8.6.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libogg.0.8.6.dylib</string>
-		</dict>
-		<key>Frameworks/libopencore-amrnb.0.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libopencore-amrnb.0.dylib</string>
-		</dict>
-		<key>Frameworks/libopencore-amrwb.0.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libopencore-amrwb.0.dylib</string>
-		</dict>
-		<key>Frameworks/libopenjp2.2.5.3.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libopenjp2.2.5.3.dylib</string>
-		</dict>
 		<key>Frameworks/libopus.0.dylib</key>
 		<dict>
 			<key>symlink</key>
-			<string>cv2/.dylibs/libopus.0.dylib</string>
+			<string>pygame/.dylibs/libopus.0.dylib</string>
 		</dict>
 		<key>Frameworks/libopusfile.0.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libopusfile.0.dylib</string>
 		</dict>
-		<key>Frameworks/libp11-kit.0.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libp11-kit.0.dylib</string>
-		</dict>
 		<key>Frameworks/libpng16.16.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libpng16.16.dylib</string>
-		</dict>
-		<key>Frameworks/libquadmath.0.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>numpy/.dylibs/libquadmath.0.dylib</string>
-		</dict>
-		<key>Frameworks/librav1e.0.8.1.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/librav1e.0.8.1.dylib</string>
-		</dict>
-		<key>Frameworks/librist.4.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/librist.4.dylib</string>
-		</dict>
-		<key>Frameworks/libscipy_openblas64_.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>numpy/.dylibs/libscipy_openblas64_.dylib</string>
-		</dict>
-		<key>Frameworks/libsharpyuv.0.1.1.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libsharpyuv.0.1.1.dylib</string>
 		</dict>
 		<key>Frameworks/libsharpyuv.0.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libsharpyuv.0.dylib</string>
 		</dict>
-		<key>Frameworks/libsnappy.1.2.2.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libsnappy.1.2.2.dylib</string>
-		</dict>
 		<key>Frameworks/libsndfile.1.0.34.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libsndfile.1.0.34.dylib</string>
-		</dict>
-		<key>Frameworks/libsodium.26.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libsodium.26.dylib</string>
-		</dict>
-		<key>Frameworks/libsoxr.0.1.2.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libsoxr.0.1.2.dylib</string>
-		</dict>
-		<key>Frameworks/libspeex.1.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libspeex.1.dylib</string>
-		</dict>
-		<key>Frameworks/libsrt.1.5.4.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libsrt.1.5.4.dylib</string>
-		</dict>
-		<key>Frameworks/libssh.4.10.2.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libssh.4.10.2.dylib</string>
-		</dict>
-		<key>Frameworks/libssl.3.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libssl.3.dylib</string>
-		</dict>
-		<key>Frameworks/libswresample.5.3.100.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libswresample.5.3.100.dylib</string>
-		</dict>
-		<key>Frameworks/libswscale.8.3.100.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libswscale.8.3.100.dylib</string>
-		</dict>
-		<key>Frameworks/libtasn1.6.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libtasn1.6.dylib</string>
-		</dict>
-		<key>Frameworks/libtheoradec.1.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libtheoradec.1.dylib</string>
-		</dict>
-		<key>Frameworks/libtheoraenc.1.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libtheoraenc.1.dylib</string>
 		</dict>
 		<key>Frameworks/libtiff.5.8.0.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libtiff.5.8.0.dylib</string>
 		</dict>
-		<key>Frameworks/libunistring.5.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libunistring.5.dylib</string>
-		</dict>
-		<key>Frameworks/libvmaf.3.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libvmaf.3.dylib</string>
-		</dict>
 		<key>Frameworks/libvorbis.0.4.9.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libvorbis.0.4.9.dylib</string>
-		</dict>
-		<key>Frameworks/libvorbis.0.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libvorbis.0.dylib</string>
 		</dict>
 		<key>Frameworks/libvorbisenc.2.0.12.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libvorbisenc.2.0.12.dylib</string>
 		</dict>
-		<key>Frameworks/libvorbisenc.2.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libvorbisenc.2.dylib</string>
-		</dict>
 		<key>Frameworks/libvorbisfile.3.3.8.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libvorbisfile.3.3.8.dylib</string>
-		</dict>
-		<key>Frameworks/libvpx.11.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libvpx.11.dylib</string>
-		</dict>
-		<key>Frameworks/libwebp.7.1.10.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libwebp.7.1.10.dylib</string>
 		</dict>
 		<key>Frameworks/libwebp.7.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libwebp.7.dylib</string>
 		</dict>
-		<key>Frameworks/libwebpmux.3.1.1.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libwebpmux.3.1.1.dylib</string>
-		</dict>
-		<key>Frameworks/libx264.164.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libx264.164.dylib</string>
-		</dict>
-		<key>Frameworks/libx265.215.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libx265.215.dylib</string>
-		</dict>
-		<key>Frameworks/libxcb.1.1.0.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libxcb.1.1.0.dylib</string>
-		</dict>
 		<key>Frameworks/libz.1.2.11.zlib-ng.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libz.1.2.11.zlib-ng.dylib</string>
 		</dict>
-		<key>Frameworks/libzmq.5.dylib</key>
+		<key>Frameworks/mom_mode_highscores.json</key>
 		<dict>
 			<key>symlink</key>
-			<string>cv2/.dylibs/libzmq.5.dylib</string>
+			<string>../Resources/mom_mode_highscores.json</string>
 		</dict>
 		<key>Frameworks/network.py</key>
 		<dict>
 			<key>symlink</key>
 			<string>../Resources/network.py</string>
 		</dict>
-		<key>Frameworks/numpy/.dylibs</key>
-		<dict>
-			<key>symlink</key>
-			<string>__dot__dylibs</string>
-		</dict>
-		<key>Frameworks/numpy/__dot__dylibs/libgcc_s.1.1.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			Fj3Jus8M/oJXjryQcx414uNQtCg=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"9c2310b58d8343a5e71cbb1afea0f8d07cbfa6c1" or cdhash H"163dc9bacf0cfe82578ebc90731e35e2e350b428"</string>
-		</dict>
-		<key>Frameworks/numpy/__dot__dylibs/libgfortran.5.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			fzyJq76X0fV0kqD/Fib2xA8xRro=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"2488bc1dc42744eaecc7437285df70de7cd1e9f5" or cdhash H"7f3c89abbe97d1f57492a0ff1626f6c40f3146ba"</string>
-		</dict>
-		<key>Frameworks/numpy/__dot__dylibs/libquadmath.0.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			cHQZ/7eApB1TGv0vXOOMs8zts7I=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"aef341c71db68a12ff5d71513078e26cb041c19c" or cdhash H"707419ffb780a41d531afd2f5ce38cb3ccedb3b2"</string>
-		</dict>
-		<key>Frameworks/numpy/__dot__dylibs/libscipy_openblas64_.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			DFDTj02E4c8D9G5zOmRU/0jSfTk=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"59de6bd2d26681b8522e719cda56cf9469299022" or cdhash H"0c50d38f4d84e1cf03f46e733a6454ff48d27d39"</string>
-		</dict>
 		<key>Frameworks/numpy/_core/_multiarray_tests.cpython-39-darwin.so</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			RVxPa0EdRy3pVUv9tQnrEb2/7Cg=
+			XAdedR4Xcicf7s4r1BsC0rjMGsQ=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"ee4822ac445f98ae56d4d6ebd3073e7c5ff07a9c" or cdhash H"455c4f6b411d472de9554bfdb509eb11bdbfec28"</string>
+			<string>cdhash H"5c075e751e1772271feece2bd41b02d2b8cc1ac4"</string>
 		</dict>
 		<key>Frameworks/numpy/_core/_multiarray_umath.cpython-39-darwin.so</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			/mEWSfsdC16bEvn4VPO0WJqjDlg=
+			cGrWBmhu9iNwyotmwMueJp4ztvc=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"0bfd6f4bec029da8ffcfbc942187cba7e8a8b56d" or cdhash H"fe611649fb1d0b5e9b12f9f854f3b4589aa30e58"</string>
+			<string>cdhash H"706ad606686ef62370ca8b66c0cb9e269e33b6f7"</string>
 		</dict>
 		<key>Frameworks/numpy/fft/_pocketfft_umath.cpython-39-darwin.so</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			KcI2BEdOOA35JU5W0AyjetAlw2o=
+			vr0sqyRq+qceLoQfkJoD8Butntg=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"023bc6b5f02560222cfc769d442f45d2586c66e7" or cdhash H"29c23604474e380df9254e56d00ca37ad025c36a"</string>
+			<string>cdhash H"bebd2cab246afaa71e2e841f909a03f01bad9ed8"</string>
 		</dict>
 		<key>Frameworks/numpy/linalg/_umath_linalg.cpython-39-darwin.so</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			vsXjplt5e6NuYEWQ9ifTurSRbdE=
+			Hd4HVwXvVAaEGE2YUQHDiap0xu8=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"7868184146c71276d907fa3edfd2b069f37cf2fd" or cdhash H"bec5e3a65b797ba36e604590f627d3bab4916dd1"</string>
+			<string>cdhash H"1dde075705ef540684184d985101c389aa74c6ef"</string>
 		</dict>
 		<key>Frameworks/numpy/random/_bounded_integers.cpython-39-darwin.so</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			pcZfeHVp7XF0mB+5aIh+ZR7Awko=
+			huhBfaLt1Znw7GmIiLfc5jq1R+M=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"d6c33c0161f805cc2f68d9fe5a91223d53db8943" or cdhash H"a5c65f787569ed7174981fb968887e651ec0c24a"</string>
+			<string>cdhash H"86e8417da2edd599f0ec698888b7dce63ab547e3"</string>
 		</dict>
 		<key>Frameworks/numpy/random/_common.cpython-39-darwin.so</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			38CSe/MsJ5d29GOLiZqHZ8eAwCo=
+			3Wn0MzWrv/jhP4E2G256+qUvsAc=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"86c6e4b0f851fd7aecdfb60485727d3d211159d6" or cdhash H"dfc0927bf32c279776f4638b899a8767c780c02a"</string>
+			<string>cdhash H"dd69f43335abbff8e13f81361b6e7afaa52fb007"</string>
 		</dict>
 		<key>Frameworks/numpy/random/_generator.cpython-39-darwin.so</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			cJI+wyTrG91hlpStp38Ml6mpIyQ=
+			00K7PXaL6zu80BkC+8T0etG9Dtc=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"33d635a48bf8e70be3f347ab6a9002a7e98902c9" or cdhash H"70923ec324eb1bdd619694ada77f0c97a9a92324"</string>
+			<string>cdhash H"d342bb3d768beb3bbcd01902fbc4f47ad1bd0ed7"</string>
 		</dict>
 		<key>Frameworks/numpy/random/_mt19937.cpython-39-darwin.so</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			8V7UU8TXkce7SjeidmEaxon/Aqg=
+			x26P/Nhj+GIoFzQ+Hn0d8jtMLEs=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"f70474ba715bd759ea9c4cb8d4b7a55832941417" or cdhash H"f15ed453c4d791c7bb4a37a276611ac689ff02a8"</string>
+			<string>cdhash H"c76e8ffcd863f8622817343e1e7d1df23b4c2c4b"</string>
 		</dict>
 		<key>Frameworks/numpy/random/_pcg64.cpython-39-darwin.so</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			WQ9wI4BgOCzuq/UwZotnV+ROijE=
+			lLbqVjexcn0YxMQO2N9BnWGKaSI=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"31b880cf6c939deb5754d26b315d116cbe31cdc1" or cdhash H"590f70238060382ceeabf530668b6757e44e8a31"</string>
+			<string>cdhash H"94b6ea5637b1727d18c4c40ed8df419d618a6922"</string>
 		</dict>
 		<key>Frameworks/numpy/random/_philox.cpython-39-darwin.so</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			CI79tMfZRc6FdHMFyjUOR+8mNeg=
+			VIjg2bCbpfBvtrR3PGov2AbMxVk=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"fdcc834173a1b384a69bcbe4a730384c8006e5e5" or cdhash H"088efdb4c7d945ce85747305ca350e47ef2635e8"</string>
+			<string>cdhash H"5488e0d9b09ba5f06fb6b4773c6a2fd806ccc559"</string>
 		</dict>
 		<key>Frameworks/numpy/random/_sfc64.cpython-39-darwin.so</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			Jrr7NXj+pQmOSWekLqPxNF9RwjE=
+			fcK4qYaPyOAXHz3iMaIVnrFZYxY=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"a2ce792bbd6845d9f0a3cbd895f8e18360031662" or cdhash H"26bafb3578fea5098e4967a42ea3f1345f51c231"</string>
+			<string>cdhash H"7dc2b8a9868fc8e0171f3de231a2159eb1596316"</string>
 		</dict>
 		<key>Frameworks/numpy/random/bit_generator.cpython-39-darwin.so</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			mv1VVSeh61hWzKHSHG7xbPZggXY=
+			C7DKvXS0eUolKI6DYn50QU+I/no=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"8afcb33bcb4488b926d9011cbaf7d189ff597790" or cdhash H"9afd555527a1eb5856cca1d21c6ef16cf6608176"</string>
+			<string>cdhash H"0bb0cabd74b4794a25288e83627e74414f88fe7a"</string>
 		</dict>
 		<key>Frameworks/numpy/random/mtrand.cpython-39-darwin.so</key>
 		<dict>
 			<key>cdhash</key>
 			<data>
-			i+a6lkSXQPdddDkPbBeY0D/yfJc=
+			lUigQTKrTCdV0YjYPH1VdmiUBUo=
 			</data>
 			<key>requirement</key>
-			<string>cdhash H"831d91930f0850f338d6cf1ac137d253d561c80a" or cdhash H"8be6ba96449740f75d74390f6c1798d03ff27c97"</string>
+			<string>cdhash H"9548a04132ab4c2755d188d83c7d55766894054a"</string>
 		</dict>
 		<key>Frameworks/playmusic.mp3</key>
 		<dict>
@@ -2335,15 +1304,6 @@
 			<key>requirement</key>
 			<string>cdhash H"a27fefb83607c216443b79f6dc90e546609ae7db"</string>
 		</dict>
-		<key>Frameworks/python3__dot__9/lib-dynload/_uuid.cpython-39-darwin.so</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			olOhYZsHlFPCyJOsxq0F7hNZNqk=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"a253a1619b079453c2c893acc6ad05ee135936a9"</string>
-		</dict>
 		<key>Frameworks/python3__dot__9/lib-dynload/array.cpython-39-darwin.so</key>
 		<dict>
 			<key>cdhash</key>
@@ -2425,6 +1385,15 @@
 			<key>requirement</key>
 			<string>cdhash H"ac233dab8cefd65d6eb3be10adc2af5c886bad2c"</string>
 		</dict>
+		<key>Frameworks/python3__dot__9/lib-dynload/syslog.cpython-39-darwin.so</key>
+		<dict>
+			<key>cdhash</key>
+			<data>
+			Qq7P5OVCpSAusNsmHnsPU4iq/G0=
+			</data>
+			<key>requirement</key>
+			<string>cdhash H"42aecfe4e542a5202eb0db261e7b0f5388aafc6d"</string>
+		</dict>
 		<key>Frameworks/python3__dot__9/lib-dynload/termios.cpython-39-darwin.so</key>
 		<dict>
 			<key>cdhash</key>
@@ -2456,6 +1425,11 @@
 		<dict>
 			<key>symlink</key>
 			<string>../Resources/scary-scream.mp3</string>
+		</dict>
+		<key>Frameworks/setuptools</key>
+		<dict>
+			<key>symlink</key>
+			<string>../Resources/setuptools</string>
 		</dict>
 		<key>Frameworks/survival_highscores.json</key>
 		<dict>
@@ -2490,7 +1464,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			ve+BIUPbEeFBuCaiR0Hqli+I4a8akuHdYc+x4lDD4zc=
+			Ds2gjjRoIrMFZ+7kHXNHhs4ezbstMrbaTz+r+96JC/s=
 			</data>
 		</dict>
 		<key>Resources/charset_normalizer</key>
@@ -2512,98 +1486,11 @@
 			msQd66X2aeyihtoo2bLK6y2Eq5YbYFfGs51TEWszJkM=
 			</data>
 		</dict>
-		<key>Resources/cv2/.dylibs</key>
-		<dict>
-			<key>symlink</key>
-			<string>../../Frameworks/cv2/.dylibs</string>
-		</dict>
-		<key>Resources/cv2/__init__.py</key>
+		<key>Resources/cutevideo.mp4</key>
 		<dict>
 			<key>hash2</key>
 			<data>
-			k2vZTFpd6/AhL8dRr3nToWNlLz6FAlnfIVnbaqPtitg=
-			</data>
-		</dict>
-		<key>Resources/cv2/config-3.py</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			mnqt9yS4IgAfXpY7Af1ON11F4su+Mo0sp7QqRAwIOhw=
-			</data>
-		</dict>
-		<key>Resources/cv2/config.py</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			HbNGOpb1ioISOoR9FQcijZ6KgABt5nQBroNZF2WOvoc=
-			</data>
-		</dict>
-		<key>Resources/cv2/cv2.abi3.so</key>
-		<dict>
-			<key>symlink</key>
-			<string>../../Frameworks/cv2/cv2.abi3.so</string>
-		</dict>
-		<key>Resources/cv2/data/__init__.py</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			125Pcte/OtB55ZxjWg5ko8ugpnogZ1sRMyP48dtBCMw=
-			</data>
-		</dict>
-		<key>Resources/cv2/gapi/__init__.py</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			6WBAjfq1FCiRADgYXGAKITHdBB6t0/jZ8hkTU8Biz+M=
-			</data>
-		</dict>
-		<key>Resources/cv2/load_config_py3.py</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			A9wfETdKZnybfbEN1SdtZAsMLVsueGa0zO93JzK9OFI=
-			</data>
-		</dict>
-		<key>Resources/cv2/mat_wrapper/__init__.py</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			i2JwY6kmDL/s7YXzIl+JZuWCMVYkRi4F6j60W3j4P9A=
-			</data>
-		</dict>
-		<key>Resources/cv2/misc/__init__.py</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			yr9PkxKslxRc87hhtIJRn5RommP9jaqksYr+ZDuj7cU=
-			</data>
-		</dict>
-		<key>Resources/cv2/misc/version.py</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			iTExq1jwGgAv3jtYQHRI8pSpmfzPsjkG9brsH0bdYhk=
-			</data>
-		</dict>
-		<key>Resources/cv2/typing/__init__.py</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			90wmq5KKlWqwanDsQglScV1SNzXhmu8vZwbcoLGV20Y=
-			</data>
-		</dict>
-		<key>Resources/cv2/utils/__init__.py</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			fuw4GHHOXsxxKc+AadAEOKQq/I1Gr4G3yMlRvAbTP30=
-			</data>
-		</dict>
-		<key>Resources/cv2/version.py</key>
-		<dict>
-			<key>hash2</key>
-			<data>
-			Z5AB6EB8NKiMcFYzT9AgjGAdwZ9+HGJQSt0WSntf02Y=
+			siORp1XRSePtAjxtSJ2kx3KHLnqqbjH4dwHTgeTqASE=
 			</data>
 		</dict>
 		<key>Resources/fart.mp3</key>
@@ -2641,6 +1528,48 @@
 			1jtmu0Eyt2zICa5/wLUnO8DbPpCgwj1yMfu4p90x+/A=
 			</data>
 		</dict>
+		<key>Resources/importlib_metadata-8.7.0.dist-info/INSTALLER</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			zuuue4knoyJ+UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg=
+			</data>
+		</dict>
+		<key>Resources/importlib_metadata-8.7.0.dist-info/METADATA</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			QJMudfqWDjfobdzipgUH5gskLahdXueIgy433mjk/Qw=
+			</data>
+		</dict>
+		<key>Resources/importlib_metadata-8.7.0.dist-info/RECORD</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			/UbipoSgAhjVB7fs3DBJoTJDZdwqWlo5AN1tqr7FX0E=
+			</data>
+		</dict>
+		<key>Resources/importlib_metadata-8.7.0.dist-info/WHEEL</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			SmOxYU7pzNKBqASvQJ7DjX3XGUF92lrGhMb3R6/iiqI=
+			</data>
+		</dict>
+		<key>Resources/importlib_metadata-8.7.0.dist-info/licenses/LICENSE</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			z8d0m5b2O9McPEK1xHG/dWgUBT6EfBDz6wA0F7xSPTA=
+			</data>
+		</dict>
+		<key>Resources/importlib_metadata-8.7.0.dist-info/top_level.txt</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			CO3fD9yylANiXkrMo4qHLV/mqXL2sC5JFKgt1yWAT+A=
+			</data>
+		</dict>
 		<key>Resources/lala.mp3</key>
 		<dict>
 			<key>hash2</key>
@@ -2673,440 +1602,117 @@
 			<key>symlink</key>
 			<string>pygame/.dylibs/libSDL2_ttf-2.0.0.dylib</string>
 		</dict>
-		<key>Resources/libSvtAv1Enc.3.0.2.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libSvtAv1Enc.3.0.2.dylib</string>
-		</dict>
-		<key>Resources/libX11.6.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libX11.6.dylib</string>
-		</dict>
-		<key>Resources/libXau.6.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libXau.6.dylib</string>
-		</dict>
-		<key>Resources/libXdmcp.6.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libXdmcp.6.dylib</string>
-		</dict>
-		<key>Resources/libaom.3.12.1.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libaom.3.12.1.dylib</string>
-		</dict>
-		<key>Resources/libaribb24.0.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libaribb24.0.dylib</string>
-		</dict>
-		<key>Resources/libavcodec.61.19.101.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libavcodec.61.19.101.dylib</string>
-		</dict>
-		<key>Resources/libavformat.61.7.100.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libavformat.61.7.100.dylib</string>
-		</dict>
-		<key>Resources/libavif.16.3.0.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libavif.16.3.0.dylib</string>
-		</dict>
-		<key>Resources/libavutil.59.39.100.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libavutil.59.39.100.dylib</string>
-		</dict>
-		<key>Resources/libbluray.2.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libbluray.2.dylib</string>
-		</dict>
 		<key>Resources/libbrotlicommon.1.0.9.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libbrotlicommon.1.0.9.dylib</string>
-		</dict>
-		<key>Resources/libbrotlicommon.1.1.0.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libbrotlicommon.1.1.0.dylib</string>
 		</dict>
 		<key>Resources/libbrotlidec.1.0.9.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libbrotlidec.1.0.9.dylib</string>
 		</dict>
-		<key>Resources/libbrotlidec.1.1.0.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libbrotlidec.1.1.0.dylib</string>
-		</dict>
-		<key>Resources/libbrotlienc.1.1.0.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libbrotlienc.1.1.0.dylib</string>
-		</dict>
-		<key>Resources/libcjson.1.7.18.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libcjson.1.7.18.dylib</string>
-		</dict>
-		<key>Resources/libcrypto.3.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libcrypto.3.dylib</string>
-		</dict>
-		<key>Resources/libdav1d.7.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libdav1d.7.dylib</string>
-		</dict>
 		<key>Resources/libfluidsynth.3.1.1.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libfluidsynth.3.1.1.dylib</string>
-		</dict>
-		<key>Resources/libfontconfig.1.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libfontconfig.1.dylib</string>
 		</dict>
 		<key>Resources/libfreetype.6.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libfreetype.6.dylib</string>
 		</dict>
-		<key>Resources/libgcc_s.1.1.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>numpy/.dylibs/libgcc_s.1.1.dylib</string>
-		</dict>
-		<key>Resources/libgfortran.5.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>numpy/.dylibs/libgfortran.5.dylib</string>
-		</dict>
 		<key>Resources/libglib-2.0.0.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libglib-2.0.0.dylib</string>
-		</dict>
-		<key>Resources/libgmp.10.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libgmp.10.dylib</string>
-		</dict>
-		<key>Resources/libgnutls.30.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libgnutls.30.dylib</string>
 		</dict>
 		<key>Resources/libgthread-2.0.0.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libgthread-2.0.0.dylib</string>
 		</dict>
-		<key>Resources/libhogweed.6.11.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libhogweed.6.11.dylib</string>
-		</dict>
-		<key>Resources/libhwy.1.2.0.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libhwy.1.2.0.dylib</string>
-		</dict>
-		<key>Resources/libidn2.0.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libidn2.0.dylib</string>
-		</dict>
 		<key>Resources/libintl.8.dylib</key>
 		<dict>
 			<key>symlink</key>
-			<string>cv2/.dylibs/libintl.8.dylib</string>
+			<string>pygame/.dylibs/libintl.8.dylib</string>
 		</dict>
 		<key>Resources/libjpeg.62.3.0.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libjpeg.62.3.0.dylib</string>
 		</dict>
-		<key>Resources/libjxl.0.11.1.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libjxl.0.11.1.dylib</string>
-		</dict>
-		<key>Resources/libjxl_cms.0.11.1.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libjxl_cms.0.11.1.dylib</string>
-		</dict>
-		<key>Resources/libjxl_threads.0.11.1.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libjxl_threads.0.11.1.dylib</string>
-		</dict>
-		<key>Resources/liblcms2.2.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/liblcms2.2.dylib</string>
-		</dict>
-		<key>Resources/liblzma.5.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/liblzma.5.dylib</string>
-		</dict>
-		<key>Resources/libmbedcrypto.3.6.4.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libmbedcrypto.3.6.4.dylib</string>
-		</dict>
-		<key>Resources/libmp3lame.0.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libmp3lame.0.dylib</string>
-		</dict>
 		<key>Resources/libmpg123.0.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libmpg123.0.dylib</string>
-		</dict>
-		<key>Resources/libnettle.8.11.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libnettle.8.11.dylib</string>
 		</dict>
 		<key>Resources/libogg.0.8.5.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libogg.0.8.5.dylib</string>
 		</dict>
-		<key>Resources/libogg.0.8.6.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libogg.0.8.6.dylib</string>
-		</dict>
-		<key>Resources/libopencore-amrnb.0.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libopencore-amrnb.0.dylib</string>
-		</dict>
-		<key>Resources/libopencore-amrwb.0.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libopencore-amrwb.0.dylib</string>
-		</dict>
-		<key>Resources/libopenjp2.2.5.3.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libopenjp2.2.5.3.dylib</string>
-		</dict>
 		<key>Resources/libopus.0.dylib</key>
 		<dict>
 			<key>symlink</key>
-			<string>cv2/.dylibs/libopus.0.dylib</string>
+			<string>pygame/.dylibs/libopus.0.dylib</string>
 		</dict>
 		<key>Resources/libopusfile.0.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libopusfile.0.dylib</string>
 		</dict>
-		<key>Resources/libp11-kit.0.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libp11-kit.0.dylib</string>
-		</dict>
 		<key>Resources/libpng16.16.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libpng16.16.dylib</string>
-		</dict>
-		<key>Resources/libquadmath.0.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>numpy/.dylibs/libquadmath.0.dylib</string>
-		</dict>
-		<key>Resources/librav1e.0.8.1.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/librav1e.0.8.1.dylib</string>
-		</dict>
-		<key>Resources/librist.4.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/librist.4.dylib</string>
-		</dict>
-		<key>Resources/libscipy_openblas64_.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>numpy/.dylibs/libscipy_openblas64_.dylib</string>
-		</dict>
-		<key>Resources/libsharpyuv.0.1.1.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libsharpyuv.0.1.1.dylib</string>
 		</dict>
 		<key>Resources/libsharpyuv.0.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libsharpyuv.0.dylib</string>
 		</dict>
-		<key>Resources/libsnappy.1.2.2.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libsnappy.1.2.2.dylib</string>
-		</dict>
 		<key>Resources/libsndfile.1.0.34.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libsndfile.1.0.34.dylib</string>
-		</dict>
-		<key>Resources/libsodium.26.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libsodium.26.dylib</string>
-		</dict>
-		<key>Resources/libsoxr.0.1.2.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libsoxr.0.1.2.dylib</string>
-		</dict>
-		<key>Resources/libspeex.1.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libspeex.1.dylib</string>
-		</dict>
-		<key>Resources/libsrt.1.5.4.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libsrt.1.5.4.dylib</string>
-		</dict>
-		<key>Resources/libssh.4.10.2.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libssh.4.10.2.dylib</string>
-		</dict>
-		<key>Resources/libssl.3.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libssl.3.dylib</string>
-		</dict>
-		<key>Resources/libswresample.5.3.100.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libswresample.5.3.100.dylib</string>
-		</dict>
-		<key>Resources/libswscale.8.3.100.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libswscale.8.3.100.dylib</string>
-		</dict>
-		<key>Resources/libtasn1.6.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libtasn1.6.dylib</string>
-		</dict>
-		<key>Resources/libtheoradec.1.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libtheoradec.1.dylib</string>
-		</dict>
-		<key>Resources/libtheoraenc.1.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libtheoraenc.1.dylib</string>
 		</dict>
 		<key>Resources/libtiff.5.8.0.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libtiff.5.8.0.dylib</string>
 		</dict>
-		<key>Resources/libunistring.5.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libunistring.5.dylib</string>
-		</dict>
-		<key>Resources/libvmaf.3.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libvmaf.3.dylib</string>
-		</dict>
 		<key>Resources/libvorbis.0.4.9.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libvorbis.0.4.9.dylib</string>
-		</dict>
-		<key>Resources/libvorbis.0.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libvorbis.0.dylib</string>
 		</dict>
 		<key>Resources/libvorbisenc.2.0.12.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libvorbisenc.2.0.12.dylib</string>
 		</dict>
-		<key>Resources/libvorbisenc.2.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libvorbisenc.2.dylib</string>
-		</dict>
 		<key>Resources/libvorbisfile.3.3.8.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libvorbisfile.3.3.8.dylib</string>
-		</dict>
-		<key>Resources/libvpx.11.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libvpx.11.dylib</string>
-		</dict>
-		<key>Resources/libwebp.7.1.10.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libwebp.7.1.10.dylib</string>
 		</dict>
 		<key>Resources/libwebp.7.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libwebp.7.dylib</string>
 		</dict>
-		<key>Resources/libwebpmux.3.1.1.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libwebpmux.3.1.1.dylib</string>
-		</dict>
-		<key>Resources/libx264.164.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libx264.164.dylib</string>
-		</dict>
-		<key>Resources/libx265.215.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libx265.215.dylib</string>
-		</dict>
-		<key>Resources/libxcb.1.1.0.dylib</key>
-		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libxcb.1.1.0.dylib</string>
-		</dict>
 		<key>Resources/libz.1.2.11.zlib-ng.dylib</key>
 		<dict>
 			<key>symlink</key>
 			<string>pygame/.dylibs/libz.1.2.11.zlib-ng.dylib</string>
 		</dict>
-		<key>Resources/libzmq.5.dylib</key>
+		<key>Resources/mom_mode_highscores.json</key>
 		<dict>
-			<key>symlink</key>
-			<string>cv2/.dylibs/libzmq.5.dylib</string>
+			<key>hash2</key>
+			<data>
+			N1F+Xz3GaBn2H1p7uKzhkhKCQV8QVR0t76XD6wmFtXA=
+			</data>
 		</dict>
 		<key>Resources/network.py</key>
 		<dict>
@@ -3296,6 +1902,13 @@
 			<key>hash2</key>
 			<data>
 			/dQckf/0gH6ZqD99oF1DIshgwpXor6u5HiVx3Wm+zpA=
+			</data>
+		</dict>
+		<key>Resources/setuptools/_vendor/jaraco/text/Lorem ipsum.txt</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			N/7c/79zxOufBY9HZ3yzMgOkNv+TkOTTio4BydrSjgs=
 			</data>
 		</dict>
 		<key>Resources/survival_highscores.json</key>

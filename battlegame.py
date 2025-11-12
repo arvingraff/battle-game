@@ -6,6 +6,7 @@ import random
 import threading
 import math
 import socket
+import json
 from network import NetworkHost, NetworkClient
 
 pygame.init()
@@ -48,6 +49,131 @@ def resource_path(relative_path):
     except Exception:
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
+
+# Leaderboard functions
+def load_highscores(mode='survival'):
+    """Load high scores from JSON file"""
+    filename = 'mom_mode_highscores.json' if mode == 'mom' else 'survival_highscores.json'
+    try:
+        with open(resource_path(filename), 'r') as f:
+            return json.load(f)
+    except:
+        return []
+
+def save_highscore(name, score, mode='survival', extra_data=None):
+    """Save a new high score"""
+    filename = 'mom_mode_highscores.json' if mode == 'mom' else 'survival_highscores.json'
+    
+    # Load existing scores
+    scores = load_highscores(mode)
+    
+    # Create new score entry
+    new_entry = {
+        'name': name,
+        'score': score,
+        'timestamp': time.strftime("%Y-%m-%d %H:%M:%S")
+    }
+    
+    # Add extra data if provided
+    if extra_data:
+        new_entry.update(extra_data)
+    
+    # Add to list
+    scores.append(new_entry)
+    
+    # Sort by score (descending)
+    scores.sort(key=lambda x: x['score'], reverse=True)
+    
+    # Keep only top 10
+    scores = scores[:10]
+    
+    # Save back to file
+    try:
+        with open(resource_path(filename), 'w') as f:
+            json.dump(scores, f, indent=2)
+    except:
+        pass  # If can't write (in bundled app), that's okay
+    
+    return scores
+
+def show_leaderboard(mode='survival'):
+    """Display the leaderboard for survival or mom mode"""
+    scores = load_highscores(mode)
+    
+    title = "ESCAPE MOM MODE - LEADERBOARD" if mode == 'mom' else "SURVIVAL MODE - LEADERBOARD"
+    title_color = (255, 50, 50) if mode == 'mom' else (100, 200, 255)
+    
+    running = True
+    while running:
+        screen.fill((20, 20, 30))
+        
+        # Title
+        title_text = lobby_font.render(title, True, title_color)
+        screen.blit(title_text, (WIDTH//2 - title_text.get_width()//2, 50))
+        
+        # Column headers
+        if mode == 'mom':
+            headers = font.render("RANK    NAME              TIME SURVIVED", True, (200, 200, 200))
+        else:
+            headers = font.render("RANK    NAMES             SCORE    LEVEL", True, (200, 200, 200))
+        screen.blit(headers, (WIDTH//2 - headers.get_width()//2, 150))
+        
+        # Scores
+        if scores:
+            for i, entry in enumerate(scores):
+                y_pos = 220 + i * 50
+                rank = f"#{i+1}"
+                
+                if mode == 'mom':
+                    name = entry.get('name', 'Unknown')[:15]
+                    score_val = entry.get('score', 0)
+                    score_text = f"{score_val}s"
+                    line = f"{rank:<8}{name:<18}{score_text}"
+                else:
+                    names = entry.get('names', entry.get('name', 'Unknown'))[:15]
+                    score_val = entry.get('score', 0)
+                    level = entry.get('level', 1)
+                    line = f"{rank:<8}{names:<18}{score_val:<9}{level}"
+                
+                # Color based on rank
+                if i == 0:
+                    color = (255, 215, 0)  # Gold
+                elif i == 1:
+                    color = (192, 192, 192)  # Silver
+                elif i == 2:
+                    color = (205, 127, 50)  # Bronze
+                else:
+                    color = (180, 180, 180)  # White
+                
+                score_text_render = font.render(line, True, color)
+                screen.blit(score_text_render, (WIDTH//2 - score_text_render.get_width()//2, y_pos))
+        else:
+            # No scores yet
+            no_scores = font.render("No scores yet! Be the first!", True, (150, 150, 150))
+            screen.blit(no_scores, (WIDTH//2 - no_scores.get_width()//2, 300))
+        
+        # Back button
+        back_button = pygame.Rect(WIDTH//2 - 100, HEIGHT - 120, 200, 60)
+        pygame.draw.rect(screen, (100, 50, 150), back_button)
+        pygame.draw.rect(screen, (150, 100, 200), back_button, 3)
+        back_text = font.render("Back", True, (255, 255, 255))
+        screen.blit(back_text, (back_button.centerx - back_text.get_width()//2, 
+                                back_button.centery - back_text.get_height()//2))
+        
+        pygame.display.flip()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if back_button.collidepoint(event.pos):
+                    return
+        
+        clock.tick(60)
 
 # Load background image for battle mode
 try:
@@ -135,7 +261,7 @@ def online_get_name_and_character(player_label, mode):
 
 def mode_lobby():
     selected = 0
-    options = ["Battle Mode", "Coin Collection Mode", "Makka Pakka Mode", "Escape Mom Mode", "Capture the Flag", "Survival Mode", "Play Music", "Stop Music", "Watch Cute Video", "Watch Grandma", "Exit"]
+    options = ["Battle Mode", "Coin Collection Mode", "Makka Pakka Mode", "Escape Mom Mode", "Capture the Flag", "Survival Mode", "Relax Mode", "Survival Leaderboard", "Mom Mode Leaderboard", "Play Music", "Stop Music", "Watch Cute Video", "Watch Grandma", "Exit"]
     music_playing = False
     pygame.mixer.music.stop()  # Ensure no music plays automatically
     while True:
@@ -160,6 +286,10 @@ def mode_lobby():
                     if options[selected] == "Exit":
                         pygame.quit()
                         sys.exit()
+                    elif options[selected] == "Survival Leaderboard":
+                        show_leaderboard('survival')
+                    elif options[selected] == "Mom Mode Leaderboard":
+                        show_leaderboard('mom')
                     elif options[selected] == "Play Music":
                         try:
                             pygame.mixer.music.stop()
@@ -175,6 +305,8 @@ def mode_lobby():
                         watch_cute_video()
                     elif options[selected] == "Watch Grandma":
                         watch_grandma()
+                    elif options[selected] == "Relax Mode":
+                        relax_mode()
                     else:
                         pygame.mixer.music.stop()
                         if options[selected] == "Battle Mode":
@@ -191,97 +323,483 @@ def mode_lobby():
                             return 2
 
 def watch_cute_video():
-    import cv2
-    cap = cv2.VideoCapture(resource_path('cutevideo.mp4'))
-    if not cap.isOpened():
-        # Show error message in lobby
-        screen.fill((30,30,30))
-        error_text = lobby_font.render("Error: Could not open cutevideo.mp4", True, (255,0,0))
-        screen.blit(error_text, (WIDTH//2-error_text.get_width()//2, HEIGHT//2-error_text.get_height()//2))
-        pygame.display.flip()
-        pygame.time.wait(2000)
-        return
-    exit_button_rect = pygame.Rect(WIDTH//2-100, HEIGHT-120, 200, 60)
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
-        try:
+    """Play cute video - fallback to animation if video can't play"""
+    import os
+    
+    video_path = resource_path('cutevideo.mp4')
+    
+    # Fallback to OpenCV
+    try:
+        import cv2
+        
+        print(f"[DEBUG] Loading video with OpenCV: {video_path}")
+        
+        if not os.path.exists(video_path):
+            raise FileNotFoundError(f"Video file not found: {video_path}")
+        
+        cap = cv2.VideoCapture(video_path)
+        
+        if not cap.isOpened():
+            raise RuntimeError("OpenCV could not open video file")
+        
+        fps = cap.get(cv2.CAP_PROP_FPS) or 30
+        clock = pygame.time.Clock()
+        
+        playing = True
+        while playing:
+            ret, frame = cap.read()
+            
+            if not ret:
+                break
+            
+            # Convert BGR to RGB
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            frame = cv2.resize(frame, (WIDTH, HEIGHT))
-            frame_surface = pygame.surfarray.make_surface(frame.swapaxes(0,1))
-            screen.blit(frame_surface, (0,0))
-        except Exception as e:
-            screen.fill((30,30,30))
-            error_text = lobby_font.render(f"Video error: {e}", True, (255,0,0))
-            screen.blit(error_text, (WIDTH//2-error_text.get_width()//2, HEIGHT//2-error_text.get_height()//2))
+            
+            # Convert to pygame surface
+            frame = frame.swapaxes(0, 1)
+            frame_surface = pygame.surfarray.make_surface(frame)
+            
+            # Scale to fit screen
+            video_rect = frame_surface.get_rect()
+            scale_factor = min(WIDTH / video_rect.width, HEIGHT / video_rect.height)
+            new_width = int(video_rect.width * scale_factor)
+            new_height = int(video_rect.height * scale_factor)
+            
+            scaled_frame = pygame.transform.scale(frame_surface, (new_width, new_height))
+            
+            # Center on screen
+            screen.fill((0, 0, 0))
+            x = (WIDTH - new_width) // 2
+            y = (HEIGHT - new_height) // 2
+            screen.blit(scaled_frame, (x, y))
+            
             pygame.display.flip()
-            pygame.time.wait(2000)
-            cap.release()
-            return
-        pygame.draw.rect(screen, (255,0,0), exit_button_rect)
-        exit_text = lobby_font.render("Exit", True, (255,255,255))
-        screen.blit(exit_text, (exit_button_rect.centerx-exit_text.get_width()//2, exit_button_rect.centery-exit_text.get_height()//2))
+            
+            # Handle events
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    cap.release()
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    playing = False
+            
+            clock.tick(fps)
+        
+        cap.release()
+        return
+        
+    except Exception as e:
+        print(f"[DEBUG] OpenCV failed: {e}")
+    
+    # Final fallback: show cute bouncing emoji animation
+    clock = pygame.time.Clock()
+    
+    # Bouncing emojis
+    emojis = ["🎬", "📹", "🎥", "🎞️"]
+    emoji_idx = 0
+    emoji_y = HEIGHT // 2
+    emoji_vel = 4
+    emoji_timer = 0
+    
+    # Floating particles
+    particles = []
+    for _ in range(20):
+        particles.append({
+            'x': random.randint(0, WIDTH),
+            'y': random.randint(0, HEIGHT),
+            'speed': random.uniform(0.5, 2),
+            'size': random.randint(2, 6)
+        })
+    
+    waiting = True
+    while waiting:
+        # Bounce emoji
+        emoji_y += emoji_vel
+        if emoji_y > HEIGHT // 2 + 40 or emoji_y < HEIGHT // 2 - 40:
+            emoji_vel = -emoji_vel
+            emoji_idx = (emoji_idx + 1) % len(emojis)
+        
+        # Update particles
+        for p in particles:
+            p['y'] += p['speed']
+            if p['y'] > HEIGHT:
+                p['y'] = 0
+                p['x'] = random.randint(0, WIDTH)
+        
+        emoji_timer += 1
+        
+        # Draw
+        screen.fill((25, 25, 40))
+        
+        # Draw particles
+        for p in particles:
+            alpha = int(128 + 127 * math.sin(emoji_timer * 0.05 + p['x']))
+            color = (100, 100, 150, alpha)
+            pygame.draw.circle(screen, color[:3], (int(p['x']), int(p['y'])), p['size'])
+        
+        # Main message
+        title_text = pygame.font.SysFont(None, 72).render("Video Player", True, (255, 200, 100))
+        screen.blit(title_text, (WIDTH//2 - title_text.get_width()//2, HEIGHT//2 - 150))
+        
+        error_text = lobby_font.render("Videos require special codecs", True, (200, 200, 200))
+        screen.blit(error_text, (WIDTH//2 - error_text.get_width()//2, HEIGHT//2 - 80))
+        
+        info_text = font.render("(Video playback not available in this build)", True, (150, 150, 150))
+        screen.blit(info_text, (WIDTH//2 - info_text.get_width()//2, HEIGHT//2 - 40))
+        
+        # Bouncing emoji
+        emoji_font = pygame.font.SysFont(None, 100)
+        emoji_text = emoji_font.render(emojis[emoji_idx], True, (255, 255, 255))
+        screen.blit(emoji_text, (WIDTH//2 - emoji_text.get_width()//2, int(emoji_y)))
+        
+        hint_text = font.render("Press any key to continue", True, (100, 255, 100))
+        screen.blit(hint_text, (WIDTH//2 - hint_text.get_width()//2, HEIGHT//2 + 120))
+        
         pygame.display.flip()
+        
+        # Handle events
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                cap.release()
                 pygame.quit()
                 sys.exit()
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                if exit_button_rect.collidepoint(event.pos):
-                    cap.release()
-                    return
-    cap.release()
+            if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                waiting = False
+        
+        clock.tick(60)
 
 def watch_grandma():
-    import cv2
+    """Play grandma video with lala music - fallback to animation if video can't play"""
+    import os
+    
+    # Start music
     try:
         pygame.mixer.music.stop()
         pygame.mixer.music.load(resource_path('lala.mp3'))
         pygame.mixer.music.play(-1)
     except Exception as e:
         print(f"Error playing grandma music: {e}")
-    cap = cv2.VideoCapture(resource_path('grandma.mp4'))
-    if not cap.isOpened():
-        screen.fill((30,30,30))
-        error_text = lobby_font.render("Error: Could not open grandma.mp4", True, (255,0,0))
-        screen.blit(error_text, (WIDTH//2-error_text.get_width()//2, HEIGHT//2))
-        pygame.display.flip()
-        time.sleep(2)
+    
+    video_path = resource_path('grandma.mp4')
+    
+    # Fallback to OpenCV
+    try:
+        import cv2
+        
+        print(f"[DEBUG] Loading grandma.mp4 with OpenCV: {video_path}")
+        
+        if not os.path.exists(video_path):
+            raise FileNotFoundError(f"Video file not found: {video_path}")
+        
+        cap = cv2.VideoCapture(video_path)
+        
+        if not cap.isOpened():
+            raise RuntimeError("OpenCV could not open video file")
+        
+        fps = cap.get(cv2.CAP_PROP_FPS) or 30
+        clock = pygame.time.Clock()
+        exit_button_rect = pygame.Rect(WIDTH//2-100, HEIGHT-120, 200, 60)
+        
+        running = True
+        while running:
+            cap.set(cv2.CAP_PROP_POS_FRAMES, 0)  # Restart video for loop
+            
+            while running:
+                ret, frame = cap.read()
+                
+                if not ret:
+                    break
+                
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                frame = frame.swapaxes(0, 1)
+                frame_surface = pygame.surfarray.make_surface(frame)
+                
+                # Scale to fit screen
+                video_rect = frame_surface.get_rect()
+                scale_factor = min(WIDTH / video_rect.width, HEIGHT / video_rect.height)
+                new_width = int(video_rect.width * scale_factor)
+                new_height = int(video_rect.height * scale_factor)
+                
+                scaled_frame = pygame.transform.scale(frame_surface, (new_width, new_height))
+                
+                screen.fill((0, 0, 0))
+                x = (WIDTH - new_width) // 2
+                y = (HEIGHT - new_height) // 2
+                screen.blit(scaled_frame, (x, y))
+                
+                # Draw exit button
+                pygame.draw.rect(screen, (255, 0, 0), exit_button_rect)
+                exit_text = lobby_font.render("Exit", True, (255, 255, 255))
+                screen.blit(exit_text, (exit_button_rect.centerx - exit_text.get_width()//2, 
+                                       exit_button_rect.centery - exit_text.get_height()//2))
+                
+                pygame.display.flip()
+                
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        cap.release()
+                        pygame.mixer.music.stop()
+                        pygame.quit()
+                        sys.exit()
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        if exit_button_rect.collidepoint(event.pos):
+                            running = False
+                    if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                        running = False
+                
+                clock.tick(fps)
+        
+        cap.release()
+        pygame.mixer.music.stop()
         return
-    exit_button_rect = pygame.Rect(WIDTH//2-100, HEIGHT-120, 200, 60)
+        
+    except Exception as e:
+        print(f"[DEBUG] OpenCV failed: {e}")
+    
+    # Final fallback: show message with dancing emoji animation
+    pygame.mixer.music.stop()
+    clock = pygame.time.Clock()
+    emoji_y = HEIGHT // 2
+    emoji_vel = 3
+    
+    waiting = True
+    while waiting:
+        # Bounce emoji
+        emoji_y += emoji_vel
+        if emoji_y > HEIGHT // 2 + 30 or emoji_y < HEIGHT // 2 - 30:
+            emoji_vel = -emoji_vel
+        
+        screen.fill((30, 30, 30))
+        error_text = lobby_font.render("Video playback not available", True, (255, 200, 100))
+        screen.blit(error_text, (WIDTH//2 - error_text.get_width()//2, HEIGHT//2 - 100))
+        
+        emoji_text = pygame.font.SysFont(None, 80).render("👵", True, (255, 255, 255))
+        screen.blit(emoji_text, (WIDTH//2 - emoji_text.get_width()//2, int(emoji_y)))
+        
+        hint_text = font.render("Press any key to continue", True, (150, 150, 150))
+        screen.blit(hint_text, (WIDTH//2 - hint_text.get_width()//2, HEIGHT//2 + 100))
+        
+        pygame.display.flip()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                waiting = False
+        
+        clock.tick(60)
+
+def relax_mode():
+    """Relaxing letter rain mode - press letters to see satisfying animations"""
+    clock = pygame.time.Clock()
+    
+    # Particle system for letter rain
+    letters = []
+    forming_letters = []
+    current_letter = None
+    phase = 'idle'  # 'idle', 'raining', 'forming', 'showing'
+    phase_timer = 0
+    
+    # Rainbow colors for fun
+    colors = [
+        (255, 100, 100), (255, 200, 100), (255, 255, 100),
+        (100, 255, 100), (100, 200, 255), (200, 100, 255),
+        (255, 100, 200)
+    ]
+    
     running = True
     while running:
-        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)  # Restart video
-        while cap.isOpened():
-            ret, frame = cap.read()
-            if not ret:
-                break
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            frame = cv2.resize(frame, (WIDTH, HEIGHT))
-            pygame_frame = pygame.surfarray.make_surface(frame.swapaxes(0,1))
-            screen.blit(pygame_frame, (0,0))
-            pygame.draw.rect(screen, (255,0,0), exit_button_rect)
-            exit_text = lobby_font.render("Exit", True, (255,255,255))
-            screen.blit(exit_text, (exit_button_rect.centerx-exit_text.get_width()//2, exit_button_rect.centery-exit_text.get_height()//2))
-            pygame.display.flip()
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    cap.release()
-                    pygame.quit()
-                    sys.exit()
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if exit_button_rect.collidepoint(event.pos):
-                        running = False
-                        break
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
-                        running = False
-                        break
-        # Loop video and music automatically
-    cap.release()
-    pygame.mixer.music.stop()
+        dt = clock.tick(60) / 1000.0
+        phase_timer += dt
+        
+        # Draw background with subtle gradient
+        for y in range(HEIGHT):
+            shade = int(20 + 15 * math.sin(y * 0.01 + phase_timer))
+            pygame.draw.line(screen, (shade, shade, shade + 20), (0, y), (WIDTH, y))
+        
+        # Handle events
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return
+                # Check if it's a letter
+                if event.unicode.isalpha():
+                    current_letter = event.unicode.upper()
+                    phase = 'raining'
+                    phase_timer = 0
+                    letters = []
+                    forming_letters = []
+                    
+                    # Create raining letters
+                    for _ in range(60):
+                        letters.append({
+                            'char': current_letter,
+                            'x': random.randint(0, WIDTH),
+                            'y': random.randint(-HEIGHT, 0),
+                            'speed': random.uniform(100, 300),
+                            'size': random.randint(20, 60),
+                            'rotation': random.uniform(0, 360),
+                            'rot_speed': random.uniform(-180, 180),
+                            'color': random.choice(colors),
+                            'alpha': 255
+                        })
+        
+        # Update phase
+        if phase == 'raining':
+            # Update falling letters
+            for letter in letters:
+                letter['y'] += letter['speed'] * dt
+                letter['rotation'] += letter['rot_speed'] * dt
+            
+            # After 2 seconds, start forming
+            if phase_timer > 2.0:
+                phase = 'forming'
+                phase_timer = 0
+                
+                # Create target positions forming the big letter
+                forming_letters = []
+                big_letter_points = get_letter_formation_points(current_letter, WIDTH//2, HEIGHT//2, 300)
+                
+                for i, letter in enumerate(letters[:len(big_letter_points)]):
+                    target = big_letter_points[i % len(big_letter_points)]
+                    forming_letters.append({
+                        'char': letter['char'],
+                        'x': letter['x'],
+                        'y': letter['y'],
+                        'target_x': target[0],
+                        'target_y': target[1],
+                        'size': letter['size'],
+                        'target_size': 30,
+                        'rotation': letter['rotation'],
+                        'color': letter['color'],
+                        'alpha': 255
+                    })
+                letters = []
+        
+        elif phase == 'forming':
+            # Move letters to form the big letter
+            all_in_place = True
+            for letter in forming_letters:
+                # Lerp to target position
+                dx = letter['target_x'] - letter['x']
+                dy = letter['target_y'] - letter['y']
+                ds = letter['target_size'] - letter['size']
+                
+                letter['x'] += dx * 5 * dt
+                letter['y'] += dy * 5 * dt
+                letter['size'] += ds * 3 * dt
+                letter['rotation'] *= 0.95  # Slow down rotation
+                
+                if abs(dx) > 5 or abs(dy) > 5:
+                    all_in_place = False
+            
+            if all_in_place or phase_timer > 2.0:
+                phase = 'showing'
+                phase_timer = 0
+        
+        elif phase == 'showing':
+            # Pulse the formed letter
+            pulse = 1.0 + 0.1 * math.sin(phase_timer * 3)
+            for letter in forming_letters:
+                letter['alpha'] = int(200 + 55 * math.sin(phase_timer * 2))
+            
+            # After 3 seconds, fade out
+            if phase_timer > 3.0:
+                for letter in forming_letters:
+                    letter['alpha'] = max(0, letter['alpha'] - 300 * dt)
+                
+                if forming_letters and forming_letters[0]['alpha'] <= 0:
+                    phase = 'idle'
+                    forming_letters = []
+                    current_letter = None
+        
+        # Draw letters
+        for letter in letters:
+            draw_rotated_letter(screen, letter['char'], letter['x'], letter['y'], 
+                              letter['size'], letter['rotation'], letter['color'], letter.get('alpha', 255))
+        
+        for letter in forming_letters:
+            pulse = 1.0
+            if phase == 'showing':
+                pulse = 1.0 + 0.1 * math.sin(phase_timer * 3)
+            draw_rotated_letter(screen, letter['char'], letter['x'], letter['y'], 
+                              int(letter['size'] * pulse), letter['rotation'], 
+                              letter['color'], letter.get('alpha', 255))
+        
+        # Draw instructions
+        if phase == 'idle':
+            title = pygame.font.SysFont(None, 72).render("Relax Mode", True, (200, 200, 255))
+            screen.blit(title, (WIDTH//2 - title.get_width()//2, HEIGHT//2 - 100))
+            
+            instruction = lobby_font.render("Press any letter key", True, (150, 150, 200))
+            screen.blit(instruction, (WIDTH//2 - instruction.get_width()//2, HEIGHT//2))
+            
+            hint = font.render("ESC to exit", True, (100, 100, 150))
+            screen.blit(hint, (WIDTH//2 - hint.get_width()//2, HEIGHT//2 + 80))
+        
+        pygame.display.flip()
+
+def draw_rotated_letter(surface, char, x, y, size, rotation, color, alpha=255):
+    """Draw a rotated letter with alpha transparency"""
+    try:
+        letter_font = pygame.font.SysFont(None, int(size))
+        text = letter_font.render(char, True, color)
+        
+        # Create a surface with per-pixel alpha
+        text_with_alpha = text.copy()
+        text_with_alpha.set_alpha(int(alpha))
+        
+        # Rotate
+        rotated = pygame.transform.rotate(text_with_alpha, rotation)
+        rect = rotated.get_rect(center=(int(x), int(y)))
+        
+        surface.blit(rotated, rect)
+    except Exception as e:
+        # Silently fail if there's an issue
+        pass
+
+def get_letter_formation_points(letter, center_x, center_y, size):
+    """Get points that form the shape of a letter"""
+    points = []
+    
+    try:
+        # Create letter patterns - simplified geometric shapes
+        if letter in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
+            # Render the letter large and sample points from it
+            letter_font = pygame.font.SysFont(None, size)
+            text = letter_font.render(letter, True, (255, 255, 255))
+            text_rect = text.get_rect(center=(center_x, center_y))
+            
+            # Sample points from the letter surface
+            for attempt in range(200):
+                # Random point within the letter bounds
+                local_x = random.randint(0, text.get_width() - 1)
+                local_y = random.randint(0, text.get_height() - 1)
+                
+                # Check if this pixel is not transparent
+                try:
+                    pixel = text.get_at((local_x, local_y))
+                    if pixel[3] > 128:  # Alpha > 128
+                        world_x = text_rect.left + local_x
+                        world_y = text_rect.top + local_y
+                        points.append((world_x, world_y))
+                except:
+                    pass
+    except Exception as e:
+        print(f"Error creating letter formation: {e}")
+    
+    # If we didn't get enough points, add some in a circle pattern
+    while len(points) < 50:
+        angle = random.uniform(0, 2 * math.pi)
+        radius = random.uniform(0, size * 0.3)
+        px = center_x + radius * math.cos(angle)
+        py = center_y + radius * math.sin(angle)
+        points.append((px, py))
+    
+    return points
 
 # Countdown and player name input functions remain the same...
 
@@ -5024,7 +5542,34 @@ def run_escape_mom_mode():
     
     # ULTRA TERRIFYING JUMPSCARE! Maximum horror!
     jumpscare_time = time.time()
-    jumpscare_duration = 3.0  # 3 seconds of PURE TERROR
+    jumpscare_duration = 4.5  # 4.5 seconds of PURE TERROR (longer!)
+    
+    # PRE-JUMPSCARE: Brief freeze frame (psychological horror)
+    freeze_frame = screen.copy()
+    for freeze_frame_count in range(15):  # 0.25 seconds of eerie stillness
+        screen.blit(freeze_frame, (0, 0))
+        # Darken gradually
+        dark_overlay = pygame.Surface((WIDTH, HEIGHT))
+        dark_overlay.set_alpha(freeze_frame_count * 15)
+        dark_overlay.fill((0, 0, 0))
+        screen.blit(dark_overlay, (0, 0))
+        
+        # Warning text fades in
+        if freeze_frame_count > 5:
+            warning_alpha = min(255, (freeze_frame_count - 5) * 25)
+            warning_text = lobby_font.render("NO...", True, (255, 0, 0))
+            warning_surf = pygame.Surface(warning_text.get_size(), pygame.SRCALPHA)
+            warning_surf.fill((255, 0, 0, warning_alpha))
+            warning_text.set_alpha(warning_alpha)
+            screen.blit(warning_text, (WIDTH//2 - warning_text.get_width()//2, HEIGHT//2 - 50))
+        
+        pygame.display.flip()
+        clock.tick(60)
+    
+    # SUDDEN BLACK SCREEN (builds tension)
+    screen.fill((0, 0, 0))
+    pygame.display.flip()
+    time.sleep(0.3)  # Brief silence...
     
     # Play scary scream sound at MAXIMUM VOLUME
     try:
@@ -5033,15 +5578,15 @@ def run_escape_mom_mode():
         pygame.mixer.music.play()
     except:
         # Fallback to system beeps
-        for _ in range(15):
+        for _ in range(20):
             print("\a")  # System beep
     
     while time.time() - jumpscare_time < jumpscare_duration:
         elapsed = time.time() - jumpscare_time
         progress = elapsed / jumpscare_duration
         
-        # INTENSE rapid flashing for shock effect
-        flash_speed = int((time.time() - jumpscare_time) * 30)
+        # INTENSE rapid flashing for shock effect (MORE EXTREME!)
+        flash_speed = int((time.time() - jumpscare_time) * 40)  # Faster flashing!
         if flash_speed % 2 == 0:
             screen.fill((0, 0, 0))
         else:
@@ -5049,55 +5594,142 @@ def run_escape_mom_mode():
             red_intensity = int(150 + progress * 105)
             screen.fill((red_intensity, 0, 0))
         
-        # Static noise effect
-        if random.random() < 0.4:
-            for i in range(200):
+        # SCREEN INVERSION effect (disorienting!)
+        if int(elapsed * 20) % 7 < 2:
+            screen.fill((255, 255, 255))  # Blinding white flash
+        
+        # MORE Static noise effect (TV static horror)
+        if random.random() < 0.6:  # More frequent
+            for i in range(400):  # More static particles
                 static_x = random.randint(0, WIDTH)
                 static_y = random.randint(0, HEIGHT)
                 static_color = random.randint(0, 255)
-                pygame.draw.circle(screen, (static_color, 0, 0), (static_x, static_y), 2)
+                pygame.draw.circle(screen, (static_color, 0, 0), (static_x, static_y), random.randint(1, 3))
         
-        # Mom grows MASSIVE and DISTORTED (30-50x bigger!)
-        scale = 30 + (progress * 20)  # Grows from 30x to 50x size  
-        face_size = int(500 * scale / 30)
-        face_x = WIDTH // 2 + random.randint(-10, 10)  # Slight shake
-        face_y = HEIGHT // 2 + random.randint(-10, 10)
+        # GLITCH LINES across screen
+        for i in range(random.randint(5, 15)):
+            glitch_y = random.randint(0, HEIGHT)
+            glitch_height = random.randint(2, 20)
+            glitch_color = (random.randint(200, 255), 0, 0)
+            pygame.draw.rect(screen, glitch_color, (0, glitch_y, WIDTH, glitch_height))
         
-        # GROTESQUE DECAYING HEAD with pulsing veins
-        pulse = int(10 * math.sin(elapsed * 15))  # Pulsing effect
-        pygame.draw.circle(screen, (220 + int(35 * progress), 140 - int(80 * progress), 140 - int(80 * progress)), 
-                          (face_x, face_y), face_size//2 + pulse)
-        # Inner decay
-        pygame.draw.circle(screen, (180 + int(50 * progress), 120 - int(100 * progress), 120 - int(100 * progress)), 
-                          (face_x, face_y), face_size//2 - 20 + pulse)
+        # Mom grows MASSIVE and DISTORTED (even BIGGER!)
+        scale = 40 + (progress * 30)  # Grows from 40x to 70x size (HUGE!)
+        face_size = int(600 * scale / 40)  # Even more massive
         
-        # Rotting flesh effect
-        for i in range(50):
+        # FACE LUNGES AT YOU (moves forward!)
+        lunge_offset = int(progress * 150)  # Face gets closer!
+        face_x = WIDTH // 2 + random.randint(-15, 15) + int(math.sin(elapsed * 10) * 20)  # More shake + sway
+        face_y = HEIGHT // 2 + random.randint(-15, 15) - lunge_offset  # Moves toward you!
+        
+        # Face rotation effect (unnatural twisting!)
+        rotation_angle = math.sin(elapsed * 8) * 0.3
+        
+        # GROTESQUE DECAYING HEAD with pulsing veins (MORE DETAILED!)
+        pulse = int(15 * math.sin(elapsed * 20))  # Faster, bigger pulse
+        
+        # Multiple layers of rotting skin
+        for layer in range(3):
+            layer_size = face_size//2 + pulse - (layer * 15)
+            decay_color = (
+                220 + int(35 * progress) - layer * 20,
+                140 - int(80 * progress) - layer * 30,
+                140 - int(80 * progress) - layer * 30
+            )
+            pygame.draw.circle(screen, decay_color, (face_x, face_y), layer_size)
+        
+        # MORE Rotting flesh effect (disgusting!)
+        for i in range(100):  # Double the rot spots!
             rot_x = face_x + random.randint(-face_size//2, face_size//2)
             rot_y = face_y + random.randint(-face_size//2, face_size//2)
-            pygame.draw.circle(screen, (120, 80, 60), (rot_x, rot_y), random.randint(3, 10))
+            rot_color = random.choice([
+                (120, 80, 60),
+                (100, 60, 40),
+                (80, 40, 20),
+                (60, 20, 10)
+            ])
+            pygame.draw.circle(screen, rot_color, (rot_x, rot_y), random.randint(3, 15))
         
-        # Deep dark circles and wrinkles (exhausted, dead eyes)
-        pygame.draw.ellipse(screen, (60, 30, 60), (face_x - 180, face_y - 120, 140, 80))
-        pygame.draw.ellipse(screen, (60, 30, 60), (face_x + 40, face_y - 120, 140, 80))
+        # MAGGOTS/INSECTS crawling on face!
+        for i in range(30):
+            maggot_angle = random.random() * 6.28
+            maggot_dist = random.randint(0, face_size//2)
+            maggot_x = int(face_x + math.cos(maggot_angle + elapsed * 2) * maggot_dist)
+            maggot_y = int(face_y + math.sin(maggot_angle + elapsed * 2) * maggot_dist)
+            pygame.draw.circle(screen, (220, 220, 180), (maggot_x, maggot_y), random.randint(2, 4))
+        
+        # Deep dark circles and wrinkles (MORE PRONOUNCED!)
+        pygame.draw.ellipse(screen, (40, 20, 40), (face_x - 200, face_y - 140, 160, 100))
+        pygame.draw.ellipse(screen, (40, 20, 40), (face_x + 40, face_y - 140, 160, 100))
+        pygame.draw.ellipse(screen, (20, 10, 20), (face_x - 190, face_y - 130, 140, 80))
+        pygame.draw.ellipse(screen, (20, 10, 20), (face_x + 50, face_y - 130, 140, 80))
         
         # ENORMOUS BLOODSHOT DEMON EYES - staring INTO YOUR SOUL!
-        eye_size = int(120 + progress * 50)
-        eye_spacing = int(160 + progress * 40)
+        eye_size = int(140 + progress * 70)  # Even BIGGER eyes!
+        eye_spacing = int(180 + progress * 60)
+        
+        # Eyes FOLLOW you with unnatural movement
+        eye_offset_x = int(math.sin(elapsed * 6) * 10)
+        eye_offset_y = int(math.cos(elapsed * 6) * 10)
         
         # Left eye - HORRIFYING
-        pygame.draw.ellipse(screen, (255, 255, 180), (face_x - eye_spacing - eye_size//2, face_y - 120, eye_size, eye_size + 40))
-        # Bloodshot RED iris - pulsing
-        iris_size = int(60 + progress * 20 + pulse)
-        pygame.draw.circle(screen, (220, 0, 0), (face_x - eye_spacing, face_y - 80), iris_size)
-        pygame.draw.circle(screen, (150, 0, 0), (face_x - eye_spacing, face_y - 80), iris_size - 10)
-        # Dilated pupil (pure evil)
-        pygame.draw.circle(screen, (0, 0, 0), (face_x - eye_spacing, face_y - 80), int(35 + progress * 10))
-        # Demonic glint
-        pygame.draw.circle(screen, (255, 100, 100), (face_x - eye_spacing + 12, face_y - 88), 8)
+        # Bloodshot sclera (yellowed, diseased)
+        pygame.draw.ellipse(screen, (255, 255, 180), (face_x - eye_spacing - eye_size//2, face_y - 140, eye_size, eye_size + 50))
+        pygame.draw.ellipse(screen, (240, 240, 140), (face_x - eye_spacing - eye_size//2 + 10, face_y - 130, eye_size - 20, eye_size + 30))
         
-        # Right eye - TERRIFYING
-        pygame.draw.ellipse(screen, (255, 255, 180), (face_x + eye_spacing - eye_size//2, face_y - 120, eye_size, eye_size + 40))
+        # MASSIVE network of blood veins in eye (grotesque!)
+        for i in range(60):  # More veins!
+            vein_angle = random.random() * 6.28
+            vein_length = random.randint(30, eye_size//2)
+            vein_start_x = face_x - eye_spacing
+            vein_start_y = face_y - 90
+            vein_end_x = int(vein_start_x + math.cos(vein_angle) * vein_length)
+            vein_end_y = int(vein_start_y + math.sin(vein_angle) * vein_length)
+            vein_thickness = random.randint(2, 6)
+            pygame.draw.line(screen, (200, 0, 0), (vein_start_x, vein_start_y), (vein_end_x, vein_end_y), vein_thickness)
+        
+        # Bloodshot RED iris - pulsing violently
+        iris_size = int(70 + progress * 30 + pulse)
+        iris_x = face_x - eye_spacing + eye_offset_x
+        iris_y = face_y - 90 + eye_offset_y
+        
+        # Multiple iris layers (depth)
+        pygame.draw.circle(screen, (255, 0, 0), (iris_x, iris_y), iris_size)
+        pygame.draw.circle(screen, (220, 0, 0), (iris_x, iris_y), iris_size - 10)
+        pygame.draw.circle(screen, (180, 0, 0), (iris_x, iris_y), iris_size - 20)
+        
+        # Dilated pupil (pure evil) - expands over time
+        pupil_size = int(40 + progress * 20)
+        pygame.draw.circle(screen, (0, 0, 0), (iris_x, iris_y), pupil_size)
+        
+        # Demonic glint with color shift
+        glint_color = (255, int(100 + progress * 155), int(100 + progress * 155))
+        pygame.draw.circle(screen, glint_color, (iris_x + 15, iris_y - 12), 10)
+        pygame.draw.circle(screen, (255, 255, 255), (iris_x + 15, iris_y - 12), 5)
+        
+        # Right eye - EQUALLY TERRIFYING
+        pygame.draw.ellipse(screen, (255, 255, 180), (face_x + eye_spacing - eye_size//2, face_y - 140, eye_size, eye_size + 50))
+        pygame.draw.ellipse(screen, (240, 240, 140), (face_x + eye_spacing - eye_size//2 + 10, face_y - 130, eye_size - 20, eye_size + 30))
+        
+        # Blood veins in right eye
+        for i in range(60):
+            vein_angle = random.random() * 6.28
+            vein_length = random.randint(30, eye_size//2)
+            vein_start_x = face_x + eye_spacing
+            vein_start_y = face_y - 90
+            vein_end_x = int(vein_start_x + math.cos(vein_angle) * vein_length)
+            vein_end_y = int(vein_start_y + math.sin(vein_angle) * vein_length)
+            vein_thickness = random.randint(2, 6)
+            pygame.draw.line(screen, (200, 0, 0), (vein_start_x, vein_start_y), (vein_end_x, vein_end_y), vein_thickness)
+        
+        iris_x_right = face_x + eye_spacing + eye_offset_x
+        iris_y_right = face_y - 90 + eye_offset_y
+        pygame.draw.circle(screen, (255, 0, 0), (iris_x_right, iris_y_right), iris_size)
+        pygame.draw.circle(screen, (220, 0, 0), (iris_x_right, iris_y_right), iris_size - 10)
+        pygame.draw.circle(screen, (180, 0, 0), (iris_x_right, iris_y_right), iris_size - 20)
+        pygame.draw.circle(screen, (0, 0, 0), (iris_x_right, iris_y_right), pupil_size)
+        pygame.draw.circle(screen, glint_color, (iris_x_right + 15, iris_y_right - 12), 10)
+        pygame.draw.circle(screen, (255, 255, 255), (iris_x_right + 15, iris_y_right - 12), 5)
         pygame.draw.circle(screen, (220, 0, 0), (face_x + eye_spacing, face_y - 80), iris_size)
         pygame.draw.circle(screen, (150, 0, 0), (face_x + eye_spacing, face_y - 80), iris_size - 10)
         pygame.draw.circle(screen, (0, 0, 0), (face_x + eye_spacing, face_y - 80), int(35 + progress * 10))
@@ -5222,27 +5854,66 @@ def run_escape_mom_mode():
             pygame.draw.line(screen, (15, 10, 10), (hair_x, hair_y), 
                            (hair_x + random.randint(-30, 30), hair_y - hair_length), hair_thickness)
         
-        # EXTREME shake effect - screen violently trembles
-        shake_intensity = int(15 + progress * 35)
+        # EXTREME shake effect - screen violently trembles (EVEN MORE INTENSE!)
+        shake_intensity = int(25 + progress * 50)  # Stronger shake!
         shake_x = random.randint(-shake_intensity, shake_intensity)
         shake_y = random.randint(-shake_intensity, shake_intensity)
         
-        # TERRIFYING text messages
-        if progress < 0.3:
-            jumpscare_text = lobby_font.render("SHE CAUGHT YOU!", True, (255, 255, 255))
-        elif progress < 0.6:
-            jumpscare_text = lobby_font.render("YOU'RE BEING EATEN ALIVE!", True, (255, int(50 + progress * 200), int(50 + progress * 200)))
-        else:
-            jumpscare_text = lobby_font.render("GAME OVER", True, (255, 0, 0))
-        screen.blit(jumpscare_text, (WIDTH//2 - jumpscare_text.get_width()//2 + shake_x, 60 + shake_y))
+        # MULTIPLE OVERLAPPING SCARY FACES (hallucination effect!)
+        if progress > 0.5 and random.random() < 0.3:
+            for ghost_face in range(3):
+                ghost_x = WIDTH // 2 + random.randint(-200, 200)
+                ghost_y = HEIGHT // 2 + random.randint(-200, 200)
+                ghost_size = random.randint(50, 150)
+                ghost_alpha = random.randint(50, 150)
+                # Ghostly additional faces
+                pygame.draw.circle(screen, (255, 0, 0, ghost_alpha), (ghost_x, ghost_y), ghost_size)
+                pygame.draw.circle(screen, (255, 0, 0), (ghost_x - 20, ghost_y - 10), 15)
+                pygame.draw.circle(screen, (255, 0, 0), (ghost_x + 20, ghost_y - 10), 15)
         
-        # Additional horror text
-        if progress > 0.4:
-            terror_text = font.render("NO ESCAPE FROM MOTHER...", True, (200, 0, 0))
-            screen.blit(terror_text, (WIDTH//2 - terror_text.get_width()//2 + shake_x//2, HEIGHT - 120 + shake_y//2))
-        if progress > 0.7:
-            final_text = font.render("DARKNESS CONSUMES YOU", True, (150, 0, 0))
-            screen.blit(final_text, (WIDTH//2 - final_text.get_width()//2 - shake_x//2, HEIGHT - 80 - shake_y//2))
+        # TERRIFYING text messages (MORE VARIETY AND HORROR!)
+        text_shake_x = shake_x + random.randint(-10, 10)
+        text_shake_y = shake_y + random.randint(-10, 10)
+        
+        if progress < 0.2:
+            jumpscare_text = lobby_font.render("SHE CAUGHT YOU!", True, (255, 255, 255))
+            screen.blit(jumpscare_text, (WIDTH//2 - jumpscare_text.get_width()//2 + text_shake_x, 60 + text_shake_y))
+        elif progress < 0.35:
+            jumpscare_text = lobby_font.render("NO ESCAPE!", True, (255, 200, 200))
+            screen.blit(jumpscare_text, (WIDTH//2 - jumpscare_text.get_width()//2 + text_shake_x, 60 + text_shake_y))
+            warning2 = font.render("YOU SHOULD HAVE RUN FASTER...", True, (200, 0, 0))
+            screen.blit(warning2, (WIDTH//2 - warning2.get_width()//2 - text_shake_x//2, HEIGHT - 150 - text_shake_y//2))
+        elif progress < 0.55:
+            jumpscare_text = lobby_font.render("SHE'S DEVOURING YOU!", True, (255, int(50 + progress * 200), int(50 + progress * 200)))
+            screen.blit(jumpscare_text, (WIDTH//2 - jumpscare_text.get_width()//2 + text_shake_x, 60 + text_shake_y))
+            warning2 = font.render("FEEL HER TEETH CRUSHING YOUR BONES...", True, (150, 0, 0))
+            screen.blit(warning2, (WIDTH//2 - warning2.get_width()//2 + text_shake_x//3, HEIGHT - 150 + text_shake_y//3))
+        elif progress < 0.75:
+            jumpscare_text = lobby_font.render("YOU'RE BEING EATEN ALIVE!", True, (255, 0, 0))
+            screen.blit(jumpscare_text, (WIDTH//2 - jumpscare_text.get_width()//2 + text_shake_x, 60 + text_shake_y))
+            warning2 = font.render("ETERNAL DARKNESS AWAITS...", True, (100, 0, 0))
+            screen.blit(warning2, (WIDTH//2 - warning2.get_width()//2 - text_shake_x//2, HEIGHT - 150 - text_shake_y//2))
+        else:
+            jumpscare_text = lobby_font.render("CONSUMED BY MOTHER", True, (200, 0, 0))
+            screen.blit(jumpscare_text, (WIDTH//2 - jumpscare_text.get_width()//2 + text_shake_x, 60 + text_shake_y))
+            warning2 = font.render("YOU ARE HERS NOW...", True, (80, 0, 0))
+            screen.blit(warning2, (WIDTH//2 - warning2.get_width()//2 + text_shake_x//2, HEIGHT - 150 + text_shake_y//2))
+        
+        # RANDOM HORRIFYING MESSAGES flash across screen
+        if random.random() < 0.15:
+            random_messages = [
+                "HELP ME",
+                "IT HURTS", 
+                "PLEASE NO",
+                "I CAN'T BREATHE",
+                "MOMMY NO",
+                "SAVE ME",
+                "TOO LATE"
+            ]
+            flash_msg = font.render(random.choice(random_messages), True, (255, 255, 255))
+            flash_x = random.randint(50, WIDTH - 200)
+            flash_y = random.randint(100, HEIGHT - 100)
+            screen.blit(flash_msg, (flash_x, flash_y))
         
         pygame.display.flip()
         clock.tick(60)
@@ -5256,17 +5927,40 @@ def run_escape_mom_mode():
                 if event.key == pygame.K_ESCAPE:
                     return 'lobby'
     
-    # After jumpscare, show normal game over screen
+    # After jumpscare, show normal game over screen with name entry
+    player_name = ""
+    entering_name = True
+    name_saved = False
+    
     while True:
         screen.fill((20, 0, 0))  # Red tint
         
         gameover = lobby_font.render("SHE CAUGHT YOU!", True, (255, 0, 0))
-        screen.blit(gameover, (WIDTH//2-gameover.get_width()//2, HEIGHT//2-100))
+        screen.blit(gameover, (WIDTH//2-gameover.get_width()//2, HEIGHT//2-200))
         
-        time_survived = font.render(f"You survived for {int(survived_time)} seconds", True, (255, 255, 255))
-        screen.blit(time_survived, (WIDTH//2-time_survived.get_width()//2, HEIGHT//2-30))
+        time_survived_text = font.render(f"You survived for {int(survived_time)} seconds", True, (255, 255, 255))
+        screen.blit(time_survived_text, (WIDTH//2-time_survived_text.get_width()//2, HEIGHT//2-130))
         
-        back_button = pygame.Rect(WIDTH//2-100, HEIGHT//2+40, 200, 60)
+        # Name entry section
+        if entering_name and not name_saved:
+            prompt = font.render("Enter your name for the leaderboard:", True, (200, 200, 200))
+            screen.blit(prompt, (WIDTH//2-prompt.get_width()//2, HEIGHT//2-60))
+            
+            # Name input box
+            name_box = pygame.Rect(WIDTH//2-200, HEIGHT//2, 400, 50)
+            pygame.draw.rect(screen, (50, 20, 20), name_box)
+            pygame.draw.rect(screen, (150, 50, 50), name_box, 3)
+            
+            name_text = font.render(player_name + "_", True, (255, 255, 255))
+            screen.blit(name_text, (name_box.x + 10, name_box.y + 10))
+            
+            hint = name_font.render("Press ENTER to submit", True, (150, 150, 150))
+            screen.blit(hint, (WIDTH//2-hint.get_width()//2, HEIGHT//2+70))
+        elif name_saved:
+            saved_msg = font.render(f"Score saved! Thanks, {player_name}!", True, (100, 255, 100))
+            screen.blit(saved_msg, (WIDTH//2-saved_msg.get_width()//2, HEIGHT//2-20))
+        
+        back_button = pygame.Rect(WIDTH//2-100, HEIGHT//2+120, 200, 60)
         pygame.draw.rect(screen, (100, 0, 0), back_button)
         back_text = font.render("Back to Menu", True, (255, 255, 255))
         screen.blit(back_text, (back_button.centerx-back_text.get_width()//2, back_button.centery-back_text.get_height()//2))
@@ -5278,8 +5972,22 @@ def run_escape_mom_mode():
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE or event.key == pygame.K_RETURN:
-                    return 'lobby'
+                if entering_name and not name_saved:
+                    if event.key == pygame.K_RETURN and player_name.strip():
+                        # Save the score
+                        save_highscore(player_name.strip(), int(survived_time), mode='mom')
+                        name_saved = True
+                        entering_name = False
+                    elif event.key == pygame.K_BACKSPACE:
+                        player_name = player_name[:-1]
+                    elif event.key == pygame.K_ESCAPE:
+                        # Skip name entry
+                        entering_name = False
+                    elif len(player_name) < 15 and event.unicode.isprintable():
+                        player_name += event.unicode
+                else:
+                    if event.key == pygame.K_ESCAPE or event.key == pygame.K_RETURN:
+                        return 'lobby'
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if back_button.collidepoint(event.pos):
                     return 'lobby'
