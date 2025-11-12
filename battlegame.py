@@ -591,6 +591,67 @@ def watch_grandma():
         clock.tick(60)
 
 def relax_mode():
+    """Relaxing mode menu - choose between Letter Rain or Counting Sheep"""
+    # Show submenu to choose mode
+    choice = relax_mode_menu()
+    if choice == 'letters':
+        letter_rain_mode()
+    elif choice == 'sheep':
+        counting_sheep_mode()
+
+def relax_mode_menu():
+    """Menu to select which relax mode to play"""
+    clock = pygame.time.Clock()
+    selected = 0
+    options = ['Letter Rain', 'Counting Sheep', 'Back']
+    
+    running = True
+    while running:
+        dt = clock.tick(60) / 1000.0
+        
+        # Draw background
+        screen.fill((20, 20, 40))
+        
+        # Draw title
+        title = pygame.font.SysFont(None, 72).render("Relax Mode", True, (200, 200, 255))
+        screen.blit(title, (WIDTH//2 - title.get_width()//2, 100))
+        
+        # Draw options
+        for i, option in enumerate(options):
+            color = (255, 255, 150) if i == selected else (150, 150, 200)
+            text = lobby_font.render(option, True, color)
+            y_pos = 250 + i * 80
+            screen.blit(text, (WIDTH//2 - text.get_width()//2, y_pos))
+            
+            # Draw selector
+            if i == selected:
+                selector = lobby_font.render(">", True, (255, 255, 150))
+                screen.blit(selector, (WIDTH//2 - text.get_width()//2 - 50, y_pos))
+        
+        # Handle events
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return None
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return None
+                elif event.key == pygame.K_UP:
+                    selected = (selected - 1) % len(options)
+                elif event.key == pygame.K_DOWN:
+                    selected = (selected + 1) % len(options)
+                elif event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
+                    if selected == 0:
+                        return 'letters'
+                    elif selected == 1:
+                        return 'sheep'
+                    else:
+                        return None
+        
+        pygame.display.flip()
+    
+    return None
+
+def letter_rain_mode():
     """Relaxing letter rain mode - press letters to see satisfying animations"""
     clock = pygame.time.Clock()
     
@@ -633,8 +694,8 @@ def relax_mode():
                     letters = []
                     forming_letters = []
                     
-                    # Create raining letters
-                    for _ in range(60):
+                    # Create raining letters (more for denser formation)
+                    for _ in range(120):
                         letters.append({
                             'char': current_letter,
                             'x': random.randint(0, WIDTH),
@@ -661,7 +722,7 @@ def relax_mode():
                 
                 # Create target positions forming the big letter
                 forming_letters = []
-                big_letter_points = get_letter_formation_points(current_letter, WIDTH//2, HEIGHT//2, 300)
+                big_letter_points = get_letter_formation_points(current_letter, WIDTH//2, HEIGHT//2, 400)
                 
                 for i, letter in enumerate(letters[:len(big_letter_points)]):
                     target = big_letter_points[i % len(big_letter_points)]
@@ -672,7 +733,7 @@ def relax_mode():
                         'target_x': target[0],
                         'target_y': target[1],
                         'size': letter['size'],
-                        'target_size': 30,
+                        'target_size': 24,  # Uniform smaller size for cleaner look
                         'rotation': letter['rotation'],
                         'color': letter['color'],
                         'alpha': 255
@@ -691,20 +752,27 @@ def relax_mode():
                 letter['x'] += dx * 5 * dt
                 letter['y'] += dy * 5 * dt
                 letter['size'] += ds * 3 * dt
-                letter['rotation'] *= 0.95  # Slow down rotation
+                letter['rotation'] *= 0.85  # Faster rotation decay for cleaner look
                 
-                if abs(dx) > 5 or abs(dy) > 5:
+                # Snap rotation to 0 when close
+                if abs(letter['rotation']) < 5:
+                    letter['rotation'] = 0
+                
+                if abs(dx) > 3 or abs(dy) > 3:
                     all_in_place = False
             
-            if all_in_place or phase_timer > 2.0:
+            if all_in_place or phase_timer > 2.5:
                 phase = 'showing'
                 phase_timer = 0
+                # Ensure all rotations are 0 for final display
+                for letter in forming_letters:
+                    letter['rotation'] = 0
         
         elif phase == 'showing':
-            # Pulse the formed letter
-            pulse = 1.0 + 0.1 * math.sin(phase_timer * 3)
+            # Subtle pulse for the formed letter
+            pulse = 1.0 + 0.05 * math.sin(phase_timer * 3)  # Smaller pulse for cleaner look
             for letter in forming_letters:
-                letter['alpha'] = int(200 + 55 * math.sin(phase_timer * 2))
+                letter['alpha'] = int(220 + 35 * math.sin(phase_timer * 2))
             
             # After 3 seconds, fade out
             if phase_timer > 3.0:
@@ -745,15 +813,20 @@ def relax_mode():
 def draw_rotated_letter(surface, char, x, y, size, rotation, color, alpha=255):
     """Draw a rotated letter with alpha transparency"""
     try:
-        letter_font = pygame.font.SysFont(None, int(size))
+        # Use a bold sans serif font for cleaner letters
+        letter_font = pygame.font.SysFont('Arial,Helvetica,sans-serif', int(size), bold=True)
         text = letter_font.render(char, True, color)
         
         # Create a surface with per-pixel alpha
         text_with_alpha = text.copy()
         text_with_alpha.set_alpha(int(alpha))
         
-        # Rotate
-        rotated = pygame.transform.rotate(text_with_alpha, rotation)
+        # Rotate (only if rotation is not 0 for performance)
+        if abs(rotation) > 0.1:
+            rotated = pygame.transform.rotate(text_with_alpha, rotation)
+        else:
+            rotated = text_with_alpha
+            
         rect = rotated.get_rect(center=(int(x), int(y)))
         
         surface.blit(rotated, rect)
@@ -766,40 +839,189 @@ def get_letter_formation_points(letter, center_x, center_y, size):
     points = []
     
     try:
-        # Create letter patterns - simplified geometric shapes
+        # Create letter patterns - use bold font for better definition
         if letter in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
             # Render the letter large and sample points from it
-            letter_font = pygame.font.SysFont(None, size)
+            letter_font = pygame.font.SysFont('Arial,Helvetica,sans-serif', size, bold=True)
             text = letter_font.render(letter, True, (255, 255, 255))
             text_rect = text.get_rect(center=(center_x, center_y))
             
-            # Sample points from the letter surface
-            for attempt in range(200):
-                # Random point within the letter bounds
-                local_x = random.randint(0, text.get_width() - 1)
-                local_y = random.randint(0, text.get_height() - 1)
-                
-                # Check if this pixel is not transparent
-                try:
-                    pixel = text.get_at((local_x, local_y))
-                    if pixel[3] > 128:  # Alpha > 128
-                        world_x = text_rect.left + local_x
-                        world_y = text_rect.top + local_y
-                        points.append((world_x, world_y))
-                except:
-                    pass
+            # Sample points from the letter surface with better distribution
+            width = text.get_width()
+            height = text.get_height()
+            
+            # Grid-based sampling for more even distribution
+            for x in range(0, width, 3):
+                for y in range(0, height, 3):
+                    try:
+                        pixel = text.get_at((x, y))
+                        if pixel[3] > 128:  # Alpha > 128
+                            # Add some randomness to avoid perfect grid
+                            jitter_x = random.uniform(-1.5, 1.5)
+                            jitter_y = random.uniform(-1.5, 1.5)
+                            world_x = text_rect.left + x + jitter_x
+                            world_y = text_rect.top + y + jitter_y
+                            points.append((world_x, world_y))
+                    except:
+                        pass
     except Exception as e:
         print(f"Error creating letter formation: {e}")
     
-    # If we didn't get enough points, add some in a circle pattern
-    while len(points) < 50:
-        angle = random.uniform(0, 2 * math.pi)
-        radius = random.uniform(0, size * 0.3)
-        px = center_x + radius * math.cos(angle)
-        py = center_y + radius * math.sin(angle)
-        points.append((px, py))
+    # If we didn't get enough points, add some in the letter area
+    if len(points) < 50:
+        for _ in range(50 - len(points)):
+            angle = random.uniform(0, 2 * math.pi)
+            radius = random.uniform(0, size * 0.3)
+            px = center_x + radius * math.cos(angle)
+            py = center_y + radius * math.sin(angle)
+            points.append((px, py))
     
     return points
+
+def counting_sheep_mode():
+    """Peaceful counting sheep game - watch sheep jump over a fence"""
+    clock = pygame.time.Clock()
+    
+    # Sheep state
+    sheep_list = []
+    count = 0
+    spawn_timer = 0
+    spawn_interval = 2.0  # Seconds between sheep
+    
+    # Fence position
+    fence_x = WIDTH // 2
+    fence_y = HEIGHT // 2 + 50
+    fence_height = 100
+    
+    # Cloud decorations
+    clouds = []
+    for _ in range(5):
+        clouds.append({
+            'x': random.randint(0, WIDTH),
+            'y': random.randint(50, 200),
+            'size': random.randint(30, 60),
+            'speed': random.uniform(10, 30)
+        })
+    
+    running = True
+    while running:
+        dt = clock.tick(60) / 1000.0
+        spawn_timer += dt
+        
+        # Draw night sky background with stars
+        screen.fill((10, 10, 40))
+        
+        # Draw stars
+        for _ in range(50):
+            star_x = random.randint(0, WIDTH)
+            star_y = random.randint(0, HEIGHT // 2)
+            brightness = random.randint(100, 255)
+            pygame.draw.circle(screen, (brightness, brightness, brightness), (star_x, star_y), 1)
+        
+        # Draw and update clouds
+        for cloud in clouds:
+            cloud['x'] += cloud['speed'] * dt
+            if cloud['x'] > WIDTH + cloud['size']:
+                cloud['x'] = -cloud['size']
+            
+            # Draw cloud as overlapping circles
+            for i in range(3):
+                offset_x = (i - 1) * cloud['size'] // 3
+                pygame.draw.circle(screen, (230, 230, 250), 
+                                 (int(cloud['x'] + offset_x), int(cloud['y'])), 
+                                 cloud['size'] // 2)
+        
+        # Draw ground
+        pygame.draw.rect(screen, (20, 80, 20), (0, HEIGHT // 2 + 100, WIDTH, HEIGHT))
+        
+        # Draw fence
+        fence_color = (139, 90, 43)  # Brown
+        for i in range(5):
+            post_x = fence_x - 60 + i * 30
+            pygame.draw.rect(screen, fence_color, (post_x, fence_y, 8, fence_height))
+        # Horizontal bars
+        pygame.draw.rect(screen, fence_color, (fence_x - 60, fence_y + 20, 140, 8))
+        pygame.draw.rect(screen, fence_color, (fence_x - 60, fence_y + 50, 140, 8))
+        pygame.draw.rect(screen, fence_color, (fence_x - 60, fence_y + 80, 140, 8))
+        
+        # Spawn new sheep
+        if spawn_timer >= spawn_interval:
+            spawn_timer = 0
+            count += 1
+            sheep_list.append({
+                'x': -50,
+                'y': fence_y + 80,  # Start on ground
+                'jump_phase': 0,  # 0=walking, 1=jumping, 2=landed
+                'target_y': fence_y + 80,
+                'speed': 150,
+                'num': count
+            })
+        
+        # Update and draw sheep
+        for sheep in sheep_list[:]:
+            sheep['x'] += sheep['speed'] * dt
+            
+            # Jumping animation
+            if sheep['jump_phase'] == 0:  # Walking to fence
+                if sheep['x'] > fence_x - 100:
+                    sheep['jump_phase'] = 1
+                    sheep['jump_start_x'] = sheep['x']
+            elif sheep['jump_phase'] == 1:  # Jumping over fence
+                # Arc motion
+                progress = (sheep['x'] - sheep['jump_start_x']) / 200
+                if progress < 1.0:
+                    sheep['y'] = fence_y + 80 - 120 * math.sin(progress * math.pi)
+                else:
+                    sheep['jump_phase'] = 2
+                    sheep['y'] = fence_y + 80
+            
+            # Draw sheep (simple cute design)
+            sheep_x = int(sheep['x'])
+            sheep_y = int(sheep['y'])
+            
+            # Body (white fluffy circle)
+            pygame.draw.circle(screen, (255, 255, 255), (sheep_x, sheep_y - 20), 20)
+            # Head (smaller white circle)
+            pygame.draw.circle(screen, (255, 255, 255), (sheep_x + 15, sheep_y - 30), 12)
+            # Face (black)
+            pygame.draw.circle(screen, (40, 40, 40), (sheep_x + 20, sheep_y - 30), 8)
+            # Eyes
+            pygame.draw.circle(screen, (0, 0, 0), (sheep_x + 18, sheep_y - 33), 2)
+            pygame.draw.circle(screen, (0, 0, 0), (sheep_x + 24, sheep_y - 33), 2)
+            # Legs (black lines)
+            for leg_offset in [-8, 0, 8]:
+                pygame.draw.line(screen, (40, 40, 40), 
+                               (sheep_x + leg_offset, sheep_y - 5), 
+                               (sheep_x + leg_offset, sheep_y), 3)
+            
+            # Remove sheep that are off screen
+            if sheep['x'] > WIDTH + 50:
+                sheep_list.remove(sheep)
+        
+        # Draw count
+        count_text = pygame.font.SysFont(None, 100).render(str(count), True, (255, 255, 200))
+        screen.blit(count_text, (WIDTH - count_text.get_width() - 30, 30))
+        
+        # Draw instruction
+        if count == 0:
+            instruction = lobby_font.render("Watch the sheep jump...", True, (200, 200, 220))
+            screen.blit(instruction, (WIDTH//2 - instruction.get_width()//2, HEIGHT - 100))
+        
+        hint = font.render("ESC to exit | SPACE for next sheep", True, (150, 150, 170))
+        screen.blit(hint, (20, HEIGHT - 40))
+        
+        # Handle events
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return
+                # Spacebar to spawn sheep faster
+                elif event.key == pygame.K_SPACE:
+                    spawn_timer = spawn_interval
+        
+        pygame.display.flip()
 
 # Countdown and player name input functions remain the same...
 
