@@ -738,15 +738,15 @@ def adventure_3d_mode():
                 'data': npc
             })
         
-        # Add portal if revealed
-        if portal_revealed:
-            sprites.append({
-                'x': 14.5,
-                'y': 13.5,
-                'type': 'portal',
-                'color': (150, 100, 255),
-                'data': {'name': 'Portal'}
-            })
+        # Always show portal (but it looks different when sealed vs active)
+        sprites.append({
+            'x': 14.5,
+            'y': 13.5,
+            'type': 'portal',
+            'color': (150, 100, 255) if portal_revealed else (80, 50, 100),  # Brighter when active
+            'data': {'name': 'Portal (Active)' if portal_revealed else 'Sealed Portal'},
+            'active': portal_revealed
+        })
         
         # Sort sprites by distance (painter's algorithm)
         for sprite in sprites:
@@ -820,14 +820,31 @@ def adventure_3d_mode():
                         pygame.draw.circle(screen, color, (screen_x + size//2, screen_y - size), max(2, size//10))
                     
                     elif sprite['type'] == 'portal':
-                        # Swirling portal effect
-                        time_offset = pygame.time.get_ticks() / 500
-                        for i in range(3):
-                            radius = size // 2 + int(math.sin(time_offset + i) * 10)
-                            portal_color = tuple(int(c * (0.5 + i * 0.2)) for c in sprite['color'])
-                            pygame.draw.circle(screen, portal_color, (screen_x, screen_y - size//2), radius, 3)
-                        # Center glow
-                        pygame.draw.circle(screen, (200, 150, 255), (screen_x, screen_y - size//2), size//4)
+                        # Portal effect - different for sealed vs active
+                        is_active = sprite.get('active', False)
+                        
+                        if is_active:
+                            # Active portal: Bright swirling effect
+                            time_offset = pygame.time.get_ticks() / 500
+                            for i in range(3):
+                                radius = size // 2 + int(math.sin(time_offset + i) * 10)
+                                portal_color = tuple(int(c * (0.5 + i * 0.2)) for c in sprite['color'])
+                                pygame.draw.circle(screen, portal_color, (screen_x, screen_y - size//2), radius, 3)
+                            # Center glow - bright purple
+                            pygame.draw.circle(screen, (200, 150, 255), (screen_x, screen_y - size//2), size//4)
+                            # Particles around active portal
+                            for j in range(5):
+                                particle_angle = (time_offset + j) % (2 * math.pi)
+                                px = screen_x + int(math.cos(particle_angle) * size // 2)
+                                py = screen_y - size//2 + int(math.sin(particle_angle) * size // 2)
+                                pygame.draw.circle(screen, (255, 200, 255), (px, py), max(1, size//20))
+                        else:
+                            # Sealed portal: Dark, static
+                            pygame.draw.circle(screen, (60, 40, 80), (screen_x, screen_y - size//2), size//2)
+                            pygame.draw.circle(screen, (80, 50, 100), (screen_x, screen_y - size//2), size//2, 3)
+                            # Lock symbol in center
+                            pygame.draw.rect(screen, (100, 60, 120), (screen_x - size//8, screen_y - size//2 - size//8, size//4, size//4))
+                            pygame.draw.circle(screen, (100, 60, 120), (screen_x, screen_y - size//2 - size//8), size//8)
         
         # Apply hit flash effect
         if hit_flash > 0:
