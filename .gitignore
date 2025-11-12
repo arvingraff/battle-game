@@ -1,0 +1,37 @@
+# Large build artifacts
+dist/*.zip
+*.zip
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist-python/
+build/
+*.spec
+
+# Virtual environments
+venv/
+venv-mobile/
+env/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Game data
+*.json
+!requirements*.json
