@@ -5,9 +5,39 @@ import time
 import random
 import threading
 import math
+import socket
 from network import NetworkHost, NetworkClient
 
 pygame.init()
+
+# Helper function to get the actual local IP address (not 127.0.0.1)
+def get_local_ip():
+    """Get the actual local network IP address"""
+    try:
+        # Method 1: Connect to external address to find which interface is used
+        # This doesn't actually send data, just determines routing
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(0.1)
+        # Connect to Google DNS (doesn't matter if unreachable)
+        s.connect(("8.8.8.8", 80))
+        local_ip = s.getsockname()[0]
+        s.close()
+        return local_ip
+    except Exception:
+        try:
+            # Method 2: Get hostname IP (fallback)
+            hostname = socket.gethostname()
+            local_ip = socket.gethostbyname(hostname)
+            # If we get localhost, try to find a better IP
+            if local_ip.startswith('127.'):
+                # Method 3: Check all network interfaces
+                for info in socket.getaddrinfo(hostname, None):
+                    ip = info[4][0]
+                    if not ip.startswith('127.') and ':' not in ip:  # Skip localhost and IPv6
+                        return ip
+            return local_ip
+        except Exception:
+            return "127.0.0.1"  # Last resort fallback
 
 # Helper function to get the correct path for bundled files
 def resource_path(relative_path):
@@ -1540,49 +1570,130 @@ def run_game(mode, player1_name, player2_name, char_choices, network=None, is_ho
             pygame.display.flip()
             pygame.time.wait(2000)
             return 'lobby'
-        # Online networking
+        # Online networking - Ultra-optimized binary protocol
         if online:
             if is_host:
-                my_bullets = '|'.join([f"{b['rect'].x},{b['rect'].y},{b['dir']},{b['owner']}" for b in bullets if b['owner']==1])
-                my_state = f"{player1.x},{player1.y},{p1_right},{player1_health};{my_bullets}"
-                network.send(my_state)
+                # Only sync every 2 frames for position (30Hz), instant for bullets
+                if not hasattr(player1, '_net_frame_count'):
+                    player1._net_frame_count = 0
+                    player1._last_x = player1.x
+                    player1._last_y = player1.y
+                    player1._last_health = player1_health
+                
+                player1._net_frame_count += 1
+                
+                # Build compact state - only send what changed
+                my_state = {}
+                
+                # Position updates every 2 frames (30Hz) or if significant change (>5px)
+                if player1._net_frame_count % 2 == 0 or abs(player1.x - player1._last_x) > 5 or abs(player1.y - player1._last_y) > 5:
+                    my_state['p'] = [player1.x, player1.y, int(p1_right)]
+                    player1._last_x = player1.x
+                    player1._last_y = player1.y
+                
+                # Health updates only when changed
+                if player1_health != player1._last_health:
+                    my_state['h'] = player1_health
+                    player1._last_health = player1_health
+                
+                # Bullets - only new ones
+                new_bullets = [b for b in bullets if b['owner']==1 and not hasattr(b, '_synced')]
+                if new_bullets:
+                    my_state['b'] = [[b['rect'].x, b['rect'].y, b['dir']] for b in new_bullets]
+                    for b in new_bullets:
+                        b['_synced'] = True
+                
+                if my_state:  # Only send if there's something to send
+                    network.send(my_state)
+                # Receive updates
                 try:
                     data = network.recv()
-                    if data:
-                        parts = data.split(';')
-                        vals = parts[0].split(',')
-                        if len(vals) >= 4:
-                            player2.x = int(vals[0])
-                            player2.y = int(vals[1])
-                            p2_right = vals[2] == 'True'
-                            player2_health = int(vals[3])
-                        if len(parts) > 1 and parts[1]:
-                            for bstr in parts[1].split('|'):
-                                bx, by, bdir, bowner = bstr.split(',')
-                                if not any(abs(b['rect'].x-int(bx))<5 and abs(b['rect'].y-int(by))<5 and b['owner']==2 for b in bullets):
-                                    bullets.append({'rect': pygame.Rect(int(bx), int(by), 10, 10), 'dir': int(bdir), 'owner': int(bowner)})
+                    if data and isinstance(data, dict):
+                        # Position update
+                        if 'p' in data:
+                            # Smooth interpolation for remote player
+                            if not hasattr(player2, '_target_x'):
+                                player2._target_x = data['p'][0]
+                                player2._target_y = data['p'][1]
+                            else:
+                                player2._target_x = data['p'][0]
+                                player2._target_y = data['p'][1]
+                            
+                            # Interpolate smoothly (reduce jitter)
+                            player2.x = int(player2.x * 0.7 + player2._target_x * 0.3)
+                            player2.y = int(player2.y * 0.7 + player2._target_y * 0.3)
+                            p2_right = bool(data['p'][2])
+                        
+                        # Health update
+                        if 'h' in data:
+                            player2_health = data['h']
+                        
+                        # Bullets
+                        if 'b' in data:
+                            for bdata in data['b']:
+                                # Check if bullet doesn't already exist
+                                if not any(abs(b['rect'].x-bdata[0])<5 and abs(b['rect'].y-bdata[1])<5 and b['owner']==2 for b in bullets):
+                                    bullets.append({'rect': pygame.Rect(bdata[0], bdata[1], 10, 10), 'dir': bdata[2], 'owner': 2})
                 except:
                     pass
             else:
-                my_bullets = '|'.join([f"{b['rect'].x},{b['rect'].y},{b['dir']},{b['owner']}" for b in bullets if b['owner']==2])
-                my_state = f"{player2.x},{player2.y},{p2_right},{player2_health};{my_bullets}"
-                network.send(my_state)
+                # Client side - same optimizations
+                if not hasattr(player2, '_net_frame_count'):
+                    player2._net_frame_count = 0
+                    player2._last_x = player2.x
+                    player2._last_y = player2.y
+                    player2._last_health = player2_health
+                
+                player2._net_frame_count += 1
+                
+                my_state = {}
+                
+                # Position updates every 2 frames or significant change
+                if player2._net_frame_count % 2 == 0 or abs(player2.x - player2._last_x) > 5 or abs(player2.y - player2._last_y) > 5:
+                    my_state['p'] = [player2.x, player2.y, int(p2_right)]
+                    player2._last_x = player2.x
+                    player2._last_y = player2.y
+                
+                # Health updates only when changed
+                if player2_health != player2._last_health:
+                    my_state['h'] = player2_health
+                    player2._last_health = player2_health
+                
+                # Bullets - only new ones
+                new_bullets = [b for b in bullets if b['owner']==2 and not hasattr(b, '_synced')]
+                if new_bullets:
+                    my_state['b'] = [[b['rect'].x, b['rect'].y, b['dir']] for b in new_bullets]
+                    for b in new_bullets:
+                        b['_synced'] = True
+                
+                if my_state:
+                    network.send(my_state)
                 try:
                     data = network.recv()
-                    if data:
-                        parts = data.split(';')
-                        vals = parts[0].split(',')
-                        if len(vals) >= 4:
-                            player1.x = int(vals[0])
-                            player1.y = int(vals[1])
-                            p1_right = vals[2] == 'True'
-                            player1_health = int(vals[3])
-                        # Bullets from host
-                        if len(parts) > 1 and parts[1]:
-                            for bstr in parts[1].split('|'):
-                                bx, by, bdir, bowner = bstr.split(',')
-                                if not any(abs(b['rect'].x-int(bx))<5 and abs(b['rect'].y-int(by))<5 and b['owner']==1 for b in bullets):
-                                    bullets.append({'rect': pygame.Rect(int(bx), int(by), 10, 10), 'dir': int(bdir), 'owner': int(bowner)})
+                    if data and isinstance(data, dict):
+                        # Position update with interpolation
+                        if 'p' in data:
+                            if not hasattr(player1, '_target_x'):
+                                player1._target_x = data['p'][0]
+                                player1._target_y = data['p'][1]
+                            else:
+                                player1._target_x = data['p'][0]
+                                player1._target_y = data['p'][1]
+                            
+                            # Smooth interpolation
+                            player1.x = int(player1.x * 0.7 + player1._target_x * 0.3)
+                            player1.y = int(player1.y * 0.7 + player1._target_y * 0.3)
+                            p1_right = bool(data['p'][2])
+                        
+                        # Health update
+                        if 'h' in data:
+                            player1_health = data['h']
+                        
+                        # Bullets
+                        if 'b' in data:
+                            for bdata in data['b']:
+                                if not any(abs(b['rect'].x-bdata[0])<5 and abs(b['rect'].y-bdata[1])<5 and b['owner']==1 for b in bullets):
+                                    bullets.append({'rect': pygame.Rect(bdata[0], bdata[1], 10, 10), 'dir': bdata[2], 'owner': 1})
                 except:
                     pass
         for event in pygame.event.get():
@@ -2716,13 +2827,13 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
     last_p1_right, last_p2_right = p1_right, p2_right
     sync_counter = 0  # Send updates every N frames
     
-    # Interpolation for smoother remote player movement
+    # Interpolation for smoother remote player movement (ULTRA optimized)
     target_p1_x, target_p1_y = player1.x, player1.y
     target_p2_x, target_p2_y = player2.x, player2.y
-    interp_speed = 0.5  # Interpolation factor (0-1, higher = faster catch-up)
+    interp_speed = 0.3  # Enhanced 70/30 weighted interpolation for ultra-smooth movement
     
-    # Send position updates only when moved significantly
-    position_threshold = 3  # pixels - only send if moved more than this
+    # Send position updates only when moved significantly (ULTRA optimized)
+    position_threshold = 5  # pixels - adaptive sync rate for better responsiveness
     
     # Don't play countdown again if coming from online (already played)
     if net is None:
@@ -2742,7 +2853,8 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
                 direction_changed = p1_right != last_p1_right
                 has_new_bullets = any(b['owner'] == 1 for b in bullets)
                 
-                if (sync_counter % 3 == 0 and (moved_significantly or health_changed or direction_changed)) or has_new_bullets:
+                # ULTRA: Adaptive 30Hz sync (every 2 frames) for better responsiveness
+                if (sync_counter % 2 == 0 and (moved_significantly or health_changed or direction_changed)) or has_new_bullets:
                     # Send only changed data (delta compression concept)
                     update = {'type': 'game_state'}
                     if moved_significantly:
@@ -2800,7 +2912,8 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
                 direction_changed = p2_right != last_p2_right
                 has_new_bullets = any(b['owner'] == 2 for b in bullets)
                 
-                if (sync_counter % 3 == 0 and (moved_significantly or health_changed or direction_changed)) or has_new_bullets:
+                # ULTRA: Adaptive 30Hz sync (every 2 frames) for better responsiveness
+                if (sync_counter % 2 == 0 and (moved_significantly or health_changed or direction_changed)) or has_new_bullets:
                     # Send only changed data
                     update = {'type': 'game_state'}
                     if moved_significantly:
@@ -4382,52 +4495,134 @@ def run_capture_the_flag(player1_name, player2_name):
 
 # Escape Mom Horror Mode
 def run_escape_mom_mode():
-    """Scary horror mode - escape from an angry mother in dark corridors!"""
+    """ULTRA SCARY horror mode - escape from a terrifying angry mother in pitch-black corridors!"""
     try:
         pygame.mixer.music.stop()
-        # Use fart.mp3 but play it slower/creepier if possible, or just use suspenseful silence
+        # Eerie silence is scarier than music
     except:
         pass
     
     # Player (child)
     player = pygame.Rect(WIDTH//2, HEIGHT//2, 30, 40)
     player_speed = 5
+    camera_shake_x = 0
+    camera_shake_y = 0
     
-    # Mother (chaser)
+    # Mother (nightmare chaser)
     mom = pygame.Rect(random.randint(0, WIDTH), random.randint(0, HEIGHT), 40, 60)
-    mom_speed = 3  # Slower but persistent
-    mom_visible = False  # She's hidden in the dark!
+    mom_speed = 1.5  # Slower for fairer gameplay
+    mom_visible = False  # She lurks in complete darkness!
     mom_last_seen = 0
+    mom_teleport_timer = time.time()
+    mom_invisible_mode = False
+    mom_invisible_timer = time.time()
     
-    # Corridor walls (random maze)
+    # MULTIPLE MOMS appear later (nightmare multiplied!)
+    extra_moms = []
+    spawn_mom_timer = time.time()
+    
+    # Corridor walls (simpler maze)
     walls = []
-    # Create a corridor maze
-    for i in range(15):
+    # Create a simpler, more navigable maze
+    for i in range(10):  # Fewer walls = easier to navigate
         if random.random() < 0.5:
             # Vertical wall
-            w = pygame.Rect(random.randint(50, WIDTH-150), random.randint(50, HEIGHT-150), 20, random.randint(100, 300))
+            w = pygame.Rect(random.randint(100, WIDTH-200), random.randint(100, HEIGHT-200), 20, random.randint(100, 250))
         else:
             # Horizontal wall
-            w = pygame.Rect(random.randint(50, WIDTH-150), random.randint(50, HEIGHT-150), random.randint(100, 300), 20)
+            w = pygame.Rect(random.randint(100, WIDTH-200), random.randint(100, HEIGHT-200), random.randint(100, 250), 20)
         walls.append(w)
+    
+    # REACHING HANDS from walls!
+    wall_hands = []
+    for i in range(4):  # Fewer hands, less overwhelming
+        hand_wall = random.choice(walls)
+        hand_x = hand_wall.x + random.randint(0, hand_wall.width)
+        hand_y = hand_wall.y + random.randint(0, hand_wall.height)
+        wall_hands.append({'x': hand_x, 'y': hand_y, 'timer': time.time(), 'visible': False})
     
     # Game state
     survived_time = 0
     start_time = time.time()
     caught = False
     heartbeat_sound = 0
+    light_flicker = 0
+    screen_glitch = False
+    whisper_timer = time.time()
+    breathing_intensity = 0
+    footstep_timer = time.time()
+    child_cry_timer = time.time()
+    fog_intensity = 0
     
-    # Darkness vignette
+    # Game state
+    survived_time = 0
+    start_time = time.time()
+    caught = False
+    heartbeat_sound = 0
+    light_flicker = 0
+    screen_glitch = False
+    whisper_timer = time.time()
+    breathing_intensity = 0
+    footstep_timer = time.time()
+    child_cry_timer = time.time()
+    fog_intensity = 0
+    
+    # Blood trails (false trails to confuse player)
+    blood_trails = []
+    for i in range(15):
+        trail_x = random.randint(100, WIDTH-100)
+        trail_y = random.randint(100, HEIGHT-100)
+        trail_angle = random.random() * 6.28
+        blood_trails.append({'x': trail_x, 'y': trail_y, 'angle': trail_angle})
+    
+    # Darkness vignette (MUCH darker)
     try:
         darkness_surface = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-        darkness_surface.set_alpha(180)
     except Exception as e:
         print(f"Error creating darkness surface: {e}")
         darkness_surface = pygame.Surface((WIDTH, HEIGHT))
     
+    # Static/glitch surface
+    glitch_surface = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+    
+    # Fog/mist surface
+    fog_surface = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+    
     while not caught:
         now = time.time()
         survived_time = now - start_time
+        
+        # Darkness increases over time (getting scarier!)
+        darkness_level = min(240, 200 + int(survived_time * 5))  # Even DARKER
+        light_radius = max(60, 130 - int(survived_time * 3))  # Light gets tiny
+        
+        # Fog increases over time (vision obscured)
+        fog_intensity = min(120, int(survived_time * 4))
+        
+        # Camera shake when mom is close
+        dx = player.x - mom.x
+        dy = player.y - mom.y
+        dist = math.sqrt(dx*dx + dy*dy)
+        
+        if dist < 200:
+            shake_power = int((200 - dist) / 10)
+            camera_shake_x = random.randint(-shake_power, shake_power)
+            camera_shake_y = random.randint(-shake_power, shake_power)
+        else:
+            camera_shake_x = 0
+            camera_shake_y = 0
+        
+        # SPAWN ADDITIONAL MOMS AFTER 30 SECONDS (ULTIMATE HORROR!)
+        if survived_time > 30 and now - spawn_mom_timer > 20 and len(extra_moms) < 3:
+            new_mom = {
+                'rect': pygame.Rect(random.randint(50, WIDTH-50), random.randint(50, HEIGHT-50), 40, 60),
+                'speed': mom_speed * 0.8,  # Slightly slower
+                'visible': False,
+                'last_seen': 0
+            }
+            extra_moms.append(new_mom)
+            spawn_mom_timer = now
+            screen_glitch = True  # Screen glitches when new mom appears!
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -4460,284 +4655,599 @@ def run_escape_mom_mode():
                 player.x, player.y = old_x, old_y
                 break
         
-        # Mom AI - hunts the player
+        # Mom AI - relentless hunter
         dx = player.x - mom.x
         dy = player.y - mom.y
         dist = math.sqrt(dx*dx + dy*dy)
         
-        # Mom moves toward player
+        # Mom can go INVISIBLE randomly (you only hear her!)
+        if now - mom_invisible_timer > random.randint(20, 35):
+            mom_invisible_mode = not mom_invisible_mode
+            mom_invisible_timer = now
+            if mom_invisible_mode:
+                screen_glitch = True  # Glitch when she vanishes!
+        
+        # Mom speeds up when close (but not too much!)
+        chase_speed = mom_speed
+        if dist < 300:
+            chase_speed = mom_speed * 1.2  # Slightly faster when close
+        if dist < 150:
+            chase_speed = mom_speed * 1.5  # Moderate speed when very close
+        
+        # Mom moves toward player with scary precision
         if dist > 0:
-            mom.x += (dx / dist) * mom_speed
-            mom.y += (dy / dist) * mom_speed
+            mom.x += (dx / dist) * chase_speed
+            mom.y += (dy / dist) * chase_speed
+        
+        # Mom can TELEPORT randomly (nightmare fuel!)
+        if now - mom_teleport_timer > random.randint(15, 25):
+            # Teleport to a random spot near player (but not too close)
+            angle = random.random() * 6.28
+            teleport_dist = random.randint(250, 400)
+            mom.x = player.x + math.cos(angle) * teleport_dist
+            mom.y = player.y + math.sin(angle) * teleport_dist
+            mom.x = max(50, min(WIDTH-50, mom.x))
+            mom.y = max(50, min(HEIGHT-50, mom.y))
+            mom_teleport_timer = now
+            screen_glitch = True  # Screen glitches when she teleports!
         
         # Mom collision with walls
         mom_old_x, mom_old_y = mom.x, mom.y
         for wall in walls:
             if mom.colliderect(wall):
-                # Mom can phase through walls sometimes (spooky!)
-                if random.random() < 0.3:
-                    pass  # She goes through!
+                # Mom can phase through walls MORE often (she's supernatural!)
+                if random.random() < 0.5:  # 50% chance to phase through
+                    pass  # She goes through walls like a ghost!
                 else:
                     mom.x, mom.y = mom_old_x, mom_old_y
                 break
         
-        # Check if mom is close (she becomes visible!)
-        if dist < 200:
-            mom_visible = True
+        # Check if mom is close (she becomes visible - SCARY!)
+        if dist < 250:
+            if not mom_invisible_mode:
+                mom_visible = True
             mom_last_seen = now
-        elif now - mom_last_seen > 2:
+            breathing_intensity = int((250 - dist) / 2.5)  # Breathing gets louder
+            
+            # FOOTSTEP SOUNDS when she's close!
+            footstep_speed = max(0.3, dist / 300)  # Faster footsteps when closer
+            if now - footstep_timer > footstep_speed:
+                footstep_timer = now
+                # Visual footstep indicator
+                print("\a")  # System beep for footstep
+        elif now - mom_last_seen > 1.5:
             mom_visible = False
+            breathing_intensity = 0
+        
+        # Extra moms AI
+        for extra_mom in extra_moms:
+            e_dx = player.x - extra_mom['rect'].x
+            e_dy = player.y - extra_mom['rect'].y
+            e_dist = math.sqrt(e_dx*e_dx + e_dy*e_dy)
+            
+            # Move toward player
+            if e_dist > 0:
+                extra_mom['rect'].x += (e_dx / e_dist) * extra_mom['speed']
+                extra_mom['rect'].y += (e_dy / e_dist) * extra_mom['speed']
+            
+            # Visibility
+            if e_dist < 250:
+                extra_mom['visible'] = True
+                extra_mom['last_seen'] = now
+            elif now - extra_mom['last_seen'] > 1.5:
+                extra_mom['visible'] = False
+            
+            # Check collision
+            if player.colliderect(extra_mom['rect']):
+                caught = True
+        
+        # CHILD CRYING SOUNDS echo through corridors
+        if now - child_cry_timer > random.randint(12, 20):
+            child_cry_timer = now
+            # Visual crying indicator (you hear distant crying)
+            # This adds to the psychological horror
         
         # Caught!
         if player.colliderect(mom):
             caught = True
         
         # Drawing
-        screen.fill((20, 20, 25))  # Dark blue/black
+        # Complete darkness background
+        screen.fill((0, 0, 5))  # Even MORE pitch black
         
-        # Draw walls (dim gray corridors)
+        # Apply camera shake to everything
+        shake_offset_x = camera_shake_x
+        shake_offset_y = camera_shake_y
+        
+        # Draw blood trails (creepy false trails)
+        for trail in blood_trails:
+            for i in range(20):
+                trail_x = int(trail['x'] + math.cos(trail['angle']) * i * 5) + shake_offset_x
+                trail_y = int(trail['y'] + math.sin(trail['angle']) * i * 5) + shake_offset_y
+                size = max(1, 8 - i // 3)
+                pygame.draw.circle(screen, (100, 0, 0), (trail_x, trail_y), size)
+        
+        # Draw blood trails (creepy false trails)
+        for trail in blood_trails:
+            for i in range(20):
+                trail_x = int(trail['x'] + math.cos(trail['angle']) * i * 5) + shake_offset_x
+                trail_y = int(trail['y'] + math.sin(trail['angle']) * i * 5) + shake_offset_y
+                size = max(1, 8 - i // 3)
+                pygame.draw.circle(screen, (100, 0, 0), (trail_x, trail_y), size)
+        
+        # Flickering light effect (lights are failing!)
+        light_flicker += 1
+        if light_flicker % 180 < 3 or (dist < 200 and light_flicker % 60 < 2):
+            # Brief flash of light when she's near (MORE SCARY!)
+            screen.fill((20, 20, 25))
+        
+        # Draw walls (barely visible in darkness) with shake
         for wall in walls:
-            pygame.draw.rect(screen, (60, 60, 70), wall)
-            pygame.draw.rect(screen, (40, 40, 50), wall, 2)
+            wall_color = (40, 40, 50) if light_flicker % 180 < 3 else (25, 25, 35)
+            shaken_wall = wall.move(shake_offset_x, shake_offset_y)
+            pygame.draw.rect(screen, wall_color, shaken_wall)
+            pygame.draw.rect(screen, (20, 20, 30), shaken_wall, 2)
         
-        # Draw player (small scared child)
-        # Head
-        pygame.draw.circle(screen, (255, 220, 180), (player.centerx, player.y+10), 8)
-        # Eyes (scared wide eyes)
-        pygame.draw.circle(screen, (255, 255, 255), (player.centerx-4, player.y+8), 3)
-        pygame.draw.circle(screen, (255, 255, 255), (player.centerx+4, player.y+8), 3)
-        pygame.draw.circle(screen, (0, 0, 0), (player.centerx-4, player.y+8), 2)
-        pygame.draw.circle(screen, (0, 0, 0), (player.centerx+4, player.y+8), 2)
-        # Scared mouth
-        pygame.draw.arc(screen, (0, 0, 0), (player.centerx-4, player.y+12, 8, 6), 0, 3.14, 2)
-        # Body (pajamas)
-        pygame.draw.rect(screen, (100, 150, 200), (player.x+5, player.y+18, 20, 22))
-        
-        # Draw mom (scary when visible!)
-        if mom_visible:
-            # Angry mother figure (scary red tint)
-            # Head
-            pygame.draw.circle(screen, (255, 200, 200), (mom.centerx, mom.y+15), 12)
-            # Angry eyes
-            pygame.draw.line(screen, (200, 0, 0), (mom.centerx-8, mom.y+12), (mom.centerx-4, mom.y+14), 3)
-            pygame.draw.line(screen, (200, 0, 0), (mom.centerx+4, mom.y+14), (mom.centerx+8, mom.y+12), 3)
-            # Angry mouth
-            pygame.draw.arc(screen, (150, 0, 0), (mom.centerx-6, mom.y+18, 12, 8), 3.14, 6.28, 3)
-            # Body (dress)
-            pygame.draw.rect(screen, (100, 50, 50), (mom.x+8, mom.y+27, 24, 33))
-            # Arms reaching
-            pygame.draw.line(screen, (255, 200, 200), (mom.centerx-10, mom.y+30), (mom.centerx-20, mom.y+25), 6)
-            pygame.draw.line(screen, (255, 200, 200), (mom.centerx+10, mom.y+30), (mom.centerx+20, mom.y+25), 6)
+        # REACHING HANDS FROM WALLS (nightmare fuel!)
+        for hand in wall_hands:
+            hand_dist = math.sqrt((hand['x'] - player.x)**2 + (hand['y'] - player.y)**2)
             
-            # Warning text when she's near!
-            if dist < 100:
-                warning = lobby_font.render("SHE'S CLOSE!", True, (255, 0, 0))
-                screen.blit(warning, (WIDTH//2-warning.get_width()//2, 50))
+            # Hands become visible randomly or when player is close
+            if hand_dist < 150 or (now - hand['timer'] > random.randint(5, 15) and random.random() < 0.1):
+                hand['visible'] = True
+                hand['timer'] = now
+            elif now - hand['timer'] > 2:
+                hand['visible'] = False
+            
+            if hand['visible']:
+                # Draw creepy hand reaching from wall
+                hand_x = hand['x'] + shake_offset_x
+                hand_y = hand['y'] + shake_offset_y
+                
+                # Palm
+                pygame.draw.circle(screen, (200, 180, 170), (hand_x, hand_y), 15)
+                
+                # Five fingers reaching toward player
+                angle_to_player = math.atan2(player.y - hand_y, player.x - hand_x)
+                for finger in range(5):
+                    finger_angle = angle_to_player + (finger - 2) * 0.3
+                    finger_length = 30 + random.randint(-5, 5)
+                    finger_end_x = int(hand_x + math.cos(finger_angle) * finger_length)
+                    finger_end_y = int(hand_y + math.sin(finger_angle) * finger_length)
+                    pygame.draw.line(screen, (200, 180, 170), (hand_x, hand_y), (finger_end_x, finger_end_y), 6)
+                    # Fingernails (dark)
+                    pygame.draw.circle(screen, (80, 60, 60), (finger_end_x, finger_end_y), 3)
         
-        # Darkness overlay (limited vision)
+        # Draw player (small terrified child) with shake
+        player_draw_x = player.x + shake_offset_x
+        player_draw_y = player.y + shake_offset_y
+        
+        # Head (pale with fear)
+        pygame.draw.circle(screen, (255, 240, 200), (player.centerx + shake_offset_x, player_draw_y+10), 8)
+        # Eyes (WIDE with terror)
+        pygame.draw.circle(screen, (255, 255, 255), (player.centerx-4 + shake_offset_x, player_draw_y+8), 4)
+        pygame.draw.circle(screen, (255, 255, 255), (player.centerx+4 + shake_offset_x, player_draw_y+8), 4)
+        pygame.draw.circle(screen, (0, 0, 0), (player.centerx-4 + shake_offset_x, player_draw_y+8), 2)
+        pygame.draw.circle(screen, (0, 0, 0), (player.centerx+4 + shake_offset_x, player_draw_y+8), 2)
+        # Trembling mouth (crying)
+        pygame.draw.arc(screen, (0, 0, 0), (player.centerx-5 + shake_offset_x, player_draw_y+12, 10, 8), 0, 3.14, 2)
+        # Tears
+        if dist < 150:
+            pygame.draw.line(screen, (150, 200, 255), (player.centerx-4 + shake_offset_x, player_draw_y+12), 
+                           (player.centerx-4 + shake_offset_x, player_draw_y+20), 2)
+            pygame.draw.line(screen, (150, 200, 255), (player.centerx+4 + shake_offset_x, player_draw_y+12), 
+                           (player.centerx+4 + shake_offset_x, player_draw_y+20), 2)
+        # Body (pajamas - trembling)
+        body_shake_x = random.randint(-1, 1) if dist < 150 else 0
+        body_shake_y = random.randint(-1, 1) if dist < 150 else 0
+        pygame.draw.rect(screen, (100, 150, 200), (player_draw_x+5+body_shake_x, player_draw_y+18+body_shake_y, 20, 22))
+        
+        # Draw mom (NIGHTMARE when visible!)
+        if (mom_visible or light_flicker % 180 < 3) and not mom_invisible_mode:
+            # Horrifying distorted mother figure
+            distortion = random.randint(-3, 3) if dist < 100 else 0
+            
+            mom_draw_x = mom.x + shake_offset_x
+            mom_draw_y = mom.y + shake_offset_y
+            mom_center_x = mom.centerx + shake_offset_x
+            mom_center_y = mom.centery + shake_offset_y
+            
+            # Shadow/aura of dread around her
+            for i in range(3):
+                pygame.draw.circle(screen, (100, 0, 0, 30), (mom_center_x, mom_center_y), 60 + i * 20, 3)
+            
+            # Head (decaying, pale)
+            pygame.draw.circle(screen, (200, 180, 180), (mom_center_x+distortion, mom_draw_y+15), 14)
+            
+            # GLOWING RED EYES (no pupils - pure evil!)
+            pygame.draw.circle(screen, (255, 0, 0), (mom_center_x-8+distortion, mom_draw_y+12), 6)
+            pygame.draw.circle(screen, (200, 0, 0), (mom_center_x-8+distortion, mom_draw_y+12), 4)
+            pygame.draw.circle(screen, (255, 0, 0), (mom_center_x+8+distortion, mom_draw_y+12), 6)
+            pygame.draw.circle(screen, (200, 0, 0), (mom_center_x+8+distortion, mom_draw_y+12), 4)
+            # Eye glow effect
+            pygame.draw.circle(screen, (255, 100, 100, 100), (mom_center_x-8, mom_draw_y+12), 12)
+            pygame.draw.circle(screen, (255, 100, 100, 100), (mom_center_x+8, mom_draw_y+12), 12)
+            
+            # Angry twisted mouth (impossible grin)
+            pygame.draw.arc(screen, (180, 0, 0), (mom_center_x-10, mom_draw_y+18, 20, 12), 3.14, 6.28, 4)
+            # Teeth showing
+            for t in range(8):
+                tooth_x = mom_center_x - 8 + t * 2
+                pygame.draw.line(screen, (255, 255, 200), (tooth_x, mom_draw_y+22), (tooth_x, mom_draw_y+26), 1)
+            
+            # Body (tattered dress)
+            pygame.draw.rect(screen, (80, 40, 40), (mom_draw_x+8, mom_draw_y+27, 24, 33))
+            # Rips in dress
+            for i in range(5):
+                rip_y = mom_draw_y + 30 + i * 6
+                pygame.draw.line(screen, (60, 20, 20), (mom_draw_x+10, rip_y), (mom_draw_x+30, rip_y), 2)
+            
+            # Arms reaching out (longer, skeletal)
+            pygame.draw.line(screen, (200, 180, 180), (mom_center_x-12, mom_draw_y+30), (mom_center_x-35, mom_draw_y+20), 8)
+            pygame.draw.line(screen, (200, 180, 180), (mom_center_x+12, mom_draw_y+30), (mom_center_x+35, mom_draw_y+20), 8)
+            # Claw-like hands
+            for finger in range(3):
+                pygame.draw.line(screen, (180, 160, 160), (mom_center_x-35, mom_draw_y+20), 
+                               (mom_center_x-40+finger*3, mom_draw_y+15), 3)
+                pygame.draw.line(screen, (180, 160, 160), (mom_center_x+35, mom_draw_y+20), 
+                               (mom_center_x+37-finger*3, mom_draw_y+15), 3)
+            
+            # Warning messages when she's near!
+            if dist < 150:
+                warning = lobby_font.render("SHE SEES YOU!", True, (255, 0, 0))
+                warning_shake_x = random.randint(-5, 5)
+                warning_shake_y = random.randint(-5, 5)
+                screen.blit(warning, (WIDTH//2-warning.get_width()//2+warning_shake_x, 50+warning_shake_y))
+            if dist < 80:
+                panic = lobby_font.render("RUN!!!", True, (255, 50, 50))
+                screen.blit(panic, (WIDTH//2-panic.get_width()//2, 100))
+        
+        # Draw EXTRA MOMS (multiplying nightmare!)
+        for extra_mom in extra_moms:
+            if extra_mom['visible'] or light_flicker % 180 < 3:
+                e_distortion = random.randint(-2, 2)
+                e_rect = extra_mom['rect']
+                e_draw_x = e_rect.x + shake_offset_x
+                e_draw_y = e_rect.y + shake_offset_y
+                e_center_x = e_rect.centerx + shake_offset_x
+                e_center_y = e_rect.centery + shake_offset_y
+                
+                # Simplified but still terrifying mom
+                # Head
+                pygame.draw.circle(screen, (200, 180, 180), (e_center_x+e_distortion, e_draw_y+15), 14)
+                # Red eyes
+                pygame.draw.circle(screen, (255, 0, 0), (e_center_x-8, e_draw_y+12), 6)
+                pygame.draw.circle(screen, (255, 0, 0), (e_center_x+8, e_draw_y+12), 6)
+                # Body
+                pygame.draw.rect(screen, (80, 40, 40), (e_draw_x+8, e_draw_y+27, 24, 33))
+                # Arms
+                pygame.draw.line(screen, (200, 180, 180), (e_center_x-12, e_draw_y+30), (e_center_x-35, e_draw_y+20), 8)
+                pygame.draw.line(screen, (200, 180, 180), (e_center_x+12, e_draw_y+30), (e_center_x+35, e_draw_y+20), 8)
+        
+        # Invisible mom warning!
+        if mom_invisible_mode and dist < 200:
+            invisible_warning = font.render("*FOOTSTEPS APPROACHING*", True, (200, 0, 0))
+            screen.blit(invisible_warning, (WIDTH//2-invisible_warning.get_width()//2, HEIGHT//2))
+        
+        # Screen glitch effect when she teleports
+        if screen_glitch:
+            glitch_surface.fill((0, 0, 0, 0))
+            for i in range(20):
+                glitch_y = random.randint(0, HEIGHT)
+                glitch_height = random.randint(5, 30)
+                pygame.draw.rect(glitch_surface, (255, 0, 0, random.randint(50, 150)), 
+                               (0, glitch_y, WIDTH, glitch_height))
+            screen.blit(glitch_surface, (0, 0))
+            if random.random() < 0.3:
+                screen_glitch = False
+        
+        # INTENSE darkness overlay (almost blind!)
         darkness_surface.fill((0, 0, 0))
-        # Create a circle of light around player
-        for radius in range(150, 0, -5):
-            alpha = int(200 * (1 - radius/150))
-            pygame.draw.circle(darkness_surface, (0, 0, 0, alpha), player.center, radius)
+        darkness_surface.set_alpha(darkness_level)
+        
+        # Create a tiny circle of light around player (getting smaller over time!)
+        light_center = player.center
+        for radius in range(light_radius, 0, -4):
+            alpha = int(darkness_level * (1 - radius/light_radius))
+            pygame.draw.circle(darkness_surface, (0, 0, 0, max(0, alpha)), light_center, radius)
+        
         screen.blit(darkness_surface, (0, 0))
         
+        # FOG/MIST overlay (obscures vision even more!)
+        fog_surface.fill((0, 0, 0, 0))
+        for i in range(30):
+            fog_x = random.randint(0, WIDTH)
+            fog_y = random.randint(0, HEIGHT)
+            fog_size = random.randint(40, 120)
+            pygame.draw.circle(fog_surface, (40, 40, 50, fog_intensity), (fog_x, fog_y), fog_size)
+        screen.blit(fog_surface, (0, 0))
+        
         # UI
-        time_text = font.render(f"Survived: {int(survived_time)}s", True, (255, 255, 255))
+        time_text = font.render(f"Survived: {int(survived_time)}s", True, (255, 200, 200))
         screen.blit(time_text, (20, 20))
         
-        tip_text = name_font.render("Use WASD/Arrows to run! Press ESC to quit", True, (200, 200, 200))
+        # Show extra mom counter if any exist
+        if len(extra_moms) > 0:
+            mom_count = font.render(f"MOMS: {len(extra_moms) + 1}!", True, (255, 100, 100))
+            screen.blit(mom_count, (20, 50))
+        
+        tip_text = name_font.render("RUN! Press ESC to escape to menu", True, (200, 150, 150))
         screen.blit(tip_text, (WIDTH//2-tip_text.get_width()//2, HEIGHT-30))
         
-        # Heartbeat effect when mom is close
-        if dist < 150:
+        # Child crying echo effect
+        if int(now - child_cry_timer) < 2:  # Show for 2 seconds
+            cry_text = name_font.render("*distant child crying*", True, (150, 150, 200, 150))
+            cry_x = WIDTH//2 - cry_text.get_width()//2 + random.randint(-3, 3)
+            cry_y = HEIGHT//4 + random.randint(-3, 3)
+            screen.blit(cry_text, (cry_x, cry_y))
+        
+        # Pulsing heartbeat effect when mom is close
+        if dist < 200:
             heartbeat_sound += 1
-            if heartbeat_sound % 30 < 15:
-                pygame.draw.circle(screen, (255, 0, 0, 50), (20, HEIGHT-40), 15)
+            pulse_size = 15 + int((200-dist) / 10)  # Bigger pulse when closer
+            if heartbeat_sound % max(10, int(dist/10)) < 5:  # Faster heartbeat when closer
+                pygame.draw.circle(screen, (255, 0, 0), (30, HEIGHT-50), pulse_size, 3)
+                pygame.draw.circle(screen, (200, 0, 0), (30, HEIGHT-50), pulse_size-3, 2)
+        
+        # Breathing indicator (when she's VERY close)
+        if breathing_intensity > 0:
+            breath_text = name_font.render("*breathing sounds*", True, (255, 100, 100, breathing_intensity))
+            screen.blit(breath_text, (WIDTH//2-breath_text.get_width()//2, HEIGHT//2-200))
+        
+        # Random whispers appear (MORE VARIETY AND TERROR!)
+        if now - whisper_timer > random.randint(8, 15):
+            whisper_timer = now
+            whispers = [
+                "I'M COMING...", 
+                "YOU CAN'T HIDE...", 
+                "FOUND YOU...", 
+                "STOP RUNNING...",
+                "COME HERE...",
+                "I SEE YOU...",
+                "NO ESCAPE...",
+                "YOU'RE MINE...",
+                "MOMMY'S HERE...",
+                "DON'T RUN FROM MOTHER...",
+                "I'M RIGHT BEHIND YOU...",
+                "THERE'S NO WAY OUT..."
+            ]
+            whisper = random.choice(whispers)
+            # Show whisper for a moment
+            if random.random() < 0.4:
+                whisper_text = font.render(whisper, True, (150, 0, 0))
+                whisper_x = random.randint(100, WIDTH-200)
+                whisper_y = random.randint(100, HEIGHT-200)
+                screen.blit(whisper_text, (whisper_x, whisper_y))
         
         pygame.display.flip()
         clock.tick(60)
     
-    # JUMPSCARE! Show TERRIFYING mom eating you from your perspective!
+    # ULTRA TERRIFYING JUMPSCARE! Maximum horror!
     jumpscare_time = time.time()
-    jumpscare_duration = 2.0  # 2 seconds of pure terror
+    jumpscare_duration = 3.0  # 3 seconds of PURE TERROR
     
-    # Play scary scream sound
+    # Play scary scream sound at MAXIMUM VOLUME
     try:
         pygame.mixer.music.load(resource_path("scary-scream.mp3"))
+        pygame.mixer.music.set_volume(1.0)  # MAX VOLUME!
         pygame.mixer.music.play()
     except:
-        # Fallback to system beeps if sound file not found
-        for _ in range(10):
+        # Fallback to system beeps
+        for _ in range(15):
             print("\a")  # System beep
     
     while time.time() - jumpscare_time < jumpscare_duration:
         elapsed = time.time() - jumpscare_time
         progress = elapsed / jumpscare_duration
         
-        # Flash between black and red for extra scary effect
-        if int((time.time() - jumpscare_time) * 20) % 2 == 0:
+        # INTENSE rapid flashing for shock effect
+        flash_speed = int((time.time() - jumpscare_time) * 30)
+        if flash_speed % 2 == 0:
             screen.fill((0, 0, 0))
         else:
-            screen.fill((int(100 * progress), 0, 0))
+            # Increasingly red and violent
+            red_intensity = int(150 + progress * 105)
+            screen.fill((red_intensity, 0, 0))
         
-        # Mom grows MASSIVE (20-30x bigger as she gets closer!)
-        scale = 20 + (progress * 10)  # Grows from 20x to 30x size
-        face_size = int(400 * scale / 20)
-        face_x = WIDTH // 2
-        face_y = HEIGHT // 2
+        # Static noise effect
+        if random.random() < 0.4:
+            for i in range(200):
+                static_x = random.randint(0, WIDTH)
+                static_y = random.randint(0, HEIGHT)
+                static_color = random.randint(0, 255)
+                pygame.draw.circle(screen, (static_color, 0, 0), (static_x, static_y), 2)
         
-        # GIANT DECAYING HEAD with veins
-        pygame.draw.circle(screen, (200 + int(30 * progress), 160 - int(60 * progress), 160 - int(60 * progress)), (face_x, face_y), face_size//2)
-        pygame.draw.circle(screen, (180 + int(40 * progress), 140 - int(80 * progress), 140 - int(80 * progress)), (face_x, face_y), face_size//2 - 10)
+        # Mom grows MASSIVE and DISTORTED (30-50x bigger!)
+        scale = 30 + (progress * 20)  # Grows from 30x to 50x size  
+        face_size = int(500 * scale / 30)
+        face_x = WIDTH // 2 + random.randint(-10, 10)  # Slight shake
+        face_y = HEIGHT // 2 + random.randint(-10, 10)
         
-        # Dark circles under eyes (tired, scary mom)
-        pygame.draw.ellipse(screen, (100, 50, 100), (face_x - 150, face_y - 100, 100, 60))
-        pygame.draw.ellipse(screen, (100, 50, 100), (face_x + 50, face_y - 100, 100, 60))
+        # GROTESQUE DECAYING HEAD with pulsing veins
+        pulse = int(10 * math.sin(elapsed * 15))  # Pulsing effect
+        pygame.draw.circle(screen, (220 + int(35 * progress), 140 - int(80 * progress), 140 - int(80 * progress)), 
+                          (face_x, face_y), face_size//2 + pulse)
+        # Inner decay
+        pygame.draw.circle(screen, (180 + int(50 * progress), 120 - int(100 * progress), 120 - int(100 * progress)), 
+                          (face_x, face_y), face_size//2 - 20 + pulse)
         
-        # MASSIVE BLOODSHOT EYES staring DOWN at you!
-        eye_size = int(100 + progress * 30)
-        eye_spacing = int(140 + progress * 20)
+        # Rotting flesh effect
+        for i in range(50):
+            rot_x = face_x + random.randint(-face_size//2, face_size//2)
+            rot_y = face_y + random.randint(-face_size//2, face_size//2)
+            pygame.draw.circle(screen, (120, 80, 60), (rot_x, rot_y), random.randint(3, 10))
         
-        # Left eye - bloodshot and terrifying
-        pygame.draw.ellipse(screen, (255, 255, 200), (face_x - eye_spacing - eye_size//2, face_y - 100, eye_size, eye_size + 30))
-        # Bloodshot iris - RED
-        pygame.draw.circle(screen, (180, 0, 0), (face_x - eye_spacing, face_y - 70), int(50 + progress * 10))
-        pygame.draw.circle(screen, (120, 0, 0), (face_x - eye_spacing, face_y - 70), int(40 + progress * 8))
-        # Black pupil staring at YOU
-        pygame.draw.circle(screen, (0, 0, 0), (face_x - eye_spacing, face_y - 70), int(25 + progress * 5))
-        # Tiny white glint (makes it look alive)
-        pygame.draw.circle(screen, (255, 255, 255), (face_x - eye_spacing + 8, face_y - 75), 5)
+        # Deep dark circles and wrinkles (exhausted, dead eyes)
+        pygame.draw.ellipse(screen, (60, 30, 60), (face_x - 180, face_y - 120, 140, 80))
+        pygame.draw.ellipse(screen, (60, 30, 60), (face_x + 40, face_y - 120, 140, 80))
         
-        # Right eye - bloodshot and terrifying
-        pygame.draw.ellipse(screen, (255, 255, 200), (face_x + eye_spacing - eye_size//2, face_y - 100, eye_size, eye_size + 30))
-        # Bloodshot iris - RED
-        pygame.draw.circle(screen, (180, 0, 0), (face_x + eye_spacing, face_y - 70), int(50 + progress * 10))
-        pygame.draw.circle(screen, (120, 0, 0), (face_x + eye_spacing, face_y - 70), int(40 + progress * 8))
-        # Black pupil staring at YOU
-        pygame.draw.circle(screen, (0, 0, 0), (face_x + eye_spacing, face_y - 70), int(25 + progress * 5))
-        # Tiny white glint
-        pygame.draw.circle(screen, (255, 255, 255), (face_x + eye_spacing + 8, face_y - 75), 5)
+        # ENORMOUS BLOODSHOT DEMON EYES - staring INTO YOUR SOUL!
+        eye_size = int(120 + progress * 50)
+        eye_spacing = int(160 + progress * 40)
         
-        # Red veins spreading from eyes
-        for i in range(15):
+        # Left eye - HORRIFYING
+        pygame.draw.ellipse(screen, (255, 255, 180), (face_x - eye_spacing - eye_size//2, face_y - 120, eye_size, eye_size + 40))
+        # Bloodshot RED iris - pulsing
+        iris_size = int(60 + progress * 20 + pulse)
+        pygame.draw.circle(screen, (220, 0, 0), (face_x - eye_spacing, face_y - 80), iris_size)
+        pygame.draw.circle(screen, (150, 0, 0), (face_x - eye_spacing, face_y - 80), iris_size - 10)
+        # Dilated pupil (pure evil)
+        pygame.draw.circle(screen, (0, 0, 0), (face_x - eye_spacing, face_y - 80), int(35 + progress * 10))
+        # Demonic glint
+        pygame.draw.circle(screen, (255, 100, 100), (face_x - eye_spacing + 12, face_y - 88), 8)
+        
+        # Right eye - TERRIFYING
+        pygame.draw.ellipse(screen, (255, 255, 180), (face_x + eye_spacing - eye_size//2, face_y - 120, eye_size, eye_size + 40))
+        pygame.draw.circle(screen, (220, 0, 0), (face_x + eye_spacing, face_y - 80), iris_size)
+        pygame.draw.circle(screen, (150, 0, 0), (face_x + eye_spacing, face_y - 80), iris_size - 10)
+        pygame.draw.circle(screen, (0, 0, 0), (face_x + eye_spacing, face_y - 80), int(35 + progress * 10))
+        pygame.draw.circle(screen, (255, 100, 100), (face_x + eye_spacing + 12, face_y - 88), 8)
+        
+        # MASSIVE network of blood veins spreading everywhere!
+        for i in range(40):
             vein_angle = random.random() * 6.28
-            vein_length = random.randint(30, 80)
+            vein_length = random.randint(40, 120)
+            thickness = random.randint(2, 5)
+            # Left eye veins
             start_x = face_x - eye_spacing
-            start_y = face_y - 70
+            start_y = face_y - 80
             end_x = int(start_x + math.cos(vein_angle) * vein_length)
             end_y = int(start_y + math.sin(vein_angle) * vein_length)
-            pygame.draw.line(screen, (200, 0, 0), (start_x, start_y), (end_x, end_y), 2)
-        for i in range(15):
-            vein_angle = random.random() * 6.28
-            vein_length = random.randint(30, 80)
+            pygame.draw.line(screen, (180, 0, 0), (start_x, start_y), (end_x, end_y), thickness)
+            # Right eye veins
             start_x = face_x + eye_spacing
-            start_y = face_y - 70
             end_x = int(start_x + math.cos(vein_angle) * vein_length)
             end_y = int(start_y + math.sin(vein_angle) * vein_length)
-            pygame.draw.line(screen, (200, 0, 0), (start_x, start_y), (end_x, end_y), 2)
+            pygame.draw.line(screen, (180, 0, 0), (start_x, start_y), (end_x, end_y), thickness)
         
-        # THICK ANGRY EYEBROWS
-        pygame.draw.line(screen, (60, 30, 30), (face_x - eye_spacing - 60, face_y - 140), (face_x - eye_spacing + 40, face_y - 100), 18)
-        pygame.draw.line(screen, (60, 30, 30), (face_x + eye_spacing - 40, face_y - 100), (face_x + eye_spacing + 60, face_y - 140), 18)
+        # MASSIVE ANGRY EYEBROWS (furious)
+        pygame.draw.line(screen, (40, 20, 20), (face_x - eye_spacing - 80, face_y - 180), 
+                        (face_x - eye_spacing + 60, face_y - 120), 25)
+        pygame.draw.line(screen, (40, 20, 20), (face_x + eye_spacing - 60, face_y - 120), 
+                        (face_x + eye_spacing + 80, face_y - 180), 25)
         
-        # Wrinkles (angry forehead)
-        for i in range(5):
-            y_pos = face_y - 160 + i * 15
-            pygame.draw.line(screen, (150, 100, 100), (face_x - 80, y_pos), (face_x + 80, y_pos + 5), 3)
+        # Deep angry wrinkles across forehead
+        for i in range(8):
+            y_pos = face_y - 200 + i * 18
+            thickness = random.randint(3, 6)
+            pygame.draw.line(screen, (120, 80, 80), (face_x - 120, y_pos), (face_x + 120, y_pos + 8), thickness)
         
-        # HUGE GAPING MOUTH - gets WIDER as she eats you!
-        mouth_width = int(200 + progress * 100)  # Grows wider
-        mouth_height = int(180 + progress * 80)  # Opens more
-        mouth_y = int(face_y + 30 - progress * 20)  # Comes toward you
+        # GAPING MOUTH - grows IMPOSSIBLY WIDE to devour you!
+        mouth_width = int(250 + progress * 150)  # MASSIVE mouth
+        mouth_height = int(220 + progress * 120)  # Opens HUGE
+        mouth_y = int(face_y + 40 - progress * 30)  # Lunges toward you
         
-        # Dark throat
-        pygame.draw.ellipse(screen, (10, 0, 0), (face_x - mouth_width//2, mouth_y, mouth_width, mouth_height))
-        pygame.draw.ellipse(screen, (5, 0, 0), (face_x - mouth_width//2 + 20, mouth_y + 20, mouth_width - 40, mouth_height - 40))
+        # Throat of ABSOLUTE DARKNESS (the void)
+        pygame.draw.ellipse(screen, (0, 0, 0), (face_x - mouth_width//2, mouth_y, mouth_width, mouth_height))
+        pygame.draw.ellipse(screen, (10, 0, 0), (face_x - mouth_width//2 + 30, mouth_y + 30, mouth_width - 60, mouth_height - 60))
+        # Inner darkness pulsing
+        inner_darkness = int(mouth_width - 100 + pulse * 2)
+        pygame.draw.ellipse(screen, (5, 0, 0), (face_x - inner_darkness//2, mouth_y + 50, inner_darkness, mouth_height - 100))
         
-        # Tongue (wet and scary)
+        # Wet disgusting tongue
         tongue_points = [
-            (face_x - 40, mouth_y + mouth_height - 40),
-            (face_x, mouth_y + mouth_height - 20),
-            (face_x + 40, mouth_y + mouth_height - 40),
-            (face_x + 30, mouth_y + mouth_height - 10),
-            (face_x - 30, mouth_y + mouth_height - 10)
+            (face_x - 60, mouth_y + mouth_height - 60),
+            (face_x, mouth_y + mouth_height - 30),
+            (face_x + 60, mouth_y + mouth_height - 60),
+            (face_x + 50, mouth_y + mouth_height - 20),
+            (face_x - 50, mouth_y + mouth_height - 20)
         ]
-        pygame.draw.polygon(screen, (180, 80, 100), tongue_points)
-        # Saliva drip effect
-        if int(elapsed * 10) % 3 == 0:
-            pygame.draw.line(screen, (200, 200, 255, 150), (face_x - 50, mouth_y + 20), (face_x - 50, mouth_y + 80), 3)
-            pygame.draw.line(screen, (200, 200, 255, 150), (face_x + 50, mouth_y + 20), (face_x + 50, mouth_y + 80), 3)
+        pygame.draw.polygon(screen, (200, 100, 120), tongue_points)
+        # Tongue texture
+        for i in range(10):
+            pygame.draw.line(screen, (180, 80, 100), (face_x - 40, mouth_y + mouth_height - 50 + i * 5), 
+                           (face_x + 40, mouth_y + mouth_height - 50 + i * 5), 2)
         
-        # SHARP TEETH (both top and bottom rows)
-        teeth_count = 14
+        # Dripping saliva (disgusting)
+        if int(elapsed * 15) % 4 < 2:
+            for drip in range(6):
+                drip_x = face_x - 80 + drip * 30
+                drip_length = random.randint(40, 100)
+                pygame.draw.line(screen, (220, 220, 255, 200), (drip_x, mouth_y + 30), 
+                               (drip_x, mouth_y + 30 + drip_length), 4)
+                pygame.draw.circle(screen, (220, 220, 255), (drip_x, mouth_y + 30 + drip_length), 4)
+        
+        # HORRIFYING SHARP TEETH (many more rows!)
+        teeth_count = 20
+        # Top teeth (long and sharp)
         for i in range(teeth_count):
-            # Top teeth
-            tooth_x = face_x - mouth_width//2 + 20 + i * (mouth_width - 40) // teeth_count
-            tooth_width = 15
-            tooth_height = int(35 + progress * 20)
-            pygame.draw.polygon(screen, (255, 255, 220), [
-                (tooth_x, mouth_y),
-                (tooth_x + tooth_width, mouth_y),
+            tooth_x = face_x - mouth_width//2 + 30 + i * (mouth_width - 60) // teeth_count
+            tooth_width = 18
+            tooth_height = int(45 + progress * 30)
+            # Sharp tooth shape
+            pygame.draw.polygon(screen, (255, 255, 200), [
+                (tooth_x, mouth_y + 10),
+                (tooth_x + tooth_width, mouth_y + 10),
                 (tooth_x + tooth_width//2, mouth_y + tooth_height)
             ])
-            # Yellow stains on teeth
-            pygame.draw.polygon(screen, (240, 240, 180), [
-                (tooth_x + 2, mouth_y),
-                (tooth_x + tooth_width - 2, mouth_y),
-                (tooth_x + tooth_width//2, mouth_y + tooth_height - 5)
+            # Decay and stains
+            pygame.draw.polygon(screen, (230, 230, 160), [
+                (tooth_x + 3, mouth_y + 10),
+                (tooth_x + tooth_width - 3, mouth_y + 10),
+                (tooth_x + tooth_width//2, mouth_y + tooth_height - 8)
             ])
+            # Blood on teeth
+            if random.random() < 0.4:
+                pygame.draw.line(screen, (150, 0, 0), (tooth_x + tooth_width//2, mouth_y + 15), 
+                               (tooth_x + tooth_width//2, mouth_y + tooth_height), 3)
             
-            # Bottom teeth
-            tooth_x_bottom = face_x - mouth_width//2 + 30 + i * (mouth_width - 60) // teeth_count
-            pygame.draw.polygon(screen, (255, 255, 220), [
+            # Bottom teeth (equally terrifying)
+            tooth_x_bottom = face_x - mouth_width//2 + 40 + i * (mouth_width - 80) // teeth_count
+            pygame.draw.polygon(screen, (255, 255, 200), [
                 (tooth_x_bottom, mouth_y + mouth_height - tooth_height),
                 (tooth_x_bottom + tooth_width, mouth_y + mouth_height - tooth_height),
-                (tooth_x_bottom + tooth_width//2, mouth_y + mouth_height)
+                (tooth_x_bottom + tooth_width//2, mouth_y + mouth_height - 10)
             ])
         
-        # Blood stains around mouth
-        for i in range(20):
-            stain_x = face_x - mouth_width//2 + random.randint(-20, mouth_width + 20)
-            stain_y = mouth_y + random.randint(-15, mouth_height + 15)
-            pygame.draw.circle(screen, (120, 0, 0), (stain_x, stain_y), random.randint(3, 8))
+        # Blood and gore around mouth
+        for i in range(40):
+            stain_x = face_x - mouth_width//2 + random.randint(-30, mouth_width + 30)
+            stain_y = mouth_y + random.randint(-20, mouth_height + 20)
+            pygame.draw.circle(screen, (100, 0, 0), (stain_x, stain_y), random.randint(4, 12))
         
-        # CRACKS and VEINS all over face
-        for i in range(30):
-            crack_start_x = face_x + random.randint(-face_size//3, face_size//3)
-            crack_start_y = face_y + random.randint(-face_size//3, face_size//3)
-            crack_end_x = crack_start_x + random.randint(-60, 60)
-            crack_end_y = crack_start_y + random.randint(-60, 60)
-            pygame.draw.line(screen, (150, 0, 0), (crack_start_x, crack_start_y), (crack_end_x, crack_end_y), 3)
+        # Deep CRACKS and VEINS across the entire face
+        for i in range(60):
+            crack_start_x = face_x + random.randint(-face_size//2, face_size//2)
+            crack_start_y = face_y + random.randint(-face_size//2, face_size//2)
+            crack_end_x = crack_start_x + random.randint(-80, 80)
+            crack_end_y = crack_start_y + random.randint(-80, 80)
+            pygame.draw.line(screen, (120, 0, 0), (crack_start_x, crack_start_y), (crack_end_x, crack_end_y), random.randint(3, 6))
         
-        # Hair (messy and scary)
-        for i in range(30):
+        # Matted, stringy hair (like from a horror movie)
+        for i in range(50):
             hair_x = face_x + random.randint(-face_size//2, face_size//2)
-            hair_y = face_y - face_size//2 + random.randint(-30, 30)
-            hair_length = random.randint(40, 100)
-            pygame.draw.line(screen, (20, 10, 10), (hair_x, hair_y), (hair_x + random.randint(-20, 20), hair_y - hair_length), 4)
+            hair_y = face_y - face_size//2 + random.randint(-40, 40)
+            hair_length = random.randint(60, 150)
+            hair_thickness = random.randint(3, 7)
+            pygame.draw.line(screen, (15, 10, 10), (hair_x, hair_y), 
+                           (hair_x + random.randint(-30, 30), hair_y - hair_length), hair_thickness)
         
-        # Shake effect - screen trembles
-        shake_intensity = int(10 + progress * 20)
+        # EXTREME shake effect - screen violently trembles
+        shake_intensity = int(15 + progress * 35)
         shake_x = random.randint(-shake_intensity, shake_intensity)
         shake_y = random.randint(-shake_intensity, shake_intensity)
         
-        # Text that changes and shakes
-        if progress < 0.5:
-            jumpscare_text = lobby_font.render("SHE CAUGHT YOU!", True, (255, int(50 + progress * 200), int(50 + progress * 200)))
+        # TERRIFYING text messages
+        if progress < 0.3:
+            jumpscare_text = lobby_font.render("SHE CAUGHT YOU!", True, (255, 255, 255))
+        elif progress < 0.6:
+            jumpscare_text = lobby_font.render("YOU'RE BEING EATEN ALIVE!", True, (255, int(50 + progress * 200), int(50 + progress * 200)))
         else:
-            jumpscare_text = lobby_font.render("YOU'RE BEING EATEN!", True, (255, 0, 0))
-        screen.blit(jumpscare_text, (WIDTH//2 - jumpscare_text.get_width()//2 + shake_x, 50 + shake_y))
+            jumpscare_text = lobby_font.render("GAME OVER", True, (255, 0, 0))
+        screen.blit(jumpscare_text, (WIDTH//2 - jumpscare_text.get_width()//2 + shake_x, 60 + shake_y))
         
-        # Add more scary text at bottom
-        if progress > 0.6:
-            terror_text = font.render("NO ESCAPE...", True, (200, 0, 0))
-            screen.blit(terror_text, (WIDTH//2 - terror_text.get_width()//2 + shake_x//2, HEIGHT - 100 + shake_y//2))
+        # Additional horror text
+        if progress > 0.4:
+            terror_text = font.render("NO ESCAPE FROM MOTHER...", True, (200, 0, 0))
+            screen.blit(terror_text, (WIDTH//2 - terror_text.get_width()//2 + shake_x//2, HEIGHT - 120 + shake_y//2))
+        if progress > 0.7:
+            final_text = font.render("DARKNESS CONSUMES YOU", True, (150, 0, 0))
+            screen.blit(final_text, (WIDTH//2 - final_text.get_width()//2 - shake_x//2, HEIGHT - 80 - shake_y//2))
         
         pygame.display.flip()
         clock.tick(60)
         
-        # Allow emergency exit
+        # Allow emergency exit (some people can't handle this level of horror!)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -4820,10 +5330,11 @@ while True:
                         # Online mode for Battle Mode
                         role = online_host_or_join()
                         if role == 'host':
+                            # Host enters name BEFORE waiting for connection
+                            player_name = get_player_name("Host: Enter your name:", HEIGHT//2)
+                            
                             # Show waiting screen with IP
-                            import socket
-                            hostname = socket.gethostname()
-                            local_ip = socket.gethostbyname(hostname)
+                            local_ip = get_local_ip()
                             
                             screen.fill((30, 30, 30))
                             wait_text = lobby_font.render("Waiting for player to join...", True, (255, 255, 0))
@@ -4853,7 +5364,6 @@ while True:
                                     pygame.time.wait(100)
                                 
                                 if net.conn:
-                                    player_name = get_player_name("Enter your name:", HEIGHT//2)
                                     my_char, opp_char = online_character_select_and_countdown(net, True, 0)
                                     if my_char is not None and opp_char is not None:
                                         char_choices = [my_char, opp_char]
@@ -4928,10 +5438,11 @@ while True:
                         # Online mode for Coin Collection
                         role = online_host_or_join()
                         if role == 'host':
+                            # Host enters name BEFORE waiting for connection
+                            player_name = get_player_name("Host: Enter your name:", HEIGHT//2)
+                            
                             # Show waiting screen with IP
-                            import socket
-                            hostname = socket.gethostname()
-                            local_ip = socket.gethostbyname(hostname)
+                            local_ip = get_local_ip()
                             
                             screen.fill((30, 30, 30))
                             wait_text = lobby_font.render("Waiting for player to join...", True, (255, 255, 0))
@@ -4961,7 +5472,6 @@ while True:
                                     pygame.time.wait(100)
                                 
                                 if net.conn:
-                                    player_name = get_player_name("Enter your name:", HEIGHT//2)
                                     char_choices = character_select(1)
                                     # Simplified online - just play locally for now
                                     run_coin_collection_and_shop(player_name, "Opponent", char_choices)
@@ -5097,10 +5607,11 @@ while True:
                         # Online mode for Survival
                         role = online_host_or_join()
                         if role == 'host':
+                            # Host enters name BEFORE waiting for connection
+                            player_name = get_player_name("Host: Enter your name:", HEIGHT//2)
+                            
                             # Show waiting screen with IP
-                            import socket
-                            hostname = socket.gethostname()
-                            local_ip = socket.gethostbyname(hostname)
+                            local_ip = get_local_ip()
                             
                             screen.fill((30, 30, 30))
                             wait_text = lobby_font.render("Waiting for player to join...", True, (255, 255, 0))
@@ -5321,10 +5832,11 @@ while True:
                         # Online mode for Makka Pakka
                         role = online_host_or_join()
                         if role == 'host':
+                            # Host enters name BEFORE waiting for connection
+                            player_name = get_player_name("Host: Enter your name:", HEIGHT//2)
+                            
                             # Show waiting screen with IP
-                            import socket
-                            hostname = socket.gethostname()
-                            local_ip = socket.gethostbyname(hostname)
+                            local_ip = get_local_ip()
                             
                             screen.fill((30, 30, 30))
                             wait_text = lobby_font.render("Waiting for player to join...", True, (255, 255, 0))
@@ -5354,7 +5866,6 @@ while True:
                                     pygame.time.wait(100)
                                 
                                 if net.conn:
-                                    player_name = get_player_name("Enter your name:", HEIGHT//2)
                                     # Simplified online - just play locally for now
                                     run_makka_pakka_mode(player_name, "Opponent")
                                     net.close()
@@ -5435,10 +5946,11 @@ while True:
                         # Online mode for Capture the Flag
                         role = online_host_or_join()
                         if role == 'host':
+                            # Host enters name BEFORE waiting for connection
+                            player_name = get_player_name("Host: Enter your name:", HEIGHT//2)
+                            
                             # Show waiting screen with IP
-                            import socket
-                            hostname = socket.gethostname()
-                            local_ip = socket.gethostbyname(hostname)
+                            local_ip = get_local_ip()
                             
                             screen.fill((30, 30, 30))
                             wait_text = lobby_font.render("Waiting for player to join...", True, (255, 255, 0))
@@ -5468,7 +5980,6 @@ while True:
                                     pygame.time.wait(100)
                                 
                                 if net.conn:
-                                    player_name = get_player_name("Enter your name:", HEIGHT//2)
                                     # Simplified online - just play locally for now
                                     run_capture_the_flag(player_name, "Opponent")
                                     net.close()
