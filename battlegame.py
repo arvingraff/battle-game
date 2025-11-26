@@ -9,7 +9,54 @@ import socket
 import json
 from network import NetworkHost, NetworkClient
 
+# Network scanning and quick match imports
+import socket
+import threading
+
 pygame.init()
+
+# Session-based purchases (resets each time game starts)
+session_purchases = {'relax_mode': False, 'shop_unlocked': False}
+
+# SAVE/LOAD FUNCTIONS FOR PERSISTENCE
+def save_secret_hack():
+    """Save secret hack progress to a file"""
+    try:
+        save_path = os.path.join(os.path.expanduser('~'), '.battlegame_secrets.json')
+        with open(save_path, 'w') as f:
+            json.dump(secret_hack, f)
+    except:
+        pass  # Fail silently if can't save
+
+def load_secret_hack():
+    """Load secret hack progress from file"""
+    try:
+        save_path = os.path.join(os.path.expanduser('~'), '.battlegame_secrets.json')
+        if os.path.exists(save_path):
+            with open(save_path, 'r') as f:
+                return json.load(f)
+    except:
+        pass
+    return {}
+
+# SECRET HACK TRACKER - Load saved progress or start fresh
+saved_secrets = load_secret_hack()
+secret_hack = {
+    'sheep_mode_played': saved_secrets.get('sheep_mode_played', False),
+    'whoppa_gang_entered': saved_secrets.get('whoppa_gang_entered', False),
+    'music_still_playing': False,  # Don't persist music
+    'skibidi_triggered': saved_secrets.get('skibidi_triggered', False),
+    'wolf_ate_buttons': False,  # Don't persist wolf state
+    'grass_mode_unlocked': False,  # Reset each session - must do hack sequence!
+    'combine_mode_unlocked': False,  # Reset each session - must do hack sequence!
+    'entered_battle_after_music': saved_secrets.get('entered_battle_after_music', False),
+    'everything_restored': False,  # Don't persist restoration
+    'became_human': False,  # Don't persist - resets each session!
+    'god_mode_unlocked': saved_secrets.get('god_mode_unlocked', False),  # PERMANENT REWARD for completing Combine Mode!
+}
+
+# Key buffer for main menu hack detection
+menu_key_buffer = ""
 
 # Helper function to get the actual local IP address (not 127.0.0.1)
 def get_local_ip():
@@ -39,6 +86,207 @@ def get_local_ip():
             return local_ip
         except Exception:
             return "127.0.0.1"  # Last resort fallback
+
+def scan_for_hosts(timeout=2):
+    """Scan local network for available game hosts"""
+    import time
+    found_hosts = []
+    local_ip = get_local_ip()
+    if not local_ip:
+        return []
+    
+    # Get network prefix (e.g., 192.168.1.)
+    ip_parts = local_ip.split('.')
+    network_prefix = '.'.join(ip_parts[:3]) + '.'
+    
+    def check_host(ip):
+        try:
+            test_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            test_sock.settimeout(0.5)
+            result = test_sock.connect_ex((ip, 50007))
+            test_sock.close()
+            if result == 0:
+                found_hosts.append(ip)
+        except:
+            pass
+    
+    # Scan common IP range (last octet 1-254)
+    threads = []
+    for i in range(1, 255):
+        ip = network_prefix + str(i)
+        if ip != local_ip:  # Don't scan ourselves
+            thread = threading.Thread(target=check_host, args=(ip,))
+            thread.daemon = True
+            thread.start()
+            threads.append(thread)
+    
+    # Wait for scan to complete
+    start_time = time.time()
+    for thread in threads:
+        remaining = timeout - (time.time() - start_time)
+        if remaining > 0:
+            thread.join(timeout=remaining)
+    
+    return found_hosts
+
+def quick_match_flow(mode_type=0):
+    """Quick match: auto-connect by scanning for hosts, or becoming a host if none found"""
+    import time
+    # Show searching screen
+    screen.fill((30, 30, 30))
+    search_text = lobby_font.render("Quick Match", True, (255, 215, 0))
+    screen.blit(search_text, (WIDTH//2 - search_text.get_width()//2, HEIGHT//2 - 120))
+    
+    status_text = font.render("Searching for available players...", True, (255, 255, 255))
+    screen.blit(status_text, (WIDTH//2 - status_text.get_width()//2, HEIGHT//2 - 30))
+    
+    cancel_text = name_font.render("Press ESC to cancel", True, (150, 150, 150))
+    screen.blit(cancel_text, (WIDTH//2 - cancel_text.get_width()//2, HEIGHT//2 + 60))
+    
+    pygame.display.flip()
+    
+    # Check for cancel during scan
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            return None
+    
+    # Scan for hosts
+    found_hosts = scan_for_hosts(timeout=3)
+    
+    if found_hosts:
+        # Found a host, try to join
+        host_ip = found_hosts[0]  # Connect to first available host
+        
+        screen.fill((30, 30, 30))
+        conn_text = lobby_font.render(f"Found player! Connecting...", True, (0, 255, 0))
+        screen.blit(conn_text, (WIDTH//2 - conn_text.get_width()//2, HEIGHT//2))
+        pygame.display.flip()
+        
+        try:
+            net = NetworkClient(host_ip)
+            pygame.time.wait(500)
+            
+            # Send initial connection packet so host detects us
+            net.send({'type': 'client_ready', 'status': 'connected'})
+            pygame.time.wait(200)
+            
+            # Client enters name (synchronized with host)
+            player_name = get_player_name_online("Enter your name:", HEIGHT//2, net, False)
+            
+            my_char, opp_char = online_character_select_and_countdown(net, False, mode_type)
+            if my_char is not None and opp_char is not None:
+                char_choices = [opp_char, my_char]
+                result = run_game_with_upgrades("Opponent", player_name, char_choices, 0, 0, 0, 0, 0, 0, mode=mode_type, net=net, is_host=False)
+            net.close()
+            return 'played'
+        except Exception as e:
+            screen.fill((30, 30, 30))
+            error_text = font.render(f"Connection failed: {str(e)}", True, (255, 0, 0))
+            screen.blit(error_text, (WIDTH//2 - error_text.get_width()//2, HEIGHT//2))
+            retry_text = name_font.render("Becoming host instead...", True, (255, 255, 0))
+            screen.blit(retry_text, (WIDTH//2 - retry_text.get_width()//2, HEIGHT//2 + 50))
+            pygame.display.flip()
+            pygame.time.wait(1500)
+            # Fall through to hosting
+    
+    # No host found, become a host
+    local_ip = get_local_ip()
+    
+    screen.fill((30, 30, 30))
+    host_text = lobby_font.render("No players found - Hosting game...", True, (255, 215, 0))
+    screen.blit(host_text, (WIDTH//2 - host_text.get_width()//2, HEIGHT//2 - 100))
+    ip_text = font.render(f"Your IP: {local_ip}", True, (255, 255, 255))
+    screen.blit(ip_text, (WIDTH//2 - ip_text.get_width()//2, HEIGHT//2))
+    wait_text = name_font.render("Waiting for someone to join...", True, (200, 200, 200))
+    screen.blit(wait_text, (WIDTH//2 - wait_text.get_width()//2, HEIGHT//2 + 50))
+    cancel_text2 = name_font.render("Press ESC to cancel", True, (150, 150, 150))
+    screen.blit(cancel_text2, (WIDTH//2 - cancel_text2.get_width()//2, HEIGHT//2 + 100))
+    pygame.display.flip()
+    
+    try:
+        net = NetworkHost()
+        # Wait for connection with cancel option
+        waiting = True
+        connection_detected = False
+        start_wait = time.time()
+        
+        # For UDP hosts, wait for first data packet to detect connection
+        while waiting and not connection_detected:
+            # Redraw waiting screen
+            screen.fill((30, 30, 30))
+            host_text = lobby_font.render("No players found - Hosting game...", True, (255, 215, 0))
+            screen.blit(host_text, (WIDTH//2 - host_text.get_width()//2, HEIGHT//2 - 100))
+            ip_text = font.render(f"Your IP: {local_ip}", True, (255, 255, 255))
+            screen.blit(ip_text, (WIDTH//2 - ip_text.get_width()//2, HEIGHT//2))
+            wait_text = name_font.render("Waiting for someone to join...", True, (200, 200, 200))
+            screen.blit(wait_text, (WIDTH//2 - wait_text.get_width()//2, HEIGHT//2 + 50))
+            cancel_text2 = name_font.render("Press ESC to cancel", True, (150, 150, 150))
+            screen.blit(cancel_text2, (WIDTH//2 - cancel_text2.get_width()//2, HEIGHT//2 + 100))
+            pygame.display.flip()
+            
+            for ev in pygame.event.get():
+                if ev.type == pygame.QUIT:
+                    net.close()
+                    pygame.quit()
+                    sys.exit()
+                if ev.type == pygame.KEYDOWN and ev.key == pygame.K_ESCAPE:
+                    net.close()
+                    return None
+            
+            # Check for connection (TCP uses net.conn, UDP uses client_addr)
+            if net.use_udp:
+                # For UDP, try to receive data to detect client
+                data = net.recv()
+                if data or net.client_addr:
+                    connection_detected = True
+            else:
+                # Pretty gradient background (clamped RGB)
+                for y in range(HEIGHT):
+                    shade = int(200 + 55 * math.sin(y * 0.005))
+                    r = max(0, min(255, shade))
+                    g = max(0, min(255, shade - 20))
+                    b = max(0, min(255, shade + 20))
+                    pygame.draw.line(screen, (r, g, b), (0, y), (WIDTH, y))
+                # Pretty gradient background (clamp channels to valid 0-255 values)
+                for y in range(HEIGHT):
+                    shade = int(200 + 55 * math.sin(y * 0.005))
+                    r = max(0, min(255, shade))
+                    g = max(0, min(255, shade - 20))
+                    b = max(0, min(255, shade + 20))
+                    pygame.draw.line(screen, (r, g, b), (0, y), (WIDTH, y))
+                # For TCP, check if connection exists
+                if net.conn:
+                    connection_detected = True
+            
+            pygame.time.wait(100)
+        
+        if connection_detected:
+            # Show connection successful message
+            screen.fill((30, 30, 30))
+            connected_text = lobby_font.render("Player Connected! Starting...", True, (0, 255, 0))
+            screen.blit(connected_text, (WIDTH//2 - connected_text.get_width()//2, HEIGHT//2))
+            pygame.display.flip()
+            pygame.time.wait(1000)
+            
+            # Host enters name (synchronized with client)
+            player_name = get_player_name_online("Enter your name:", HEIGHT//2, net, True)
+            
+            my_char, opp_char = online_character_select_and_countdown(net, True, mode_type)
+            if my_char is not None and opp_char is not None:
+                char_choices = [my_char, opp_char]
+                result = run_game_with_upgrades(player_name, "Opponent", char_choices, 0, 0, 0, 0, 0, 0, mode=mode_type, net=net, is_host=True)
+            net.close()
+            return 'played'
+    except Exception as e:
+        screen.fill((30, 30, 30))
+        error_text = font.render(f"Hosting error: {str(e)}", True, (255, 0, 0))
+        screen.blit(error_text, (WIDTH//2 - error_text.get_width()//2, HEIGHT//2))
+        pygame.display.flip()
+        pygame.time.wait(2000)
+        return None
 
 # Helper function to get the correct path for bundled files
 def resource_path(relative_path):
@@ -113,9 +361,9 @@ def show_leaderboard(mode='survival'):
         
         # Column headers
         if mode == 'mom':
-            headers = font.render("RANK    NAME              TIME SURVIVED", True, (200, 200, 200))
+            headers = font.render("RANK    NAME          TIME      DATE", True, (200, 200, 200))
         else:
-            headers = font.render("RANK    NAMES             SCORE    LEVEL", True, (200, 200, 200))
+            headers = font.render("RANK    NAME          SCORE    LEVEL    DATE", True, (200, 200, 200))
         screen.blit(headers, (WIDTH//2 - headers.get_width()//2, 150))
         
         # Scores
@@ -124,16 +372,26 @@ def show_leaderboard(mode='survival'):
                 y_pos = 220 + i * 50
                 rank = f"#{i+1}"
                 
+                # Format date (show just the date, not time)
+                timestamp = entry.get('timestamp', 'N/A')
+                if timestamp != 'N/A':
+                    try:
+                        date_only = timestamp.split(' ')[0]  # Get just YYYY-MM-DD
+                    except:
+                        date_only = timestamp[:10] if len(timestamp) >= 10 else timestamp
+                else:
+                    date_only = 'N/A'
+                
                 if mode == 'mom':
-                    name = entry.get('name', 'Unknown')[:15]
+                    name = entry.get('name', 'Unknown')[:12]
                     score_val = entry.get('score', 0)
                     score_text = f"{score_val}s"
-                    line = f"{rank:<8}{name:<18}{score_text}"
+                    line = f"{rank:<8}{name:<14}{score_text:<10}{date_only}"
                 else:
-                    names = entry.get('names', entry.get('name', 'Unknown'))[:15]
+                    names = entry.get('names', entry.get('name', 'Unknown'))[:12]
                     score_val = entry.get('score', 0)
                     level = entry.get('level', 1)
-                    line = f"{rank:<8}{names:<18}{score_val:<9}{level}"
+                    line = f"{rank:<8}{names:<14}{score_val:<9}{level:<9}{date_only}"
                 
                 # Color based on rank
                 if i == 0:
@@ -367,7 +625,7 @@ def adventure_3d_mode():
     move_speed = 3.5
     rot_speed = 3.0
     fov = math.pi / 3
-    max_depth = 20.0
+    max_depth = 16.0  # Reduced for performance
     
     # Enhanced UI colors
     ui_bg = (15, 15, 25)
@@ -375,6 +633,10 @@ def adventure_3d_mode():
     health_color = (220, 40, 40)
     mana_color = (40, 120, 220)
     exp_color = (255, 200, 50)
+    
+    # Performance optimizations
+    num_rays = 100  # Reduced from 150 for better FPS
+    ray_quality = 0.2  # Step size for ray casting
     
     # Visual effects
     damage_numbers = []  # Floating damage numbers
@@ -384,6 +646,11 @@ def adventure_3d_mode():
     # Quest tracking
     show_quest_panel = False
     portal_revealed = False
+    
+    # Game state
+    game_over = False
+    victory = False
+    attack_animation = 0.0  # Timer for attack animations
     
     running = True
     show_map = False
@@ -395,6 +662,67 @@ def adventure_3d_mode():
     
     while running:
         dt = clock.tick(60) / 1000.0
+        
+        # If game over or victory, only allow ESC to exit
+        if game_over or victory:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    return
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    return
+            
+            # Just render the final screen
+            screen.fill((10, 10, 20))
+            
+            if game_over:
+                # Death screen
+                overlay = pygame.Surface((WIDTH, HEIGHT))
+                overlay.fill((20, 0, 0))
+                overlay.set_alpha(200)
+                screen.blit(overlay, (0, 0))
+                
+                title = lobby_font.render("💀 GAME OVER 💀", True, (255, 50, 50))
+                screen.blit(title, (WIDTH // 2 - title.get_width() // 2, HEIGHT // 2 - 100))
+                
+                lines = [
+                    "You have been defeated...",
+                    "The dungeon claims another victim.",
+                    "",
+                    "Press ESC to return to menu"
+                ]
+                y_offset = HEIGHT // 2
+                for line in lines:
+                    text = font.render(line, True, (255, 200, 200))
+                    screen.blit(text, (WIDTH // 2 - text.get_width() // 2, y_offset))
+                    y_offset += 40
+            
+            elif victory:
+                # Victory screen
+                overlay = pygame.Surface((WIDTH, HEIGHT))
+                overlay.fill((20, 0, 40))
+                overlay.set_alpha(200)
+                screen.blit(overlay, (0, 0))
+                
+                title = lobby_font.render("✨ VICTORY! ✨", True, (255, 215, 0))
+                screen.blit(title, (WIDTH // 2 - title.get_width() // 2, HEIGHT // 2 - 100))
+                
+                lines = [
+                    "You have completed all quests!",
+                    "The portal glows with energy...",
+                    "You escape the cursed dungeon!",
+                    "",
+                    "Press ESC to return to menu"
+                ]
+                y_offset = HEIGHT // 2
+                for line in lines:
+                    text = font.render(line, True, (200, 255, 200))
+                    screen.blit(text, (WIDTH // 2 - text.get_width() // 2, y_offset))
+                    y_offset += 40
+            
+            pygame.display.flip()
+            continue
+        
+        # Normal game continues...
         
         # Update timers
         if message_timer > 0:
@@ -464,7 +792,31 @@ def adventure_3d_mode():
                     check_y = player['y'] + math.sin(player['angle']) * 1.5
                     cx, cy = int(check_x), int(check_y)
                     
-                    if 0 <= cx < len(world_map[0]) and 0 <= cy < len(world_map):
+                    # Check if interacting with portal (by proximity to portal coordinates)
+                    portal_x, portal_y = 14.5, 13.5
+                    dist_to_portal = math.sqrt((check_x - portal_x)**2 + (check_y - portal_y)**2)
+                    
+                    if dist_to_portal < 1.5:  # Close enough to portal
+                        # Check if monsters are defeated (not all quests, just monsters)
+                        monsters_complete = False
+                        for quest in player['quests']:
+                            if 'Monster' in quest['name'] and quest['complete']:
+                                monsters_complete = True
+                                break
+                        
+                        if monsters_complete:
+                            # Complete the portal quest
+                            for quest in player['quests']:
+                                if 'Portal' in quest['name']:
+                                    quest['complete'] = True
+                            
+                            # Victory!
+                            victory = True
+                        else:
+                            message = "⚠ The portal is sealed! Defeat all 4 monsters first."
+                            message_timer = 3.0
+                    
+                    elif 0 <= cx < len(world_map[0]) and 0 <= cy < len(world_map):
                         tile = world_map[cy][cx]
                         if tile == 2:  # Door
                             world_map[cy][cx] = 0
@@ -518,26 +870,13 @@ def adventure_3d_mode():
                                     else:
                                         message = f"{npc['name']}: Good luck on your journey!"
                                         message_timer = 2.0
-                        elif tile == 6:  # Portal
-                            # Check if all quests complete
-                            all_complete = all(q['complete'] for q in player['quests'])
-                            if all_complete:
-                                dialogue_lines = [
-                                    "═══ VICTORY! ═══",
-                                    "You have completed all quests!",
-                                    "The portal glows with energy...",
-                                    "You escape the cursed dungeon!",
-                                    "",
-                                    "Press ESC to return to menu"
-                                ]
-                                dialogue_timer = 999
-                            else:
-                                message = "⚠ The portal is sealed! Complete all quests first."
-                                message_timer = 3.0
                 
                 if event.key == pygame.K_SPACE:
                     # Attack
                     if combat_target and combat_target['alive']:
+                        # Trigger attack animation
+                        attack_animation = 0.5  # 0.5 seconds of animation
+                        
                         # Calculate damage based on weapon
                         base_damage = 10 + player['level'] * 5
                         if 'Golden Sword' in player['equipped_weapon']:
@@ -613,14 +952,8 @@ def adventure_3d_mode():
                             hit_flash = 0.5
                             
                             if player['health'] <= 0:
-                                dialogue_lines = [
-                                    "💀 GAME OVER 💀",
-                                    "You have been defeated...",
-                                    "The dungeon claims another victim.",
-                                    "",
-                                    "Press ESC to return to menu"
-                                ]
-                                dialogue_timer = 999
+                                game_over = True
+                                player['health'] = 0  # Don't go negative
         
         # Check for nearby enemies
         combat_target = None
@@ -631,25 +964,23 @@ def adventure_3d_mode():
                     combat_target = enemy
                     break
         
+        # Check if near portal for hand interaction hint
+        portal_x, portal_y = 14.5, 13.5
+        dist_to_portal = math.sqrt((portal_x - player['x'])**2 + (portal_y - player['y'])**2)
+        near_portal = dist_to_portal < 3.0
+        
         # === RENDER 3D VIEW ===
-        # Draw gradient sky/ceiling
-        for i in range(HEIGHT//2):
-            shade = int(30 + (i / (HEIGHT//2)) * 50)
-            pygame.draw.line(screen, (shade, shade, shade + 30), (0, i), (WIDTH, i))
+        # Simple but effective sky gradient (optimized)
+        screen.fill((30, 40, 60))  # Sky color
+        pygame.draw.rect(screen, (20, 30, 25), (0, HEIGHT//2, WIDTH, HEIGHT//2))  # Floor
         
-        # Draw gradient floor
-        for i in range(HEIGHT//2):
-            shade = int(20 + (i / (HEIGHT//2)) * 40)
-            pygame.draw.line(screen, (shade, shade + 20, shade), (0, HEIGHT//2 + i), (WIDTH, HEIGHT//2 + i))
-        
-        # Ray casting with enhanced graphics
-        num_rays = 150
+        # Optimized ray casting - fewer rays, faster rendering
         for ray in range(num_rays):
             ray_angle = player['angle'] - fov / 2 + (ray / num_rays) * fov
             
-            # Cast ray
-            for depth in range(int(max_depth * 10)):
-                test_depth = depth / 10.0
+            # Cast ray with larger steps for speed
+            for depth in range(0, int(max_depth / ray_quality)):
+                test_depth = depth * ray_quality
                 test_x = player['x'] + math.cos(ray_angle) * test_depth
                 test_y = player['y'] + math.sin(ray_angle) * test_depth
                 
@@ -659,54 +990,51 @@ def adventure_3d_mode():
                     if world_map[ty][tx] == 1:  # Wall
                         # Calculate wall height
                         distance = test_depth * math.cos(ray_angle - player['angle'])
-                        wall_height = min(HEIGHT, int(HEIGHT / (distance + 0.0001) * 0.6))
+                        wall_height = min(HEIGHT, int(HEIGHT / (distance + 0.0001) * 0.65))
                         
-                        # Enhanced wall shading with texture-like effect
-                        shade = max(30, 255 - int(distance * 15))
+                        # Simple but effective lighting
+                        shade = max(20, 255 - int(distance * 18))
                         
-                        # Add fake brick pattern
+                        # Simple brick effect
                         brick_offset = int((test_x + test_y) * 2) % 2
-                        brick_shade = shade - brick_offset * 20
+                        brick_shade = shade - brick_offset * 15
                         
-                        # Different shades for N/S vs E/W walls
+                        # Wall orientation shading
                         if abs(math.cos(ray_angle)) > abs(math.sin(ray_angle)):
-                            color = (brick_shade // 2, brick_shade // 2, brick_shade // 1.5)
+                            color = (brick_shade // 2, brick_shade // 2.2, brick_shade // 1.8)
                         else:
-                            color = (brick_shade // 2.5, brick_shade // 2.5, brick_shade // 1.8)
+                            color = (brick_shade // 1.8, brick_shade // 2, brick_shade // 1.6)
                         
                         wall_top = HEIGHT // 2 - wall_height // 2
                         wall_bottom = HEIGHT // 2 + wall_height // 2
                         
                         x_pos = int(ray * (WIDTH / num_rays))
-                        pygame.draw.line(screen, color, (x_pos, wall_top), (x_pos, wall_bottom), max(1, int(WIDTH / num_rays) + 1))
-                        
-                        # Add shadow at top and bottom of walls
-                        shadow_color = tuple(c // 3 for c in color)
-                        pygame.draw.line(screen, shadow_color, (x_pos, wall_top), (x_pos, wall_top + 2))
-                        pygame.draw.line(screen, shadow_color, (x_pos, wall_bottom - 2), (x_pos, wall_bottom))
+                        line_width = max(1, int(WIDTH / num_rays) + 1)
+                        pygame.draw.line(screen, color, (x_pos, wall_top), (x_pos, wall_bottom), line_width)
                         break
-                    elif world_map[ty][tx] == 2:  # Door
+                    elif world_map[ty][tx] == 2:  # Door - simple wooden style
                         distance = test_depth * math.cos(ray_angle - player['angle'])
-                        wall_height = min(HEIGHT, int(HEIGHT / (distance + 0.0001) * 0.6))
-                        shade = max(30, 220 - int(distance * 15))
+                        wall_height = min(HEIGHT, int(HEIGHT / (distance + 0.0001) * 0.65))
+                        shade = max(20, 200 - int(distance * 15))
+                        
                         # Wooden door color
                         color = (shade // 2, shade // 3, shade // 6)
                         
                         wall_top = HEIGHT // 2 - wall_height // 2
                         wall_bottom = HEIGHT // 2 + wall_height // 2
                         x_pos = int(ray * (WIDTH / num_rays))
-                        pygame.draw.line(screen, color, (x_pos, wall_top), (x_pos, wall_bottom), max(1, int(WIDTH / num_rays) + 1))
+                        line_width = max(1, int(WIDTH / num_rays) + 1)
+                        pygame.draw.line(screen, color, (x_pos, wall_top), (x_pos, wall_bottom), line_width)
                         
-                        # Door handle in middle
-                        if ray % 10 == 5:
-                            handle_y = HEIGHT // 2
-                            pygame.draw.circle(screen, (180, 150, 50), (x_pos, handle_y), 2)
+                        # Door handle
+                        if distance < 3.0 and ray % 8 == 4:
+                            pygame.draw.circle(screen, (180, 150, 50), (x_pos, HEIGHT // 2), 2)
                         break
         
-        # Draw sprites (enemies, treasures, NPCs) with realistic colors
+        # Draw sprites (enemies, treasures, NPCs) - optimized
         sprites = []
         
-        # Add enemies with their custom colors
+        # Add enemies
         for enemy in enemies:
             if enemy['alive']:
                 sprites.append({
@@ -775,37 +1103,278 @@ def adventure_3d_mode():
                     
                     # Draw sprite with more detail
                     if sprite['type'] == 'enemy':
-                        # Body
-                        pygame.draw.ellipse(screen, color, (screen_x - size//2, screen_y - size, size, size * 1.5))
-                        # Head
-                        head_color = tuple(min(255, c + 20) for c in color)
-                        pygame.draw.circle(screen, head_color, (screen_x, screen_y - size - size//4), size//3)
-                        # Eyes (red glow)
-                        eye_size = max(2, size // 15)
-                        pygame.draw.circle(screen, (255, 50, 50), (screen_x - size//8, screen_y - size - size//4), eye_size)
-                        pygame.draw.circle(screen, (255, 50, 50), (screen_x + size//8, screen_y - size - size//4), eye_size)
+                        enemy_type = sprite['data'].get('type', 'unknown')
+                        
+                        # GOBLIN - Small, hunched, greenish
+                        if enemy_type == 'goblin':
+                            # Small hunched body
+                            pygame.draw.ellipse(screen, color, (screen_x - size//3, screen_y - size//2, size//1.5, size))
+                            # Big head
+                            head_color = tuple(min(255, int(c * 1.2)) for c in color)
+                            pygame.draw.ellipse(screen, head_color, (screen_x - size//2.5, screen_y - size - size//3, size//1.2, size//1.5))
+                            # Pointed ears
+                            pygame.draw.polygon(screen, head_color, [
+                                (screen_x - size//2, screen_y - size - size//4),
+                                (screen_x - size//1.5, screen_y - size - size//3),
+                                (screen_x - size//2.5, screen_y - size)
+                            ])
+                            pygame.draw.polygon(screen, head_color, [
+                                (screen_x + size//2, screen_y - size - size//4),
+                                (screen_x + size//1.5, screen_y - size - size//3),
+                                (screen_x + size//2.5, screen_y - size)
+                            ])
+                            # Beady yellow eyes
+                            eye_size = max(3, size // 12)
+                            pygame.draw.circle(screen, (255, 255, 50), (screen_x - size//6, screen_y - size - size//6), eye_size)
+                            pygame.draw.circle(screen, (0, 0, 0), (screen_x - size//6, screen_y - size - size//6), eye_size//2)
+                            pygame.draw.circle(screen, (255, 255, 50), (screen_x + size//6, screen_y - size - size//6), eye_size)
+                            pygame.draw.circle(screen, (0, 0, 0), (screen_x + size//6, screen_y - size - size//6), eye_size//2)
+                            # Sharp teeth
+                            for i in range(3):
+                                tooth_x = screen_x - size//6 + i * size//6
+                                pygame.draw.polygon(screen, (255, 255, 255), [
+                                    (tooth_x, screen_y - size + size//8),
+                                    (tooth_x - size//20, screen_y - size),
+                                    (tooth_x + size//20, screen_y - size)
+                                ])
+                        
+                        # ORC - Big, muscular, brutish
+                        elif enemy_type == 'orc':
+                            # Massive muscular body
+                            pygame.draw.rect(screen, color, (screen_x - size//2, screen_y - size, size, size * 1.3))
+                            # Broad shoulders
+                            pygame.draw.rect(screen, tuple(int(c * 0.9) for c in color), 
+                                           (screen_x - size//1.5, screen_y - size - size//4, size * 1.3, size//3))
+                            # Large square head
+                            head_color = tuple(min(255, int(c * 1.1)) for c in color)
+                            pygame.draw.rect(screen, head_color, (screen_x - size//2.5, screen_y - size - size//1.5, size//1.2, size//1.3))
+                            # Tusks
+                            pygame.draw.polygon(screen, (255, 255, 220), [
+                                (screen_x - size//4, screen_y - size - size//4),
+                                (screen_x - size//3, screen_y - size + size//6),
+                                (screen_x - size//5, screen_y - size)
+                            ])
+                            pygame.draw.polygon(screen, (255, 255, 220), [
+                                (screen_x + size//4, screen_y - size - size//4),
+                                (screen_x + size//3, screen_y - size + size//6),
+                                (screen_x + size//5, screen_y - size)
+                            ])
+                            # Angry red eyes
+                            eye_size = max(2, size // 14)
+                            pygame.draw.circle(screen, (255, 100, 100), (screen_x - size//8, screen_y - size - size//3), eye_size)
+                            pygame.draw.circle(screen, (255, 0, 0), (screen_x - size//8, screen_y - size - size//3), eye_size//2)
+                            pygame.draw.circle(screen, (255, 100, 100), (screen_x + size//8, screen_y - size - size//3), eye_size)
+                            pygame.draw.circle(screen, (255, 0, 0), (screen_x + size//8, screen_y - size - size//3), eye_size//2)
+                            # War paint
+                            pygame.draw.line(screen, (150, 50, 50), (screen_x - size//3, screen_y - size - size//2), 
+                                           (screen_x + size//3, screen_y - size - size//2), max(1, size//20))
+                        
+                        # SKELETON - Thin, bony, undead
+                        elif enemy_type == 'skeleton':
+                            # Ribcage
+                            for i in range(4):
+                                rib_y = screen_y - size + i * size//5
+                                pygame.draw.ellipse(screen, color, (screen_x - size//3, rib_y, size//1.5, size//8), 2)
+                            # Spine
+                            pygame.draw.line(screen, color, (screen_x, screen_y - size), (screen_x, screen_y + size//4), max(2, size//15))
+                            # Pelvis
+                            pygame.draw.arc(screen, color, (screen_x - size//3, screen_y - size//6, size//1.5, size//3), 0, math.pi, max(2, size//15))
+                            # Skull
+                            pygame.draw.circle(screen, (240, 240, 240), (screen_x, screen_y - size - size//3), size//2.5)
+                            # Dark eye sockets with green glow
+                            pygame.draw.circle(screen, (20, 20, 20), (screen_x - size//8, screen_y - size - size//3), size//10)
+                            pygame.draw.circle(screen, (50, 255, 50), (screen_x - size//8, screen_y - size - size//3), size//15)
+                            pygame.draw.circle(screen, (20, 20, 20), (screen_x + size//8, screen_y - size - size//3), size//10)
+                            pygame.draw.circle(screen, (50, 255, 50), (screen_x + size//8, screen_y - size - size//3), size//15)
+                            # Nose hole
+                            pygame.draw.polygon(screen, (20, 20, 20), [
+                                (screen_x, screen_y - size - size//4),
+                                (screen_x - size//15, screen_y - size - size//6),
+                                (screen_x + size//15, screen_y - size - size//6)
+                            ])
+                            # Teeth
+                            for i in range(6):
+                                tooth_x = screen_x - size//4 + i * size//10
+                                pygame.draw.rect(screen, (20, 20, 20), (tooth_x, screen_y - size - size//8, size//20, size//12))
+                            # Bone arms
+                            pygame.draw.line(screen, color, (screen_x - size//2, screen_y - size//2), 
+                                           (screen_x - size//1.5, screen_y - size), max(2, size//18))
+                            pygame.draw.line(screen, color, (screen_x + size//2, screen_y - size//2), 
+                                           (screen_x + size//1.5, screen_y - size), max(2, size//18))
+                        
+                        # DRAGON - Large, scaly, wings
+                        elif enemy_type == 'dragon':
+                            # Massive scaly body
+                            for i in range(3):
+                                scale_y = screen_y - size + i * size//3
+                                scale_color = tuple(max(20, int(c * (0.8 + i * 0.1))) for c in color)
+                                pygame.draw.ellipse(screen, scale_color, (screen_x - size//1.8, scale_y, size//0.9, size//2.5))
+                            # Wings spread
+                            wing_color = tuple(int(c * 0.7) for c in color)
+                            # Left wing
+                            pygame.draw.polygon(screen, wing_color, [
+                                (screen_x - size//3, screen_y - size),
+                                (screen_x - size * 1.2, screen_y - size//2),
+                                (screen_x - size//2, screen_y - size//3)
+                            ])
+                            # Right wing
+                            pygame.draw.polygon(screen, wing_color, [
+                                (screen_x + size//3, screen_y - size),
+                                (screen_x + size * 1.2, screen_y - size//2),
+                                (screen_x + size//2, screen_y - size//3)
+                            ])
+                            # Wing membranes
+                            pygame.draw.polygon(screen, tuple(int(c * 0.5) for c in color), [
+                                (screen_x - size//3, screen_y - size),
+                                (screen_x - size * 1.2, screen_y - size//2),
+                                (screen_x - size//2, screen_y - size//3)
+                            ], 1)
+                            # Dragon head with horns
+                            head_color = tuple(min(255, int(c * 1.2)) for c in color)
+                            pygame.draw.ellipse(screen, head_color, (screen_x - size//2.5, screen_y - size * 1.4, size//1.2, size//1.8))
+                            # Horns
+                            pygame.draw.polygon(screen, (80, 80, 80), [
+                                (screen_x - size//4, screen_y - size * 1.5),
+                                (screen_x - size//3, screen_y - size * 1.8),
+                                (screen_x - size//5, screen_y - size * 1.4)
+                            ])
+                            pygame.draw.polygon(screen, (80, 80, 80), [
+                                (screen_x + size//4, screen_y - size * 1.5),
+                                (screen_x + size//3, screen_y - size * 1.8),
+                                (screen_x + size//5, screen_y - size * 1.4)
+                            ])
+                            # Fierce orange/red eyes
+                            eye_size = max(4, size // 10)
+                            pygame.draw.circle(screen, (255, 150, 0), (screen_x - size//8, screen_y - size * 1.3), eye_size)
+                            pygame.draw.circle(screen, (255, 0, 0), (screen_x - size//8, screen_y - size * 1.3), eye_size//3)
+                            pygame.draw.circle(screen, (255, 150, 0), (screen_x + size//8, screen_y - size * 1.3), eye_size)
+                            pygame.draw.circle(screen, (255, 0, 0), (screen_x + size//8, screen_y - size * 1.3), eye_size//3)
+                            # Smoke from nostrils
+                            for j in range(2):
+                                smoke_offset = (pygame.time.get_ticks() / 200 + j) % 20
+                                smoke_alpha = max(0, 150 - smoke_offset * 10)
+                                smoke_x = screen_x - size//8 + j * size//4
+                                smoke_y = screen_y - size * 1.2 - smoke_offset
+                                if smoke_alpha > 0:
+                                    pygame.draw.circle(screen, (100, 100, 100), (int(smoke_x), int(smoke_y)), max(2, size//15))
+                            # Sharp teeth
+                            for i in range(5):
+                                tooth_x = screen_x - size//3 + i * size//7
+                                pygame.draw.polygon(screen, (255, 255, 255), [
+                                    (tooth_x, screen_y - size * 1.15),
+                                    (tooth_x - size//25, screen_y - size * 1.05),
+                                    (tooth_x + size//25, screen_y - size * 1.05)
+                                ])
+                        
                         # Health bar above enemy
                         if 'health' in sprite['data'] and 'max_health' in sprite['data']:
-                            bar_width = size
-                            bar_height = 4
+                            bar_width = size * 1.2
+                            bar_height = max(4, size // 20)
                             bar_x = screen_x - bar_width // 2
-                            bar_y = screen_y - size - size//2 - 15
+                            bar_y = screen_y - size * 1.6 if enemy_type == 'dragon' else screen_y - size * 1.2
                             # Background
-                            pygame.draw.rect(screen, (60, 60, 60), (bar_x, bar_y, bar_width, bar_height))
+                            pygame.draw.rect(screen, (40, 40, 40), (bar_x, bar_y, bar_width, bar_height))
                             # Health
                             health_pct = sprite['data']['health'] / sprite['data']['max_health']
                             health_width = int(bar_width * health_pct)
                             health_bar_color = (255, 50, 50) if health_pct < 0.3 else (255, 200, 50) if health_pct < 0.7 else (50, 255, 50)
                             pygame.draw.rect(screen, health_bar_color, (bar_x, bar_y, health_width, bar_height))
+                            pygame.draw.rect(screen, (200, 200, 200), (bar_x, bar_y, bar_width, bar_height), 1)
+                            # Enemy name above health bar
+                            enemy_name = sprite['data'].get('name', '')
+                            if enemy_name and size > 30:
+                                name_text = name_font.render(enemy_name, True, (255, 255, 255))
+                                name_text.set_alpha(200)
+                                screen.blit(name_text, (screen_x - name_text.get_width()//2, bar_y - 18))
                     
                     elif sprite['type'] == 'treasure':
-                        # Chest shape with glow
-                        glow_color = tuple(min(255, c + 50) for c in color)
-                        pygame.draw.circle(screen, glow_color, (screen_x, screen_y - size//2), size//2 + 5, 2)
-                        pygame.draw.rect(screen, color, (screen_x - size//2, screen_y - size//2, size, size//2))
-                        pygame.draw.rect(screen, tuple(c // 2 for c in color), (screen_x - size//2, screen_y - size//2, size, size//2), 2)
-                        # Lock
-                        pygame.draw.circle(screen, (200, 180, 100), (screen_x, screen_y - size//4), max(2, size//10))
+                        # Different chest appearance based on treasure type
+                        treasure_type = sprite['data'].get('type', 'gold')
+                        
+                        if treasure_type == 'weapon':
+                            # Golden ornate weapon chest
+                            chest_color = (255, 215, 0)
+                            # Pulsing golden glow
+                            glow_intensity = int(abs(math.sin(pygame.time.get_ticks() / 300)) * 50)
+                            glow_color = tuple(min(255, c + glow_intensity) for c in chest_color)
+                            pygame.draw.circle(screen, glow_color, (screen_x, screen_y - size//2), size//2 + 8, 3)
+                            pygame.draw.circle(screen, glow_color, (screen_x, screen_y - size//2), size//2 + 5, 2)
+                            # Main chest body - golden
+                            pygame.draw.rect(screen, chest_color, (screen_x - size//2, screen_y - size//2, size, size//2))
+                            # Lid with decorations
+                            pygame.draw.polygon(screen, tuple(min(255, c + 30) for c in chest_color), [
+                                (screen_x - size//2, screen_y - size//2),
+                                (screen_x, screen_y - size//1.5),
+                                (screen_x + size//2, screen_y - size//2)
+                            ])
+                            # Ornate lock
+                            pygame.draw.circle(screen, (180, 150, 50), (screen_x, screen_y - size//4), max(3, size//8))
+                            pygame.draw.circle(screen, (255, 215, 0), (screen_x, screen_y - size//4), max(2, size//12))
+                            # Decorative gems
+                            for i in range(3):
+                                gem_x = screen_x - size//4 + i * size//4
+                                pygame.draw.circle(screen, (255, 50, 50), (gem_x, screen_y - size//2.5), max(2, size//20))
+                        
+                        elif treasure_type == 'gold':
+                            # Standard gold chest with coins
+                            chest_color = (200, 160, 50)
+                            # Simple glow
+                            pygame.draw.circle(screen, (255, 215, 0), (screen_x, screen_y - size//2), size//2 + 5, 2)
+                            # Wooden chest
+                            pygame.draw.rect(screen, chest_color, (screen_x - size//2, screen_y - size//2, size, size//2))
+                            # Metal bands
+                            pygame.draw.rect(screen, (120, 100, 60), (screen_x - size//2, screen_y - size//3, size, size//15))
+                            pygame.draw.rect(screen, (120, 100, 60), (screen_x - size//2, screen_y - size//8, size, size//15))
+                            # Simple lock
+                            pygame.draw.circle(screen, (150, 130, 70), (screen_x, screen_y - size//4), max(2, size//10))
+                            # Coin symbol on top
+                            if size > 20:
+                                pygame.draw.circle(screen, (255, 215, 0), (screen_x, screen_y - size//1.8), size//8)
+                                pygame.draw.circle(screen, chest_color, (screen_x, screen_y - size//1.8), size//12)
+                        
+                        elif treasure_type == 'potion':
+                            # Red magical chest with potion symbol
+                            chest_color = (180, 50, 50)
+                            # Red magical aura
+                            aura_pulse = int(abs(math.sin(pygame.time.get_ticks() / 400)) * 40)
+                            aura_color = (255, 50 + aura_pulse, 50 + aura_pulse)
+                            pygame.draw.circle(screen, aura_color, (screen_x, screen_y - size//2), size//2 + 6, 2)
+                            # Main chest
+                            pygame.draw.rect(screen, chest_color, (screen_x - size//2, screen_y - size//2, size, size//2))
+                            # Glowing red cross (health symbol)
+                            cross_size = size//6
+                            pygame.draw.rect(screen, (255, 100, 100), (screen_x - cross_size//2, screen_y - size//2.5 - cross_size, 
+                                           cross_size//2, cross_size * 2))
+                            pygame.draw.rect(screen, (255, 100, 100), (screen_x - cross_size, screen_y - size//2.5 - cross_size//2, 
+                                           cross_size * 2, cross_size//2))
+                            # Mystical lock
+                            pygame.draw.circle(screen, (200, 100, 100), (screen_x, screen_y - size//4), max(3, size//9))
+                            pygame.draw.circle(screen, (255, 150, 150), (screen_x, screen_y - size//4), max(1, size//15))
+                        
+                        else:  # Default/other treasures
+                            # Purple magical chest
+                            chest_color = (150, 100, 200)
+                            # Purple mystical glow
+                            glow_pulse = int(abs(math.sin(pygame.time.get_ticks() / 350)) * 60)
+                            glow_color = (150 + glow_pulse, 100 + glow_pulse, 200 + glow_pulse)
+                            pygame.draw.circle(screen, glow_color, (screen_x, screen_y - size//2), size//2 + 7, 2)
+                            # Main chest
+                            pygame.draw.rect(screen, chest_color, (screen_x - size//2, screen_y - size//2, size, size//2))
+                            # Magical runes
+                            for i in range(4):
+                                rune_y = screen_y - size//2.5 + i * size//12
+                                pygame.draw.line(screen, (200, 150, 255), (screen_x - size//6, rune_y), 
+                                               (screen_x + size//6, rune_y), max(1, size//30))
+                            # Ornate magical lock
+                            pygame.draw.circle(screen, (180, 130, 220), (screen_x, screen_y - size//4), max(3, size//8))
+                            pygame.draw.circle(screen, (220, 180, 255), (screen_x, screen_y - size//4), max(2, size//12))
+                            # Star symbol
+                            if size > 25:
+                                for i in range(5):
+                                    angle = i * 2 * math.pi / 5 - math.pi / 2
+                                    x1 = screen_x + int(math.cos(angle) * size//10)
+                                    y1 = screen_y - size//4 + int(math.sin(angle) * size//10)
+                                    pygame.draw.circle(screen, (255, 255, 150), (x1, y1), max(1, size//40))
                     
                     elif sprite['type'] == 'npc':
                         # Friendly character
@@ -845,6 +1414,210 @@ def adventure_3d_mode():
                             # Lock symbol in center
                             pygame.draw.rect(screen, (100, 60, 120), (screen_x - size//8, screen_y - size//2 - size//8, size//4, size//4))
                             pygame.draw.circle(screen, (100, 60, 120), (screen_x, screen_y - size//2 - size//8), size//8)
+        
+        # === DRAW FIRST-PERSON HANDS/ARMS ===
+        # This draws your hands at the bottom of the screen
+        
+        # Determine hand animation based on actions
+        time_ms = pygame.time.get_ticks()
+        bob_offset = int(math.sin(time_ms / 200) * 5) if moved else 0  # Walking bob
+        
+        # RIGHT HAND - Holding weapon (sword/staff)
+        right_hand_x = WIDTH - 250
+        right_hand_y = HEIGHT - 200 + bob_offset
+        
+        # Draw arm (brown sleeve)
+        arm_points = [
+            (right_hand_x + 150, HEIGHT),
+            (right_hand_x + 120, HEIGHT - 100),
+            (right_hand_x + 80, HEIGHT - 150),
+            (right_hand_x + 60, HEIGHT - 180),
+            (right_hand_x + 40, HEIGHT - 180),
+            (right_hand_x + 60, HEIGHT - 150),
+            (right_hand_x + 100, HEIGHT - 100),
+            (right_hand_x + 130, HEIGHT)
+        ]
+        pygame.draw.polygon(screen, (80, 60, 40), arm_points)  # Brown sleeve
+        pygame.draw.polygon(screen, (60, 45, 30), arm_points, 2)  # Outline
+        
+        # Draw hand (skin color)
+        hand_x = right_hand_x + 50
+        hand_y = right_hand_y - 30
+        pygame.draw.ellipse(screen, (220, 180, 150), (hand_x, hand_y, 60, 80))  # Palm
+        
+        # Fingers gripping the weapon
+        finger_base_x = hand_x + 10
+        for i in range(4):
+            finger_x = finger_base_x + i * 12
+            finger_y = hand_y + 20
+            # Finger segments
+            pygame.draw.ellipse(screen, (200, 160, 130), (finger_x, finger_y, 10, 25))
+            pygame.draw.ellipse(screen, (200, 160, 130), (finger_x, finger_y + 20, 9, 20))
+        
+        # Thumb
+        pygame.draw.ellipse(screen, (210, 170, 140), (hand_x + 50, hand_y + 30, 15, 30))
+        
+        # Draw weapon in hand
+        weapon_name = player['equipped_weapon']
+        
+        # Calculate attack animation offset
+        attack_offset = 0
+        attack_glow_intensity = 0
+        if attack_animation > 0:
+            # Progress from 0 (start) to 1 (end) of animation
+            attack_progress = 1 - (attack_animation / 0.5)
+            # Swing forward then back (parabolic motion)
+            attack_offset = int(math.sin(attack_progress * math.pi) * 60)
+            attack_glow_intensity = attack_progress
+        
+        if 'Staff' in weapon_name or 'Mystic' in weapon_name:
+            # Magic Staff - purple glow
+            staff_x = hand_x + 25 - attack_offset // 2
+            staff_y = hand_y - 150 - attack_offset
+            # Staff shaft
+            pygame.draw.line(screen, (80, 50, 30), (staff_x, staff_y + 200), (staff_x, staff_y), 8)
+            # Magical crystal on top
+            for j in range(3):
+                glow_size = 25 + j * 8
+                # Increase glow during attack
+                if attack_animation > 0:
+                    glow_size = int(glow_size * (1 + attack_glow_intensity * 1.5))
+                glow_alpha = 100 - j * 30
+                crystal_color = (150 + j * 20, 100, 255 - j * 30)
+                # Brighter during attack
+                if attack_animation > 0:
+                    crystal_color = tuple(min(255, c + int(attack_glow_intensity * 100)) for c in crystal_color)
+                pygame.draw.circle(screen, crystal_color, (staff_x, staff_y), glow_size // 2)
+            # Glow particles
+            particle_time = time_ms / 300
+            particle_count = 5 if attack_animation <= 0 else 15  # More particles during attack
+            for p in range(particle_count):
+                angle = (particle_time + p * 1.2) % (2 * math.pi)
+                radius = 30 if attack_animation <= 0 else 30 + attack_glow_intensity * 40
+                px = int(staff_x + math.cos(angle) * radius)
+                py = int(staff_y + math.sin(angle) * radius)
+                particle_color = (200, 150, 255) if attack_animation <= 0 else (255, 200, 255)
+                pygame.draw.circle(screen, particle_color, (px, py), 3 if attack_animation <= 0 else 5)
+            # Magic blast effect during attack
+            if attack_animation > 0:
+                blast_radius = int(attack_glow_intensity * 80)
+                for ring in range(3):
+                    blast_color = (200 - ring * 30, 150 - ring * 30, 255)
+                    blast_alpha = int((1 - attack_glow_intensity) * 150)
+                    pygame.draw.circle(screen, blast_color, (staff_x, staff_y - 30), blast_radius + ring * 15, 3)
+        else:
+            # Sword (default or Golden Sword)
+            blade_x = hand_x + 30 - attack_offset
+            blade_y = hand_y - 120 - attack_offset // 2
+            
+            # Blade
+            if 'Golden' in weapon_name:
+                blade_color = (255, 215, 0)  # Gold
+                shine_color = (255, 255, 200)
+            else:
+                blade_color = (180, 180, 200)  # Steel
+                shine_color = (220, 220, 240)
+            
+            # Enhance colors during attack
+            if attack_animation > 0:
+                blade_color = tuple(min(255, c + int(attack_glow_intensity * 80)) for c in blade_color)
+                shine_color = (255, 255, 255)
+            
+            # Draw blade with shine
+            blade_points = [
+                (blade_x, blade_y),
+                (blade_x - 15, blade_y + 100),
+                (blade_x - 10, blade_y + 120),
+                (blade_x + 10, blade_y + 120),
+                (blade_x + 15, blade_y + 100)
+            ]
+            pygame.draw.polygon(screen, blade_color, blade_points)
+            # Shine line on blade
+            pygame.draw.line(screen, shine_color, (blade_x, blade_y + 10), (blade_x, blade_y + 100), 2)
+            
+            # Sword trail/slash effect during attack
+            if attack_animation > 0:
+                # Draw motion blur/slash trail
+                for trail in range(3):
+                    trail_offset = trail * 15
+                    trail_alpha = int(255 * (1 - trail * 0.3) * attack_glow_intensity)
+                    trail_color = (255, 255, 200) if 'Golden' in weapon_name else (200, 200, 255)
+                    trail_blade_x = blade_x + trail_offset
+                    trail_blade_y = blade_y + trail_offset // 2
+                    pygame.draw.line(screen, trail_color, 
+                                   (trail_blade_x, trail_blade_y), 
+                                   (trail_blade_x - 10, trail_blade_y + 100), 
+                                   max(1, 4 - trail))
+            
+            # Guard/crossguard
+            pygame.draw.rect(screen, (100, 80, 60), (blade_x - 25, blade_y + 120, 50, 8))
+            
+            # Handle
+            pygame.draw.rect(screen, (60, 40, 20), (blade_x - 8, blade_y + 128, 16, 40))
+            # Leather grip wrapping
+            for wrap in range(5):
+                wrap_y = blade_y + 130 + wrap * 7
+                pygame.draw.line(screen, (80, 50, 25), (blade_x - 8, wrap_y), (blade_x + 8, wrap_y), 2)
+            
+            # Pommel
+            pygame.draw.circle(screen, (150, 120, 80), (blade_x, blade_y + 172), 10)
+        
+        # LEFT HAND - Open hand for interactions
+        left_hand_x = 150
+        left_hand_y = HEIGHT - 250 + bob_offset
+        
+        # Draw arm (brown sleeve)
+        left_arm_points = [
+            (left_hand_x - 150, HEIGHT),
+            (left_hand_x - 120, HEIGHT - 100),
+            (left_hand_x - 80, HEIGHT - 120),
+            (left_hand_x - 60, HEIGHT - 140),
+            (left_hand_x - 40, HEIGHT - 140),
+            (left_hand_x - 60, HEIGHT - 120),
+            (left_hand_x - 100, HEIGHT - 100),
+            (left_hand_x - 130, HEIGHT)
+        ]
+        pygame.draw.polygon(screen, (80, 60, 40), left_arm_points)
+        pygame.draw.polygon(screen, (60, 45, 30), left_arm_points, 2)
+        
+        # Draw left hand (open palm)
+        lhand_x = left_hand_x - 60
+        lhand_y = left_hand_y
+        pygame.draw.ellipse(screen, (220, 180, 150), (lhand_x, lhand_y, 70, 90))  # Palm
+        
+        # Open fingers (extended)
+        # Thumb
+        pygame.draw.ellipse(screen, (210, 170, 140), (lhand_x - 10, lhand_y + 35, 18, 35))
+        pygame.draw.ellipse(screen, (200, 160, 130), (lhand_x - 15, lhand_y + 60, 15, 25))
+        
+        # Index finger (pointing/ready to press E)
+        pygame.draw.ellipse(screen, (200, 160, 130), (lhand_x + 20, lhand_y - 10, 12, 30))
+        pygame.draw.ellipse(screen, (200, 160, 130), (lhand_x + 22, lhand_y - 35, 11, 28))
+        pygame.draw.ellipse(screen, (190, 150, 120), (lhand_x + 23, lhand_y - 58, 10, 25))
+        
+        # Middle finger
+        pygame.draw.ellipse(screen, (200, 160, 130), (lhand_x + 35, lhand_y - 15, 12, 32))
+        pygame.draw.ellipse(screen, (200, 160, 130), (lhand_x + 37, lhand_y - 42, 11, 30))
+        pygame.draw.ellipse(screen, (190, 150, 120), (lhand_x + 38, lhand_y - 67, 10, 27))
+        
+        # Ring finger
+        pygame.draw.ellipse(screen, (200, 160, 130), (lhand_x + 50, lhand_y - 10, 11, 30))
+        pygame.draw.ellipse(screen, (200, 160, 130), (lhand_x + 51, lhand_y - 35, 10, 28))
+        pygame.draw.ellipse(screen, (190, 150, 120), (lhand_x + 52, lhand_y - 58, 9, 25))
+        
+        # Pinky finger
+        pygame.draw.ellipse(screen, (200, 160, 130), (lhand_x + 63, lhand_y, 10, 25))
+        pygame.draw.ellipse(screen, (200, 160, 130), (lhand_x + 64, lhand_y - 20, 9, 22))
+        pygame.draw.ellipse(screen, (190, 150, 120), (lhand_x + 65, lhand_y - 38, 8, 20))
+        
+        # Add interaction hint near left hand when near objects (but NOT during combat)
+        near_object = near_portal and combat_target is None
+        if near_object:
+            hint_text = name_font.render("Press E", True, (255, 255, 100))
+            pygame.draw.rect(screen, (0, 0, 0, 128), (lhand_x - 20, lhand_y - 100, 100, 30))
+            screen.blit(hint_text, (lhand_x - 10, lhand_y - 95))
+            # Finger highlights when ready to interact
+            pygame.draw.circle(screen, (255, 255, 100), (lhand_x + 25, lhand_y - 50), 3)
         
         # Apply hit flash effect
         if hit_flash > 0:
@@ -1053,6 +1826,1285 @@ def adventure_3d_mode():
         
         pygame.display.flip()
 
+def scary_doll_sequence(screen, dolls, music_playing):
+    """Horror sequence - scary doll chops off doll heads and comes at the player!"""
+    clock = pygame.time.Clock()
+    
+    # Play scary scream sound
+    try:
+        scream_sound = pygame.mixer.Sound(resource_path('scary-scream.mp3'))
+        scream_sound.play()
+    except:
+        pass
+    
+    # Phase 1: Screen goes dark
+    for darkness in range(0, 255, 15):
+        screen.fill((0, 0, 0))
+        
+        # Draw dolls getting darker
+        for doll in dolls:
+            alpha = 255 - darkness
+            if alpha > 0:
+                draw_doll(screen, doll['x'], doll['y'], doll, doll['scale'], 0)
+        
+        # Dark overlay
+        dark_surf = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+        dark_surf.fill((0, 0, 0, darkness))
+        screen.blit(dark_surf, (0, 0))
+        
+        pygame.display.flip()
+        clock.tick(30)
+        
+        # Check for quit
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return
+    
+    # Wait in darkness
+    pygame.time.wait(500)
+    
+    # Phase 2: Scary doll appears from the left
+    scary_doll = {
+        'x': -100,
+        'y': HEIGHT // 2,
+        'size': 80,
+        'mouth_open': 0
+    }
+    
+    # Falling heads
+    falling_heads = []
+    
+    # Animate scary doll moving across
+    for frame in range(180):
+        dt = clock.tick(60) / 1000.0
+        
+        # Dark red background with flashing (clamped to valid range)
+        flash = max(0, min(255, int(20 + 30 * math.sin(frame * 0.3))))
+        screen.fill((flash, 0, 0))
+        
+        # Move scary doll
+        scary_doll['x'] += 5
+        scary_doll['mouth_open'] = abs(math.sin(frame * 0.3)) * 30
+        
+        # Draw normal dolls (before scary doll reaches them)
+        for i, doll in enumerate(dolls):
+            if scary_doll['x'] < doll['x'] - 50:
+                # Doll is still intact, but shaking
+                shake_x = doll['x'] + random.uniform(-2, 2)
+                shake_y = doll['y'] + random.uniform(-2, 2)
+                draw_doll(screen, shake_x, shake_y, doll, doll['scale'], frame * 0.1)
+            elif scary_doll['x'] >= doll['x'] - 50 and scary_doll['x'] < doll['x'] + 50:
+                # Doll is being attacked - head falls off!
+                if not any(h['doll_index'] == i for h in falling_heads):
+                    falling_heads.append({
+                        'x': doll['x'],
+                        'y': doll['y'] - 25,
+                        'vx': random.uniform(-100, 100),
+                        'vy': -200,
+                        'rotation': 0,
+                        'rot_speed': random.uniform(-360, 360),
+                        'doll_index': i,
+                        'color': doll['color'],
+                        'hair_color': doll['hair_color']
+                    })
+                
+                # Draw headless body
+                draw_headless_doll(screen, doll['x'], doll['y'], doll)
+            else:
+                # Doll is already attacked - just headless body
+                draw_headless_doll(screen, doll['x'], doll['y'], doll)
+        
+        # Update and draw falling heads
+        for head in falling_heads:
+            head['vy'] += 600 * dt  # Gravity
+            head['x'] += head['vx'] * dt
+            head['y'] += head['vy'] * dt
+            head['rotation'] += head['rot_speed'] * dt
+            
+            if head['y'] < HEIGHT + 50:
+                draw_severed_head(screen, head['x'], head['y'], head['rotation'], head['color'], head['hair_color'])
+        
+        # Draw scary doll
+        draw_scary_doll(screen, scary_doll['x'], scary_doll['y'], scary_doll['size'], scary_doll['mouth_open'], frame)
+        
+        pygame.display.flip()
+        
+        # Check for quit
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return
+    
+    # Phase 3: Scary doll rushes toward camera
+    for zoom in range(60):
+        screen.fill((10, 0, 0))
+        
+        # Doll gets BIGGER and closer
+        size = scary_doll['size'] + zoom * 15
+        mouth_open = 20 + zoom * 2
+        
+        # Center of screen
+        draw_scary_doll(screen, WIDTH // 2, HEIGHT // 2, size, mouth_open, zoom * 3)
+        
+        # Blood splatter effect
+        if zoom > 30:
+            for _ in range(5):
+                splat_x = random.randint(0, WIDTH)
+                splat_y = random.randint(0, HEIGHT)
+                splat_size = random.randint(5, 20)
+                pygame.draw.circle(screen, (150, 0, 0), (splat_x, splat_y), splat_size)
+        
+        pygame.display.flip()
+        clock.tick(30)
+        
+        # Check for quit
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return
+    
+    # Final jumpscare - flash red
+    for _ in range(3):
+        screen.fill((255, 0, 0))
+        pygame.display.flip()
+        pygame.time.wait(100)
+        screen.fill((0, 0, 0))
+        pygame.display.flip()
+        pygame.time.wait(100)
+    
+    # Show creepy message
+    screen.fill((0, 0, 0))
+    message1 = lobby_font.render("They weren't really your friends...", True, (200, 0, 0))
+    message2 = lobby_font.render("Were they?", True, (150, 0, 0))
+    screen.blit(message1, (WIDTH // 2 - message1.get_width() // 2, HEIGHT // 2 - 50))
+    screen.blit(message2, (WIDTH // 2 - message2.get_width() // 2, HEIGHT // 2 + 20))
+    pygame.display.flip()
+    pygame.time.wait(2000)
+
+def draw_headless_doll(surface, x, y, doll):
+    """Draw a doll without a head (horror mode)"""
+    scale = doll['scale']
+    
+    # Body (same as normal)
+    if doll['outfit'] == 'dress':
+        dress_points = [
+            (x, y - 10 * scale),
+            (x - 25 * scale, y + 30 * scale),
+            (x - 30 * scale, y + 50 * scale),
+            (x + 30 * scale, y + 50 * scale),
+            (x + 25 * scale, y + 30 * scale)
+        ]
+        pygame.draw.polygon(surface, doll['color'], dress_points)
+    elif doll['outfit'] == 'princess':
+        pygame.draw.polygon(surface, doll['color'], [
+            (x, y - 10 * scale),
+            (x - 35 * scale, y + 50 * scale),
+            (x + 35 * scale, y + 50 * scale)
+        ])
+    elif doll['outfit'] == 'superhero':
+        pygame.draw.rect(surface, doll['color'], (int(x - 20 * scale), int(y - 10 * scale), 
+                                                   int(40 * scale), int(60 * scale)))
+    else:
+        pygame.draw.rect(surface, doll['color'], (int(x - 18 * scale), int(y - 10 * scale), 
+                                                   int(36 * scale), int(30 * scale)))
+    
+    # Arms
+    arm_color = (255, 220, 180)
+    pygame.draw.circle(surface, arm_color, (int(x - 25 * scale), int(y + 5 * scale)), int(8 * scale))
+    pygame.draw.circle(surface, arm_color, (int(x + 25 * scale), int(y + 5 * scale)), int(8 * scale))
+    
+    # Neck stump with blood
+    pygame.draw.circle(surface, (255, 220, 180), (int(x), int(y - 10 * scale)), int(12 * scale))
+    pygame.draw.circle(surface, (150, 0, 0), (int(x), int(y - 10 * scale)), int(10 * scale))
+    # Blood drips
+    for i in range(3):
+        drip_x = x + random.uniform(-10, 10) * scale
+        drip_y = y - 10 * scale + i * 8 * scale
+        pygame.draw.circle(surface, (150, 0, 0), (int(drip_x), int(drip_y)), int(3 * scale))
+
+def draw_severed_head(surface, x, y, rotation, color, hair_color):
+    """Draw a severed doll head (horror mode)"""
+    # Create surface for head
+    head_surf = pygame.Surface((50, 50), pygame.SRCALPHA)
+    
+    # Head
+    pygame.draw.circle(head_surf, (255, 220, 180), (25, 25), 18)
+    
+    # Hair
+    hair_points = [
+        (5, 25), (10, 10), (25, 5), (40, 10), (45, 25)
+    ]
+    pygame.draw.polygon(head_surf, hair_color, hair_points)
+    
+    # Dead eyes (X's)
+    pygame.draw.line(head_surf, (0, 0, 0), (15, 20), (20, 25), 2)
+    pygame.draw.line(head_surf, (0, 0, 0), (20, 20), (15, 25), 2)
+    pygame.draw.line(head_surf, (0, 0, 0), (30, 20), (35, 25), 2)
+    pygame.draw.line(head_surf, (0, 0, 0), (35, 20), (30, 25), 2)
+    
+    # Open mouth (screaming)
+    pygame.draw.circle(head_surf, (0, 0, 0), (25, 32), 6)
+    
+    # Blood on neck
+    pygame.draw.circle(head_surf, (150, 0, 0), (25, 43), 8)
+    
+    # Rotate and draw
+    rotated = pygame.transform.rotate(head_surf, rotation)
+    rect = rotated.get_rect(center=(int(x), int(y)))
+    surface.blit(rotated, rect)
+
+def draw_scary_doll(surface, x, y, size, mouth_open, frame):
+    """Draw the terrifying scary doll"""
+    
+    # Shadow/aura
+    for i in range(5):
+        alpha = 50 - i * 10
+        shadow_surf = pygame.Surface((int(size * 2.5), int(size * 3)), pygame.SRCALPHA)
+        pygame.draw.ellipse(shadow_surf, (0, 0, 0, alpha), shadow_surf.get_rect())
+        surface.blit(shadow_surf, (int(x - size * 1.25), int(y - size * 1.5)))
+    
+    # Body - dark tattered dress
+    dress_points = [
+        (x, y),
+        (x - size * 0.6, y + size * 1.2),
+        (x - size * 0.7, y + size * 1.5),
+        (x + size * 0.7, y + size * 1.5),
+        (x + size * 0.6, y + size * 1.2)
+    ]
+    pygame.draw.polygon(surface, (30, 10, 30), dress_points)
+    # Torn edges
+    for i in range(5):
+        tear_x = x - size * 0.7 + i * size * 0.35
+        tear_y = y + size * 1.5
+        pygame.draw.line(surface, (20, 5, 20), (tear_x, tear_y), (tear_x - 5, tear_y + 10), 2)
+    
+    # Arms - long and creepy
+    arm_color = (180, 180, 160)
+    # Left arm reaching out
+    pygame.draw.line(surface, arm_color, (int(x - size * 0.3), int(y + size * 0.2)), 
+                    (int(x - size * 1.2), int(y + size * 0.8)), int(size * 0.15))
+    # Claw hand
+    for finger in range(3):
+        finger_x = x - size * 1.2 - finger * 8
+        finger_y = y + size * 0.8
+        pygame.draw.line(surface, (150, 150, 130), (int(x - size * 1.2), int(y + size * 0.8)),
+                        (int(finger_x), int(finger_y + 15)), 3)
+    
+    # Right arm
+    pygame.draw.line(surface, arm_color, (int(x + size * 0.3), int(y + size * 0.2)), 
+                    (int(x + size * 1.2), int(y + size * 0.8)), int(size * 0.15))
+    
+    # Head - pale and creepy
+    pygame.draw.circle(surface, (200, 200, 190), (int(x), int(y - size * 0.3)), int(size * 0.5))
+    
+    # Creepy hair - black and stringy
+    for i in range(8):
+        hair_x = x + math.sin(i + frame * 0.05) * size * 0.4
+        hair_start_y = y - size * 0.8
+        hair_end_y = y - size * 0.3 + random.uniform(0, size * 0.6)
+        pygame.draw.line(surface, (10, 10, 10), (int(hair_x), int(hair_start_y)),
+                        (int(hair_x), int(hair_end_y)), 3)
+    
+    # Eyes - GLOWING RED
+    eye_glow_size = int(size * 0.15)
+    # Left eye with glow
+    for glow in range(3):
+        glow_alpha = 100 - glow * 30
+        glow_surf = pygame.Surface((eye_glow_size * 2, eye_glow_size * 2), pygame.SRCALPHA)
+        pygame.draw.circle(glow_surf, (255, 0, 0, glow_alpha), (eye_glow_size, eye_glow_size), 
+                          eye_glow_size + glow * 5)
+        surface.blit(glow_surf, (int(x - size * 0.2 - eye_glow_size), int(y - size * 0.4 - eye_glow_size)))
+    pygame.draw.circle(surface, (255, 0, 0), (int(x - size * 0.2), int(y - size * 0.4)), int(size * 0.1))
+    pygame.draw.circle(surface, (150, 0, 0), (int(x - size * 0.2), int(y - size * 0.4)), int(size * 0.05))
+    
+    # Right eye with glow
+    for glow in range(3):
+        glow_alpha = 100 - glow * 30
+        glow_surf = pygame.Surface((eye_glow_size * 2, eye_glow_size * 2), pygame.SRCALPHA)
+        pygame.draw.circle(glow_surf, (255, 0, 0, glow_alpha), (eye_glow_size, eye_glow_size), 
+                          eye_glow_size + glow * 5)
+        surface.blit(glow_surf, (int(x + size * 0.2 - eye_glow_size), int(y - size * 0.4 - eye_glow_size)))
+    pygame.draw.circle(surface, (255, 0, 0), (int(x + size * 0.2), int(y - size * 0.4)), int(size * 0.1))
+    pygame.draw.circle(surface, (150, 0, 0), (int(x + size * 0.2), int(y - size * 0.4)), int(size * 0.05))
+    
+    # Mouth - BLOODY with sharp teeth
+    mouth_y = y - size * 0.2
+    mouth_height = int(size * 0.3 + mouth_open)
+    pygame.draw.ellipse(surface, (0, 0, 0), (int(x - size * 0.2), int(mouth_y), 
+                                              int(size * 0.4), mouth_height))
+    pygame.draw.ellipse(surface, (100, 0, 0), (int(x - size * 0.18), int(mouth_y + 2), 
+                                                int(size * 0.36), mouth_height - 4))
+    
+    # Sharp teeth
+    num_teeth = 6
+    for i in range(num_teeth):
+        tooth_x = x - size * 0.15 + i * (size * 0.3 / num_teeth)
+        # Top teeth
+        tooth_points_top = [
+            (tooth_x, mouth_y),
+            (tooth_x - 3, mouth_y + 10),
+            (tooth_x + 3, mouth_y + 10)
+        ]
+        pygame.draw.polygon(surface, (255, 255, 240), tooth_points_top)
+        
+        # Bottom teeth
+        tooth_points_bottom = [
+            (tooth_x, mouth_y + mouth_height),
+            (tooth_x - 3, mouth_y + mouth_height - 10),
+            (tooth_x + 3, mouth_y + mouth_height - 10)
+        ]
+        pygame.draw.polygon(surface, (255, 255, 240), tooth_points_bottom)
+    
+    # Blood on teeth and mouth
+    for _ in range(8):
+        blood_x = x + random.uniform(-size * 0.15, size * 0.15)
+        blood_y = mouth_y + random.uniform(0, mouth_height)
+        pygame.draw.circle(surface, (150, 0, 0), (int(blood_x), int(blood_y)), random.randint(1, 3))
+
+def dilly_dolly_mode():
+    """Whimsical Dilly Dolly Mode - Play with adorable dolls, dress them up, and watch them dance!"""
+    clock = pygame.time.Clock()
+    
+    # Doll state
+    dolls = []
+    for i in range(5):
+        dolls.append({
+            'x': 150 + i * 150,
+            'y': HEIGHT // 2,
+            'vy': 0,
+            'bouncing': False,
+            'outfit': 'dress',  # 'dress', 'princess', 'superhero', 'casual'
+            'color': random.choice([(255, 180, 200), (180, 200, 255), (200, 255, 180), (255, 220, 150), (220, 180, 255)]),
+            'hair_color': random.choice([(139, 69, 19), (255, 215, 0), (0, 0, 0), (255, 100, 100), (150, 75, 0)]),
+            'name': random.choice(['Lily', 'Rose', 'Daisy', 'Bella', 'Luna', 'Star', 'Angel', 'Joy', 'Hope']),
+            'dancing': False,
+            'dance_offset': 0,
+            'hat': None,  # 'crown', 'bow', 'star', 'flower'
+            'accessory': None,  # 'necklace', 'wand', 'wings'
+            'scale': 1.0,
+            'wiggle': 0
+        })
+    
+    # UI State
+    selected_doll = 0
+    mode = 'play'  # 'play', 'dress', 'dance', 'tea'
+    animation_time = 0
+    
+    # Confetti system
+    confetti = []
+    
+    # Music playing flag
+    music_playing = False
+    
+    # Sparkles
+    sparkles = []
+    
+    # Tea party setup
+    tea_table_y = HEIGHT - 200
+    tea_cups = []
+    cookies = []
+    for i in range(5):
+        tea_cups.append({
+            'x': 150 + i * 150,
+            'y': tea_table_y + 50,
+            'filled': False,
+            'steam': []
+        })
+        cookies.append({
+            'x': 150 + i * 150,
+            'y': tea_table_y + 100,
+            'eaten': False
+        })
+    
+    # Cheat code tracking
+    cheat_input = ""
+    rainbow_mode = False
+    giant_mode = False
+    sparkle_mode = False
+    
+    running = True
+    while running:
+        dt = clock.tick(60) / 1000.0
+        animation_time += dt
+        
+        # Rainbow background in rainbow mode
+        if rainbow_mode:
+            hue = (animation_time * 50) % 360
+            r = int(127.5 + 127.5 * math.sin(math.radians(hue)))
+            g = int(127.5 + 127.5 * math.sin(math.radians(hue + 120)))
+            b = int(127.5 + 127.5 * math.sin(math.radians(hue + 240)))
+            screen.fill((r, g, b))
+        else:
+            # Pretty gradient background (clamped RGB channels)
+            for y in range(HEIGHT):
+                shade = int(200 + 55 * math.sin(y * 0.005))
+                r = max(0, min(255, shade))
+                g = max(0, min(255, shade - 20))
+                b = max(0, min(255, shade + 20))
+                pygame.draw.line(screen, (r, g, b), (0, y), (WIDTH, y))
+        
+        # Draw clouds
+        for i in range(8):
+            cloud_x = (100 + i * 150 + animation_time * 10) % (WIDTH + 200) - 100
+            cloud_y = 50 + i * 30
+            for j in range(3):
+                pygame.draw.circle(screen, (255, 255, 255, 150), (int(cloud_x + j * 20), int(cloud_y)), 20)
+        
+        # Handle events
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    # Stop music if playing
+                    if music_playing:
+                        pygame.mixer.music.stop()
+                    return
+                
+                # Cheat code tracking
+                if event.unicode.isalpha():
+                    cheat_input += event.unicode.lower()
+                    if len(cheat_input) > 10:
+                        cheat_input = cheat_input[-10:]
+                    
+                    # Check for cheat codes
+                    if 'rainbow' in cheat_input:
+                        rainbow_mode = not rainbow_mode
+                        cheat_input = ""
+                        # Create confetti burst
+                        for _ in range(100):
+                            confetti.append({
+                                'x': WIDTH // 2,
+                                'y': HEIGHT // 2,
+                                'vx': random.uniform(-300, 300),
+                                'vy': random.uniform(-400, -100),
+                                'color': random.choice([(255, 100, 100), (100, 255, 100), (100, 100, 255), (255, 255, 100), (255, 100, 255)]),
+                                'size': random.randint(3, 8),
+                                'rotation': random.uniform(0, 360),
+                                'rot_speed': random.uniform(-360, 360)
+                            })
+                    
+                    elif 'giant' in cheat_input:
+                        giant_mode = not giant_mode
+                        cheat_input = ""
+                        for doll in dolls:
+                            if giant_mode:
+                                doll['scale'] = 2.0
+                            else:
+                                doll['scale'] = 1.0
+                    
+                    elif 'sparkle' in cheat_input:
+                        sparkle_mode = not sparkle_mode
+                        cheat_input = ""
+                    
+                    elif 'lllooolll' in cheat_input:
+                        # SCARY DOLL HORROR MODE!
+                        cheat_input = ""
+                        scary_doll_sequence(screen, dolls, music_playing)
+                        # Stop music if playing
+                        if music_playing:
+                            pygame.mixer.music.stop()
+                        # Return to main menu
+                        return
+                
+                # Mode switching
+                if event.key == pygame.K_1:
+                    mode = 'play'
+                    # Stop dancing and music when switching to play mode
+                    for doll in dolls:
+                        doll['dancing'] = False
+                    if music_playing:
+                        pygame.mixer.music.stop()
+                        music_playing = False
+                elif event.key == pygame.K_2:
+                    mode = 'dress'
+                    # Stop dancing and music when switching to dress mode
+                    for doll in dolls:
+                        doll['dancing'] = False
+                    if music_playing:
+                        pygame.mixer.music.stop()
+                        music_playing = False
+                elif event.key == pygame.K_3:
+                    mode = 'dance'
+                    # All dolls start dancing!
+                    for doll in dolls:
+                        doll['dancing'] = True
+                    # Play music
+                    if not music_playing:
+                        try:
+                            music_path = resource_path('playmusic.mp3')
+                            pygame.mixer.music.load(music_path)
+                            pygame.mixer.music.play(-1)
+                            music_playing = True
+                        except:
+                            pass
+                elif event.key == pygame.K_4:
+                    mode = 'tea'
+                    # Stop dancing and music when switching to tea mode
+                    for doll in dolls:
+                        doll['dancing'] = False
+                    if music_playing:
+                        pygame.mixer.music.stop()
+                        music_playing = False
+                
+                # Doll selection
+                if event.key == pygame.K_LEFT:
+                    selected_doll = (selected_doll - 1) % len(dolls)
+                elif event.key == pygame.K_RIGHT:
+                    selected_doll = (selected_doll + 1) % len(dolls)
+                
+                # Play mode actions
+                if mode == 'play':
+                    if event.key == pygame.K_SPACE:
+                        # Make selected doll bounce
+                        dolls[selected_doll]['bouncing'] = True
+                        dolls[selected_doll]['vy'] = -500
+                        # Add sparkles
+                        for _ in range(20):
+                            sparkles.append({
+                                'x': dolls[selected_doll]['x'],
+                                'y': dolls[selected_doll]['y'],
+                                'vx': random.uniform(-100, 100),
+                                'vy': random.uniform(-200, -50),
+                                'life': 1.0,
+                                'color': random.choice([(255, 255, 100), (255, 200, 255), (200, 255, 255)])
+                            })
+                    
+                    if event.key == pygame.K_w:
+                        # Make all dolls wave
+                        for doll in dolls:
+                            doll['wiggle'] = 10
+                
+                # Dress mode actions
+                elif mode == 'dress':
+                    if event.key == pygame.K_o:
+                        # Change outfit
+                        outfits = ['dress', 'princess', 'superhero', 'casual']
+                        current = outfits.index(dolls[selected_doll]['outfit'])
+                        dolls[selected_doll]['outfit'] = outfits[(current + 1) % len(outfits)]
+                    
+                    if event.key == pygame.K_h:
+                        # Change hat
+                        hats = [None, 'crown', 'bow', 'star', 'flower']
+                        current_hat = dolls[selected_doll]['hat']
+                        if current_hat is None:
+                            dolls[selected_doll]['hat'] = 'crown'
+                        else:
+                            idx = hats.index(current_hat)
+                            dolls[selected_doll]['hat'] = hats[(idx + 1) % len(hats)]
+                    
+                    if event.key == pygame.K_a:
+                        # Change accessory
+                        accessories = [None, 'necklace', 'wand', 'wings']
+                        current_acc = dolls[selected_doll]['accessory']
+                        if current_acc is None:
+                            dolls[selected_doll]['accessory'] = 'necklace'
+                        else:
+                            idx = accessories.index(current_acc)
+                            dolls[selected_doll]['accessory'] = accessories[(idx + 1) % len(accessories)]
+                    
+                    if event.key == pygame.K_c:
+                        # Random color
+                        dolls[selected_doll]['color'] = (
+                            random.randint(150, 255),
+                            random.randint(150, 255),
+                            random.randint(150, 255)
+                        )
+                
+                # Tea party mode
+                elif mode == 'tea':
+                    if event.key == pygame.K_SPACE:
+                        # Pour tea for selected doll
+                        tea_cups[selected_doll]['filled'] = True
+                        # Add steam particles
+                        for _ in range(5):
+                            tea_cups[selected_doll]['steam'].append({
+                                'y': 0,
+                                'offset': random.uniform(-5, 5),
+                                'speed': random.uniform(20, 40),
+                                'life': 1.0
+                            })
+                    
+                    if event.key == pygame.K_e:
+                        # Eat cookie
+                        if not cookies[selected_doll]['eaten']:
+                            cookies[selected_doll]['eaten'] = True
+                            # Add crumbs
+                            for _ in range(15):
+                                sparkles.append({
+                                    'x': cookies[selected_doll]['x'],
+                                    'y': cookies[selected_doll]['y'],
+                                    'vx': random.uniform(-50, 50),
+                                    'vy': random.uniform(-100, 0),
+                                    'life': 0.8,
+                                    'color': (210, 180, 140)
+                                })
+        
+        # Update dolls
+        for i, doll in enumerate(dolls):
+            # Bouncing physics
+            if doll['bouncing']:
+                doll['vy'] += 1000 * dt  # Gravity
+                doll['y'] += doll['vy'] * dt
+                
+                # Floor bounce
+                floor_y = HEIGHT // 2 if mode != 'tea' else tea_table_y - 80
+                if doll['y'] >= floor_y:
+                    doll['y'] = floor_y
+                    doll['vy'] = -doll['vy'] * 0.6  # Bounce with damping
+                    if abs(doll['vy']) < 50:
+                        doll['bouncing'] = False
+                        doll['vy'] = 0
+            
+            # Dancing animation
+            if doll['dancing']:
+                doll['dance_offset'] = math.sin(animation_time * 5 + i * 0.5) * 20
+            else:
+                doll['dance_offset'] = 0
+            
+            # Wiggle decay
+            if doll['wiggle'] > 0:
+                doll['wiggle'] -= dt * 10
+        
+        # Update confetti
+        for c in confetti[:]:
+            c['vy'] += 500 * dt  # Gravity
+            c['x'] += c['vx'] * dt
+            c['y'] += c['vy'] * dt
+            c['rotation'] += c['rot_speed'] * dt
+            
+            if c['y'] > HEIGHT:
+                confetti.remove(c)
+        
+        # Update sparkles
+        for s in sparkles[:]:
+            s['x'] += s['vx'] * dt
+            s['y'] += s['vy'] * dt
+            s['vy'] += 200 * dt  # Gravity
+            s['life'] -= dt
+            
+            if s['life'] <= 0:
+                sparkles.remove(s)
+        
+        # Sparkle mode - continuous sparkles
+        if sparkle_mode and random.random() < 0.3:
+            for doll in dolls:
+                if random.random() < 0.1:
+                    sparkles.append({
+                        'x': doll['x'] + random.uniform(-20, 20),
+                        'y': doll['y'] - 40 + random.uniform(-20, 20),
+                        'vx': random.uniform(-30, 30),
+                        'vy': random.uniform(-80, -20),
+                        'life': 0.8,
+                        'color': random.choice([(255, 255, 100), (255, 200, 255), (200, 255, 255), (100, 255, 255)])
+                    })
+        
+        # Update tea steam
+        if mode == 'tea':
+            for cup in tea_cups:
+                if cup['filled']:
+                    for steam in cup['steam'][:]:
+                        steam['y'] -= steam['speed'] * dt
+                        steam['life'] -= dt * 0.3
+                        if steam['life'] <= 0:
+                            cup['steam'].remove(steam)
+                    
+                    # Add new steam
+                    if random.random() < 0.2:
+                        cup['steam'].append({
+                            'y': 0,
+                            'offset': random.uniform(-5, 5),
+                            'speed': random.uniform(20, 40),
+                            'life': 1.0
+                        })
+        
+        # Draw confetti
+        for c in confetti:
+            size = c['size']
+            rotated_surface = pygame.Surface((size * 2, size * 2), pygame.SRCALPHA)
+            pygame.draw.rect(rotated_surface, c['color'], (size // 2, size // 2, size, size))
+            rotated = pygame.transform.rotate(rotated_surface, c['rotation'])
+            rect = rotated.get_rect(center=(int(c['x']), int(c['y'])))
+            screen.blit(rotated, rect)
+        
+        # Draw sparkles
+        for s in sparkles:
+            alpha = int(s['life'] * 255)
+            color = (*s['color'], alpha)
+            size = int(3 + s['life'] * 4)
+            surf = pygame.Surface((size * 2, size * 2), pygame.SRCALPHA)
+            pygame.draw.circle(surf, color, (size, size), size)
+            screen.blit(surf, (int(s['x'] - size), int(s['y'] - size)))
+        
+        # Draw tea party table
+        if mode == 'tea':
+            # Tablecloth
+            pygame.draw.rect(screen, (255, 200, 200), (50, tea_table_y, WIDTH - 100, 150))
+            pygame.draw.rect(screen, (255, 150, 150), (50, tea_table_y, WIDTH - 100, 150), 3)
+            
+            # Draw tea cups and cookies
+            for i, (cup, cookie) in enumerate(zip(tea_cups, cookies)):
+                # Tea cup
+                cup_color = (255, 255, 255) if cup['filled'] else (230, 230, 230)
+                pygame.draw.ellipse(screen, cup_color, (cup['x'] - 15, cup['y'] - 10, 30, 20))
+                pygame.draw.rect(screen, cup_color, (cup['x'] - 15, cup['y'] - 5, 30, 15))
+                pygame.draw.ellipse(screen, (200, 200, 200), (cup['x'] - 15, cup['y'] - 10, 30, 20), 2)
+                
+                # Tea liquid
+                if cup['filled']:
+                    pygame.draw.ellipse(screen, (139, 69, 19), (cup['x'] - 12, cup['y'] - 8, 24, 15))
+                
+                # Handle
+                pygame.draw.arc(screen, (200, 200, 200), (cup['x'] + 10, cup['y'] - 5, 15, 20), -math.pi/2, math.pi/2, 3)
+                
+                # Steam
+                for steam in cup['steam']:
+                    steam_alpha = int(steam['life'] * 150)
+                    steam_y = cup['y'] - 20 - steam['y']
+                    steam_surf = pygame.Surface((6, 6), pygame.SRCALPHA)
+                    pygame.draw.circle(steam_surf, (200, 200, 200, steam_alpha), (3, 3), 3)
+                    screen.blit(steam_surf, (int(cup['x'] + steam['offset'] - 3), int(steam_y)))
+                
+                # Cookie
+                if not cookie['eaten']:
+                    pygame.draw.circle(screen, (210, 180, 140), (cookie['x'], cookie['y']), 12)
+                    # Chocolate chips
+                    random.seed(i * 123)  # Consistent chips per cookie
+                    for _ in range(5):
+                        chip_x = cookie['x'] + random.randint(-8, 8)
+                        chip_y = cookie['y'] + random.randint(-8, 8)
+                        pygame.draw.circle(screen, (101, 67, 33), (chip_x, chip_y), 2)
+                    random.seed()  # Reset seed
+        
+        # Draw dolls
+        for i, doll in enumerate(dolls):
+            draw_x = doll['x']
+            draw_y = doll['y'] + doll['dance_offset']
+            scale = doll['scale']
+            
+            # Wiggle effect
+            wiggle_offset = math.sin(animation_time * 20) * doll['wiggle']
+            draw_x += wiggle_offset
+            
+            # Draw doll with outfit
+            draw_doll(screen, draw_x, draw_y, doll, scale, animation_time)
+            
+            # Selection indicator
+            if i == selected_doll:
+                indicator_y = draw_y + 60 * scale + 10
+                pygame.draw.polygon(screen, (255, 255, 100), [
+                    (draw_x, indicator_y),
+                    (draw_x - 10, indicator_y + 15),
+                    (draw_x + 10, indicator_y + 15)
+                ])
+                
+                # Draw name
+                name_text = font.render(doll['name'], True, (255, 255, 255))
+                name_bg = pygame.Surface((name_text.get_width() + 10, name_text.get_height() + 5), pygame.SRCALPHA)
+                pygame.draw.rect(name_bg, (0, 0, 0, 150), name_bg.get_rect(), border_radius=5)
+                screen.blit(name_bg, (draw_x - name_text.get_width() // 2 - 5, draw_y - 90))
+                screen.blit(name_text, (draw_x - name_text.get_width() // 2, draw_y - 88))
+        
+        # Draw UI
+        draw_dilly_dolly_ui(screen, mode, selected_doll, dolls, rainbow_mode, giant_mode, sparkle_mode)
+        
+        pygame.display.flip()
+    
+    # Stop music when leaving
+    if music_playing:
+        pygame.mixer.music.stop()
+
+def draw_doll(surface, x, y, doll, scale=1.0, time=0):
+    """Draw a cute doll with outfit, hat, and accessories"""
+    
+    # Body (dress/outfit)
+    if doll['outfit'] == 'dress':
+        # Pretty dress
+        dress_points = [
+            (x, y - 10 * scale),
+            (x - 25 * scale, y + 30 * scale),
+            (x - 30 * scale, y + 50 * scale),
+            (x + 30 * scale, y + 50 * scale),
+            (x + 25 * scale, y + 30 * scale)
+        ]
+        pygame.draw.polygon(surface, doll['color'], dress_points)
+        # Dress details
+        pygame.draw.circle(surface, (255, 255, 255), (int(x - 10 * scale), int(y + 20 * scale)), int(3 * scale))
+        pygame.draw.circle(surface, (255, 255, 255), (int(x + 10 * scale), int(y + 20 * scale)), int(3 * scale))
+        pygame.draw.circle(surface, (255, 255, 255), (int(x), int(y + 35 * scale)), int(3 * scale))
+    
+    elif doll['outfit'] == 'princess':
+        # Royal princess dress
+        pygame.draw.polygon(surface, doll['color'], [
+            (x, y - 10 * scale),
+            (x - 35 * scale, y + 50 * scale),
+            (x + 35 * scale, y + 50 * scale)
+        ])
+        # Gold trim
+        pygame.draw.line(surface, (255, 215, 0), (int(x - 30 * scale), int(y + 45 * scale)), 
+                        (int(x + 30 * scale), int(y + 45 * scale)), int(3 * scale))
+    
+    elif doll['outfit'] == 'superhero':
+        # Superhero suit
+        pygame.draw.rect(surface, doll['color'], (int(x - 20 * scale), int(y - 10 * scale), 
+                                                   int(40 * scale), int(60 * scale)))
+        # Cape
+        cape_points = [
+            (x - 15 * scale, y - 5 * scale),
+            (x - 35 * scale, y + 40 * scale),
+            (x - 25 * scale, y + 50 * scale)
+        ]
+        pygame.draw.polygon(surface, (255, 50, 50), cape_points)
+        # Logo
+        pygame.draw.circle(surface, (255, 255, 0), (int(x), int(y + 10 * scale)), int(8 * scale))
+        pygame.draw.circle(surface, doll['color'], (int(x), int(y + 10 * scale)), int(5 * scale))
+    
+    else:  # casual
+        # Casual t-shirt and pants
+        pygame.draw.rect(surface, doll['color'], (int(x - 18 * scale), int(y - 10 * scale), 
+                                                   int(36 * scale), int(30 * scale)))
+        pygame.draw.rect(surface, (100, 100, 200), (int(x - 18 * scale), int(y + 20 * scale), 
+                                                     int(36 * scale), int(30 * scale)))
+    
+    # Arms
+    arm_color = (255, 220, 180)
+    pygame.draw.circle(surface, arm_color, (int(x - 25 * scale), int(y + 5 * scale)), int(8 * scale))
+    pygame.draw.circle(surface, arm_color, (int(x + 25 * scale), int(y + 5 * scale)), int(8 * scale))
+    
+    # Head
+    pygame.draw.circle(surface, arm_color, (int(x), int(y - 25 * scale)), int(20 * scale))
+    
+    # Hair
+    hair_points = [
+        (x - 20 * scale, y - 25 * scale),
+        (x - 15 * scale, y - 40 * scale),
+        (x, y - 45 * scale),
+        (x + 15 * scale, y - 40 * scale),
+        (x + 20 * scale, y - 25 * scale)
+    ]
+    pygame.draw.polygon(surface, doll['hair_color'], hair_points)
+    
+    # Face
+    # Eyes
+    eye_y = y - 28 * scale
+    pygame.draw.circle(surface, (0, 0, 0), (int(x - 7 * scale), int(eye_y)), int(3 * scale))
+    pygame.draw.circle(surface, (0, 0, 0), (int(x + 7 * scale), int(eye_y)), int(3 * scale))
+    # Eye shine
+    pygame.draw.circle(surface, (255, 255, 255), (int(x - 6 * scale), int(eye_y - 1 * scale)), int(1 * scale))
+    pygame.draw.circle(surface, (255, 255, 255), (int(x + 8 * scale), int(eye_y - 1 * scale)), int(1 * scale))
+    
+    # Smile
+    smile_rect = pygame.Rect(int(x - 8 * scale), int(y - 23 * scale), int(16 * scale), int(8 * scale))
+    pygame.draw.arc(surface, (255, 100, 100), smile_rect, 0, math.pi, int(2 * scale))
+    
+    # Rosy cheeks
+    cheek_surf = pygame.Surface((int(8 * scale), int(8 * scale)), pygame.SRCALPHA)
+    pygame.draw.circle(cheek_surf, (255, 180, 180, 100), (int(4 * scale), int(4 * scale)), int(4 * scale))
+    surface.blit(cheek_surf, (int(x - 18 * scale), int(y - 25 * scale)))
+    surface.blit(cheek_surf, (int(x + 10 * scale), int(y - 25 * scale)))
+    
+    # Hat
+    if doll['hat'] == 'crown':
+        # Golden crown
+        crown_points = [
+            (x - 15 * scale, y - 40 * scale),
+            (x - 12 * scale, y - 50 * scale),
+            (x - 5 * scale, y - 45 * scale),
+            (x, y - 52 * scale),
+            (x + 5 * scale, y - 45 * scale),
+            (x + 12 * scale, y - 50 * scale),
+            (x + 15 * scale, y - 40 * scale)
+        ]
+        pygame.draw.polygon(surface, (255, 215, 0), crown_points)
+        # Jewels
+        pygame.draw.circle(surface, (255, 50, 50), (int(x), int(y - 48 * scale)), int(3 * scale))
+    
+    elif doll['hat'] == 'bow':
+        # Pretty bow
+        bow_color = (255, 100, 150)
+        pygame.draw.circle(surface, bow_color, (int(x - 10 * scale), int(y - 45 * scale)), int(8 * scale))
+        pygame.draw.circle(surface, bow_color, (int(x + 10 * scale), int(y - 45 * scale)), int(8 * scale))
+        pygame.draw.circle(surface, bow_color, (int(x), int(y - 45 * scale)), int(5 * scale))
+    
+    elif doll['hat'] == 'star':
+        # Star on head
+        star_points = []
+        for i in range(10):
+            angle = i * math.pi / 5 - math.pi / 2
+            radius = (10 * scale) if i % 2 == 0 else (5 * scale)
+            star_x = x + radius * math.cos(angle)
+            star_y = y - 50 * scale + radius * math.sin(angle)
+            star_points.append((star_x, star_y))
+        pygame.draw.polygon(surface, (255, 255, 100), star_points)
+    
+    elif doll['hat'] == 'flower':
+        # Flower crown
+        for i in range(5):
+            petal_x = x + math.cos(i * 2 * math.pi / 5 + time * 2) * 12 * scale
+            petal_y = y - 45 * scale + math.sin(i * 2 * math.pi / 5 + time * 2) * 12 * scale
+            pygame.draw.circle(surface, (255, 150, 200), (int(petal_x), int(petal_y)), int(5 * scale))
+        pygame.draw.circle(surface, (255, 255, 100), (int(x), int(y - 45 * scale)), int(6 * scale))
+    
+    # Accessories
+    if doll['accessory'] == 'necklace':
+        # Pearl necklace
+        for i in range(5):
+            pearl_x = x - 10 * scale + i * 5 * scale
+            pearl_y = y - 5 * scale
+            pygame.draw.circle(surface, (255, 255, 255), (int(pearl_x), int(pearl_y)), int(3 * scale))
+    
+    elif doll['accessory'] == 'wand':
+        # Magic wand
+        wand_x = x + 30 * scale
+        wand_y = y + 10 * scale
+        pygame.draw.line(surface, (139, 69, 19), (int(x + 25 * scale), int(y + 5 * scale)), 
+                        (int(wand_x), int(wand_y)), int(3 * scale))
+        # Star on wand
+        star_points = []
+        for i in range(10):
+            angle = i * math.pi / 5 - math.pi / 2 + time * 3
+            radius = (8 * scale) if i % 2 == 0 else (4 * scale)
+            star_x = wand_x + radius * math.cos(angle)
+            star_y = wand_y + radius * math.sin(angle)
+            star_points.append((star_x, star_y))
+        pygame.draw.polygon(surface, (255, 255, 100), star_points)
+    
+    elif doll['accessory'] == 'wings':
+        # Fairy wings
+        wing_color = (200, 200, 255, 150)
+        wing_surf = pygame.Surface((int(40 * scale), int(30 * scale)), pygame.SRCALPHA)
+        # Left wing
+        pygame.draw.ellipse(wing_surf, wing_color, (0, int(5 * scale), int(20 * scale), int(25 * scale)))
+        # Right wing  
+        pygame.draw.ellipse(wing_surf, wing_color, (int(20 * scale), int(5 * scale), int(20 * scale), int(25 * scale)))
+        surface.blit(wing_surf, (int(x - 20 * scale), int(y - 15 * scale)))
+
+def draw_dilly_dolly_ui(surface, mode, selected_doll, dolls, rainbow_mode, giant_mode, sparkle_mode):
+    """Draw UI for Dilly Dolly Mode"""
+    
+    # Mode indicator
+    mode_names = {
+        'play': 'PLAY MODE - Space: Bounce, W: Wave',
+        'dress': 'DRESS MODE - O: Outfit, H: Hat, A: Accessory, C: Color',
+        'dance': 'DANCE MODE - Let them dance!',
+        'tea': 'TEA PARTY - Space: Pour Tea, E: Eat Cookie'
+    }
+    
+    mode_text = lobby_font.render(mode_names[mode], True, (255, 255, 255))
+    mode_bg = pygame.Surface((mode_text.get_width() + 20, mode_text.get_height() + 10), pygame.SRCALPHA)
+    pygame.draw.rect(mode_bg, (100, 50, 150, 200), mode_bg.get_rect(), border_radius=10)
+    surface.blit(mode_bg, (WIDTH // 2 - mode_text.get_width() // 2 - 10, 10))
+    surface.blit(mode_text, (WIDTH // 2 - mode_text.get_width() // 2, 15))
+    
+    # Mode buttons
+    modes = [('1', 'Play'), ('2', 'Dress'), ('3', 'Dance'), ('4', 'Tea')]
+    button_y = HEIGHT - 60
+    for i, (key, name) in enumerate(modes):
+        button_x = 100 + i * 180
+        color = (150, 200, 255) if mode == name.lower() else (100, 100, 150)
+        pygame.draw.rect(surface, color, (button_x, button_y, 150, 40), border_radius=8)
+        pygame.draw.rect(surface, (255, 255, 255), (button_x, button_y, 150, 40), 3, border_radius=8)
+        
+        button_text = font.render(f"{key}: {name}", True, (255, 255, 255))
+        surface.blit(button_text, (button_x + 75 - button_text.get_width() // 2, button_y + 10))
+    
+    # Active cheats indicator
+    if rainbow_mode or giant_mode or sparkle_mode:
+        cheat_y = HEIGHT - 100
+        cheats_text = "Active: "
+        if rainbow_mode:
+            cheats_text += "RAINBOW "
+        if giant_mode:
+            cheats_text += "GIANT "
+        if sparkle_mode:
+            cheats_text += "SPARKLE "
+        
+        cheat_render = font.render(cheats_text, True, (255, 255, 100))
+        cheat_bg = pygame.Surface((cheat_render.get_width() + 10, cheat_render.get_height() + 5), pygame.SRCALPHA)
+        pygame.draw.rect(cheat_bg, (150, 50, 200, 200), cheat_bg.get_rect(), border_radius=5)
+        surface.blit(cheat_bg, (WIDTH // 2 - cheat_render.get_width() // 2 - 5, cheat_y))
+        surface.blit(cheat_render, (WIDTH // 2 - cheat_render.get_width() // 2, cheat_y + 2))
+    
+    # Instructions
+    instr_text = font.render("Left/Right: Select Doll | ESC: Exit", True, (255, 255, 255))
+    instr_bg = pygame.Surface((instr_text.get_width() + 10, instr_text.get_height() + 5), pygame.SRCALPHA)
+    pygame.draw.rect(instr_bg, (0, 0, 0, 150), instr_bg.get_rect(), border_radius=5)
+    surface.blit(instr_bg, (10, 10))
+    surface.blit(instr_text, (15, 12))
+
+def ultimate_satisfaction_mode():
+    """The most satisfying game ever - bubble wrap, slime, dominoes, and paint mixing!"""
+    clock = pygame.time.Clock()
+    
+    # Bubble wrap grid
+    bubble_size = 40
+    cols = WIDTH // bubble_size
+    rows = (HEIGHT - 150) // bubble_size
+    bubbles = [[True for _ in range(cols)] for _ in range(rows)]
+    
+    # Slime particles
+    slime_particles = []
+    
+    # Domino chain
+    dominoes = []
+    
+    # Paint drops
+    paint_drops = []
+    
+    # Counters
+    bubbles_popped = 0
+    slime_squished = 0
+    dominoes_fallen = 0
+    
+    # Current mode
+    current_mode = 'bubbles'
+    mode_names = ['Bubble Wrap', 'Slime Squish', 'Domino Chain', 'Paint Mix']
+    mode_index = 0
+    
+    # Setup dominoes
+    def reset_dominoes():
+        dominoes.clear()
+        for i in range(20):
+            dominoes.append({
+                'x': 100 + i * 50,
+                'y': HEIGHT // 2,
+                'angle': 0,
+                'falling': False,
+                'fall_speed': 0
+            })
+    
+    reset_dominoes()
+    
+    running = True
+    while running:
+        dt = clock.tick(60) / 1000.0
+        
+        # Beautiful gradient background (optimized)
+        screen.fill((120, 160, 210))
+        for y in range(0, HEIGHT, 5):
+            r = int(100 + 50 * math.sin(y * 0.01))
+            g = int(150 + 50 * math.sin(y * 0.01 + 2))
+            b = int(200 + 50 * math.sin(y * 0.01 + 4))
+            pygame.draw.rect(screen, (r, g, b), (0, y, WIDTH, 5))
+        
+        # Handle events
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return
+                elif event.key == pygame.K_TAB:
+                    # Switch modes
+                    mode_index = (mode_index + 1) % 4
+                    current_mode = ['bubbles', 'slime', 'dominoes', 'paint'][mode_index]
+                elif event.key == pygame.K_r:
+                    # Reset current mode
+                    if current_mode == 'bubbles':
+                        bubbles = [[True for _ in range(cols)] for _ in range(rows)]
+                    elif current_mode == 'slime':
+                        slime_particles.clear()
+                    elif current_mode == 'dominoes':
+                        reset_dominoes()
+                    elif current_mode == 'paint':
+                        paint_drops.clear()
+            
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mx, my = event.pos
+                
+                if current_mode == 'bubbles':
+                    # Pop bubble
+                    col = mx // bubble_size
+                    row = my // bubble_size
+                    if 0 <= row < rows and 0 <= col < cols and bubbles[row][col]:
+                        bubbles[row][col] = False
+                        bubbles_popped += 1
+                        # Pop particles
+                        for _ in range(20):
+                            angle = random.uniform(0, 2 * math.pi)
+                            speed = random.uniform(50, 150)
+                            slime_particles.append({
+                                'x': float(col * bubble_size + bubble_size // 2),
+                                'y': float(row * bubble_size + bubble_size // 2),
+                                'vx': math.cos(angle) * speed,
+                                'vy': math.sin(angle) * speed,
+                                'life': 1.0,
+                                'size': random.randint(2, 6),
+                                'color': (100 + random.randint(0, 155), 200, 255)
+                            })
+                
+                elif current_mode == 'slime':
+                    # Create slime explosion
+                    for _ in range(50):
+                        angle = random.uniform(0, 2 * math.pi)
+                        speed = random.uniform(20, 100)
+                        slime_particles.append({
+                            'x': float(mx),
+                            'y': float(my),
+                            'vx': math.cos(angle) * speed,
+                            'vy': math.sin(angle) * speed,
+                            'life': 2.0,
+                            'size': random.randint(3, 10),
+                            'color': (random.randint(100, 255), random.randint(200, 255), random.randint(100, 255))
+                        })
+                    slime_squished += 1
+                
+                elif current_mode == 'dominoes':
+                    # Knock over domino
+                    for i, domino in enumerate(dominoes):
+                        if abs(mx - domino['x']) < 25 and abs(my - domino['y']) < 40:
+                            if not domino['falling']:
+                                domino['falling'] = True
+                                domino['fall_speed'] = 200
+                            break
+                
+                elif current_mode == 'paint':
+                    # Drop paint
+                    paint_drops.append({
+                        'x': float(mx),
+                        'y': float(my),
+                        'vx': random.uniform(-50, 50),
+                        'vy': random.uniform(50, 150),
+                        'size': random.randint(15, 30),
+                        'color': [random.randint(50, 255), random.randint(50, 255), random.randint(50, 255)],
+                        'life': 3.0
+                    })
+        
+        # === BUBBLE WRAP MODE ===
+        if current_mode == 'bubbles':
+            for row in range(rows):
+                for col in range(cols):
+                    x = col * bubble_size
+                    y = row * bubble_size
+                    
+                    if bubbles[row][col]:
+                        # Unpopped bubble
+                        pygame.draw.circle(screen, (150, 150, 180), (x + bubble_size // 2 + 2, y + bubble_size // 2 + 2), bubble_size // 3)
+                        pygame.draw.circle(screen, (200, 220, 255), (x + bubble_size // 2, y + bubble_size // 2), bubble_size // 3)
+                        pygame.draw.circle(screen, (255, 255, 255), (x + bubble_size // 2 - 5, y + bubble_size // 2 - 5), bubble_size // 8)
+                        pygame.draw.circle(screen, (150, 170, 200), (x + bubble_size // 2, y + bubble_size // 2), bubble_size // 3, 2)
+        
+        # === SLIME MODE ===
+        elif current_mode == 'slime':
+            inst = lobby_font.render("Click anywhere to squish slime!", True, (255, 255, 255))
+            screen.blit(inst, (WIDTH // 2 - inst.get_width() // 2, 50))
+        
+        # === DOMINO MODE ===
+        elif current_mode == 'dominoes':
+            # Update dominoes
+            for i, domino in enumerate(dominoes):
+                if domino['falling']:
+                    domino['angle'] += domino['fall_speed'] * dt
+                    if domino['angle'] >= 90:
+                        domino['angle'] = 90
+                        # Trigger next domino
+                        if i + 1 < len(dominoes) and not dominoes[i + 1]['falling']:
+                            dominoes[i + 1]['falling'] = True
+                            dominoes[i + 1]['fall_speed'] = 250
+                            dominoes_fallen += 1
+                
+                # Draw domino
+                domino_surf = pygame.Surface((40, 80), pygame.SRCALPHA)
+                pygame.draw.rect(domino_surf, (240, 240, 250), (0, 0, 40, 80))
+                pygame.draw.rect(domino_surf, (50, 50, 100), (0, 0, 40, 80), 3)
+                for dy in [20, 40, 60]:
+                    pygame.draw.circle(domino_surf, (50, 50, 100), (20, dy), 4)
+                
+                if domino['angle'] > 0:
+                    domino_surf = pygame.transform.rotate(domino_surf, -domino['angle'])
+                
+                rect = domino_surf.get_rect(center=(domino['x'], domino['y']))
+                screen.blit(domino_surf, rect)
+        
+        # === PAINT MIX MODE ===
+        elif current_mode == 'paint':
+            inst = lobby_font.render("Click to drop paint and watch it mix!", True, (255, 255, 255))
+            screen.blit(inst, (WIDTH // 2 - inst.get_width() // 2, 50))
+            
+            # Update paint drops
+            for drop in paint_drops[:]:
+                drop['y'] += drop['vy'] * dt
+                drop['x'] += drop['vx'] * dt
+                drop['vy'] += 200 * dt  # Gravity
+                drop['life'] -= dt
+                
+                # Bounce off bottom
+                if drop['y'] > HEIGHT - 100:
+                    drop['y'] = HEIGHT - 100
+                    drop['vy'] *= -0.5
+                    drop['vx'] *= 0.8
+                
+                # Bounce off sides
+                if drop['x'] < drop['size'] or drop['x'] > WIDTH - drop['size']:
+                    drop['vx'] *= -0.5
+                
+                # Mix with nearby drops
+                for other in paint_drops:
+                    if other != drop:
+                        dx = other['x'] - drop['x']
+                        dy = other['y'] - drop['y']
+                        dist = math.sqrt(dx * dx + dy * dy)
+                        if dist < drop['size'] + other['size']:
+                            # Mix colors
+                            for i in range(3):
+                                drop['color'][i] = (drop['color'][i] + other['color'][i]) // 2
+                
+                if drop['life'] <= 0:
+                    paint_drops.remove(drop)
+                else:
+                    # Draw paint drop
+                    for glow in range(3):
+                        glow_size = drop['size'] + glow * 5
+                        glow_surf = pygame.Surface((glow_size * 2, glow_size * 2), pygame.SRCALPHA)
+                        color = drop['color']
+                        glow_alpha = int(255 * min(1, drop['life'])) // (glow + 1)
+                        pygame.draw.circle(glow_surf, (color[0], color[1], color[2], glow_alpha), (glow_size, glow_size), glow_size)
+                        screen.blit(glow_surf, (int(drop['x']) - glow_size, int(drop['y']) - glow_size))
+        
+        # Update and draw particles (used in multiple modes)
+        for particle in slime_particles[:]:
+            particle['x'] += particle['vx'] * dt
+            particle['y'] += particle['vy'] * dt
+            particle['vy'] += 200 * dt  # Gravity
+            particle['life'] -= dt
+            
+            if particle['life'] <= 0 or particle['y'] > HEIGHT:
+                slime_particles.remove(particle)
+            else:
+                alpha = int(255 * particle['life'])
+                size = particle['size']
+                surf = pygame.Surface((size * 2, size * 2), pygame.SRCALPHA)
+                color = particle['color']
+                if isinstance(color, (list, tuple)) and len(color) >= 3:
+                    pygame.draw.circle(surf, (color[0], color[1], color[2], alpha), (size, size), size)
+                screen.blit(surf, (int(particle['x']) - size, int(particle['y']) - size))
+        
+        # Draw UI
+        ui_bg = pygame.Surface((WIDTH, 100))
+        ui_bg.fill((0, 0, 0))
+        ui_bg.set_alpha(180)
+        screen.blit(ui_bg, (0, 0))
+        
+        # Title
+        title = pygame.font.SysFont(None, 60).render(f"✨ {mode_names[mode_index]} ✨", True, (255, 255, 100))
+        screen.blit(title, (WIDTH // 2 - title.get_width() // 2, 10))
+        
+        # Instructions
+        instructions = [("TAB", "Switch Mode"), ("R", "Reset"), ("ESC", "Exit")]
+        x_offset = 50
+        for key, action in instructions:
+            key_text = font.render(f"[{key}]", True, (255, 255, 150))
+            action_text = font.render(action, True, (200, 200, 255))
+            screen.blit(key_text, (x_offset, 65))
+            screen.blit(action_text, (x_offset + key_text.get_width() + 10, 65))
+            x_offset += key_text.get_width() + action_text.get_width() + 40
+        
+        # Stats
+        stats_text = font.render(f"Bubbles: {bubbles_popped} | Slime: {slime_squished} | Dominoes: {dominoes_fallen}", True, (150, 255, 150))
+        screen.blit(stats_text, (WIDTH - stats_text.get_width() - 20, 65))
+        
+        pygame.display.flip()
+
+
+
 # Countdown and player name input functions remain the same...
 
 
@@ -1138,27 +3190,2745 @@ def online_get_name_and_character(player_label, mode):
     return name, selected
 # --- END ONLINE NAME/CHARACTER SELECTION ---
 
+# Shop/Purchase functions
+def load_purchases():
+    """Load purchased items - now session-based, resets every time game starts"""
+    # Don't load from file - purchases reset each session!
+    return {'relax_mode': False, 'shop_unlocked': False}
+
+def save_purchase(item_name):
+    """Save a purchased item - only for current session"""
+    # Don't save to file - just return updated dict for this session
+    purchases = load_purchases()
+    purchases[item_name] = True
+    return purchases
+
+def unlock_shop():
+    """Unlock the shop with secret code"""
+    global session_purchases
+    session_purchases['shop_unlocked'] = True
+
+# Track unlock progress
+unlock_progress = {
+    'found_secret_game': False,
+    'clicked_shop_word': False,
+    'entered_lllooolll': False,
+    'answered_math': False
+}
+
+def do_mom_jumpscare(initial_message="SHE CAUGHT YOU!"):
+    """The ULTRA TERRIFYING mom jumpscare from Escape Mom Mode!"""
+    # Play scary scream sound at MAXIMUM VOLUME
+    try:
+        pygame.mixer.music.load(resource_path("scary-scream.mp3"))
+        pygame.mixer.music.set_volume(1.0)  # MAX VOLUME!
+        pygame.mixer.music.play()
+    except:
+        # Fallback to system beeps
+        for _ in range(20):
+            print("\a")  # System beep
+    
+    jumpscare_time = time.time()
+    jumpscare_duration = 4.5  # 4.5 seconds of PURE TERROR
+    
+    while time.time() - jumpscare_time < jumpscare_duration:
+        elapsed = time.time() - jumpscare_time
+        progress = elapsed / jumpscare_duration
+        
+        # INTENSE rapid flashing for shock effect
+        flash_speed = int((time.time() - jumpscare_time) * 40)
+        if flash_speed % 2 == 0:
+            screen.fill((0, 0, 0))
+        else:
+            red_intensity = int(150 + progress * 105)
+            screen.fill((red_intensity, 0, 0))
+        
+        # SCREEN INVERSION effect
+        if int(elapsed * 20) % 7 < 2:
+            screen.fill((255, 255, 255))  # Blinding white flash
+        
+        # Static noise effect
+        if random.random() < 0.6:
+            for i in range(400):
+                static_x = random.randint(0, WIDTH)
+                static_y = random.randint(0, HEIGHT)
+                static_color = random.randint(0, 255)
+                pygame.draw.circle(screen, (static_color, 0, 0), (static_x, static_y), random.randint(1, 3))
+        
+        # GLITCH LINES
+        for i in range(random.randint(5, 15)):
+            glitch_y = random.randint(0, HEIGHT)
+            glitch_height = random.randint(2, 20)
+            glitch_color = (random.randint(200, 255), 0, 0)
+            pygame.draw.rect(screen, glitch_color, (0, glitch_y, WIDTH, glitch_height))
+        
+        # Mom grows MASSIVE and DISTORTED
+        scale = 40 + (progress * 30)
+        face_size = int(600 * scale / 40)
+        
+        # FACE LUNGES AT YOU
+        lunge_offset = int(progress * 150)
+        face_x = WIDTH // 2 + random.randint(-15, 15) + int(math.sin(elapsed * 10) * 20)
+        face_y = HEIGHT // 2 + random.randint(-15, 15) - lunge_offset
+        
+        # GROTESQUE HEAD with pulsing veins
+        pulse = int(15 * math.sin(elapsed * 20))
+        
+        # Multiple layers of rotting skin
+        for layer in range(3):
+            layer_size = face_size//2 + pulse - (layer * 15)
+            decay_color = (
+                220 + int(35 * progress) - layer * 20,
+                140 - int(80 * progress) - layer * 30,
+                140 - int(80 * progress) - layer * 30
+            )
+            pygame.draw.circle(screen, decay_color, (face_x, face_y), layer_size)
+        
+        # Rotting flesh effect
+        for i in range(100):
+            rot_x = face_x + random.randint(-face_size//2, face_size//2)
+            rot_y = face_y + random.randint(-face_size//2, face_size//2)
+            rot_color = random.choice([
+                (120, 80, 60),
+                (100, 60, 40),
+                (80, 40, 20),
+                (60, 20, 10)
+            ])
+            pygame.draw.circle(screen, rot_color, (rot_x, rot_y), random.randint(3, 15))
+        
+        # ENORMOUS BLOODSHOT DEMON EYES
+        eye_size = int(140 + progress * 70)
+        eye_spacing = int(180 + progress * 60)
+        eye_offset_x = int(math.sin(elapsed * 6) * 10)
+        eye_offset_y = int(math.cos(elapsed * 6) * 10)
+        
+        # Left eye
+        pygame.draw.ellipse(screen, (255, 255, 180), (face_x - eye_spacing - eye_size//2, face_y - 140, eye_size, eye_size + 50))
+        
+        # Blood veins in left eye
+        for i in range(60):
+            vein_angle = random.random() * 6.28
+            vein_length = random.randint(30, eye_size//2)
+            vein_start_x = face_x - eye_spacing
+            vein_start_y = face_y - 90
+            vein_end_x = int(vein_start_x + math.cos(vein_angle) * vein_length)
+            vein_end_y = int(vein_start_y + math.sin(vein_angle) * vein_length)
+            vein_thickness = random.randint(2, 6)
+            pygame.draw.line(screen, (200, 0, 0), (vein_start_x, vein_start_y), (vein_end_x, vein_end_y), vein_thickness)
+        
+        # Iris and pupil (left)
+        iris_size = int(70 + progress * 30 + pulse)
+        iris_x = face_x - eye_spacing + eye_offset_x
+        iris_y = face_y - 90 + eye_offset_y
+        pygame.draw.circle(screen, (255, 0, 0), (iris_x, iris_y), iris_size)
+        pygame.draw.circle(screen, (220, 0, 0), (iris_x, iris_y), iris_size - 10)
+        pygame.draw.circle(screen, (180, 0, 0), (iris_x, iris_y), iris_size - 20)
+        pupil_size = int(40 + progress * 20)
+        pygame.draw.circle(screen, (0, 0, 0), (iris_x, iris_y), pupil_size)
+        
+        # Right eye
+        pygame.draw.ellipse(screen, (255, 255, 180), (face_x + eye_spacing - eye_size//2, face_y - 140, eye_size, eye_size + 50))
+        
+        # Blood veins in right eye
+        for i in range(60):
+            vein_angle = random.random() * 6.28
+            vein_length = random.randint(30, eye_size//2)
+            vein_start_x = face_x + eye_spacing
+            vein_start_y = face_y - 90
+            vein_end_x = int(vein_start_x + math.cos(vein_angle) * vein_length)
+            vein_end_y = int(vein_start_y + math.sin(vein_angle) * vein_length)
+            vein_thickness = random.randint(2, 6)
+            pygame.draw.line(screen, (200, 0, 0), (vein_start_x, vein_start_y), (vein_end_x, vein_end_y), vein_thickness)
+        
+        iris_x_right = face_x + eye_spacing + eye_offset_x
+        iris_y_right = face_y - 90 + eye_offset_y
+        pygame.draw.circle(screen, (255, 0, 0), (iris_x_right, iris_y_right), iris_size)
+        pygame.draw.circle(screen, (220, 0, 0), (iris_x_right, iris_y_right), iris_size - 10)
+        pygame.draw.circle(screen, (180, 0, 0), (iris_x_right, iris_y_right), iris_size - 20)
+        pygame.draw.circle(screen, (0, 0, 0), (iris_x_right, iris_y_right), pupil_size)
+        
+        # GAPING MOUTH - grows IMPOSSIBLY WIDE
+        mouth_width = int(250 + progress * 150)
+        mouth_height = int(220 + progress * 120)
+        mouth_y = int(face_y + 40 - progress * 30)
+        
+        # Throat of darkness
+        pygame.draw.ellipse(screen, (0, 0, 0), (face_x - mouth_width//2, mouth_y, mouth_width, mouth_height))
+        pygame.draw.ellipse(screen, (10, 0, 0), (face_x - mouth_width//2 + 30, mouth_y + 30, mouth_width - 60, mouth_height - 60))
+        
+        # HORRIFYING SHARP TEETH
+        teeth_count = 20
+        for i in range(teeth_count):
+            tooth_x = face_x - mouth_width//2 + 30 + i * (mouth_width - 60) // teeth_count
+            tooth_width = 18
+            tooth_height = int(45 + progress * 30)
+            pygame.draw.polygon(screen, (255, 255, 200), [
+                (tooth_x, mouth_y + 10),
+                (tooth_x + tooth_width, mouth_y + 10),
+                (tooth_x + tooth_width//2, mouth_y + tooth_height)
+            ])
+            
+            # Bottom teeth
+            tooth_x_bottom = face_x - mouth_width//2 + 40 + i * (mouth_width - 80) // teeth_count
+            pygame.draw.polygon(screen, (255, 255, 200), [
+                (tooth_x_bottom, mouth_y + mouth_height - tooth_height),
+                (tooth_x_bottom + tooth_width, mouth_y + mouth_height - tooth_height),
+                (tooth_x_bottom + tooth_width//2, mouth_y + mouth_height - 10)
+            ])
+        
+        # EXTREME shake effect
+        shake_intensity = int(25 + progress * 50)
+        shake_x = random.randint(-shake_intensity, shake_intensity)
+        shake_y = random.randint(-shake_intensity, shake_intensity)
+        
+        # TERRIFYING text messages
+        text_shake_x = shake_x + random.randint(-10, 10)
+        text_shake_y = shake_y + random.randint(-10, 10)
+        
+        if progress < 0.25:
+            jumpscare_text = lobby_font.render(initial_message, True, (255, 255, 255))
+            screen.blit(jumpscare_text, (WIDTH//2 - jumpscare_text.get_width()//2 + text_shake_x, 60 + text_shake_y))
+        elif progress < 0.5:
+            jumpscare_text = lobby_font.render("NO ESCAPE!", True, (255, 200, 200))
+            screen.blit(jumpscare_text, (WIDTH//2 - jumpscare_text.get_width()//2 + text_shake_x, 60 + text_shake_y))
+        elif progress < 0.75:
+            jumpscare_text = lobby_font.render("SHE'S WATCHING!", True, (255, int(50 + progress * 200), int(50 + progress * 200)))
+            screen.blit(jumpscare_text, (WIDTH//2 - jumpscare_text.get_width()//2 + text_shake_x, 60 + text_shake_y))
+        else:
+            jumpscare_text = lobby_font.render("START OVER!", True, (200, 0, 0))
+            screen.blit(jumpscare_text, (WIDTH//2 - jumpscare_text.get_width()//2 + text_shake_x, 60 + text_shake_y))
+        
+        pygame.display.flip()
+        clock.tick(60)
+    
+    # Stop the scream
+    try:
+        pygame.mixer.music.stop()
+    except:
+        pass
+
+def secret_hunt_game():
+    """Secret game where you need to find and click 'shop' text"""
+    global unlock_progress
+    
+    running = True
+    # Random positions for distraction texts
+    import random
+    
+    # Create many random texts, one of which is "shop"
+    texts = []
+    shop_rect = None
+    text_rects = []  # Store all text rects for wrong click detection
+    
+    for i in range(30):
+        random_words = ["game", "mode", "coin", "battle", "fun", "play", "wolf", "secret", "code", "hidden"]
+        word = random.choice(random_words)
+        x = random.randint(50, WIDTH - 100)
+        y = random.randint(100, HEIGHT - 100)
+        texts.append({'word': word, 'x': x, 'y': y, 'color': (random.randint(100, 255), random.randint(100, 255), random.randint(100, 255))})
+    
+    # Add the special "shop" text in a random position
+    shop_x = random.randint(200, WIDTH - 200)
+    shop_y = random.randint(200, HEIGHT - 200)
+    texts.append({'word': 'shop', 'x': shop_x, 'y': shop_y, 'color': (255, 50, 255)})
+    
+    # Shuffle so shop isn't last
+    random.shuffle(texts)
+    
+    while running:
+        screen.fill((10, 10, 30))
+        
+        # Title
+        title = lobby_font.render("??? SECRET SPACE ???", True, (100, 255, 100))
+        screen.blit(title, (WIDTH//2 - title.get_width()//2, 20))
+        
+        hint = name_font.render("Find something interesting...", True, (150, 150, 150))
+        screen.blit(hint, (WIDTH//2 - hint.get_width()//2, 70))
+        
+        # Clear text_rects for this frame
+        text_rects = []
+        
+        # Draw all texts
+        for text_data in texts:
+            text_surf = font.render(text_data['word'], True, text_data['color'])
+            text_rect = text_surf.get_rect(topleft=(text_data['x'], text_data['y']))
+            screen.blit(text_surf, text_rect)
+            
+            # Store all rects for click detection
+            text_rects.append({'rect': text_rect, 'word': text_data['word']})
+            
+            # Store shop rect for click detection
+            if text_data['word'] == 'shop':
+                shop_rect = text_rect
+        
+        # Exit hint
+        exit_hint = name_font.render("Press ESC to exit", True, (100, 100, 100))
+        screen.blit(exit_hint, (WIDTH//2 - exit_hint.get_width()//2, HEIGHT - 40))
+        
+        pygame.display.flip()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                # Check if clicked on shop
+                if shop_rect and shop_rect.collidepoint(event.pos):
+                    unlock_progress['clicked_shop_word'] = True
+                    # Show success message
+                    screen.fill((10, 10, 30))
+                    success = lobby_font.render("✓ YOU FOUND IT!", True, (100, 255, 100))
+                    screen.blit(success, (WIDTH//2 - success.get_width()//2, HEIGHT//2 - 40))
+                    hint_text = font.render("Now exit and continue your journey...", True, (200, 200, 200))
+                    screen.blit(hint_text, (WIDTH//2 - hint_text.get_width()//2, HEIGHT//2 + 20))
+                    pygame.display.flip()
+                    pygame.time.wait(2000)
+                    running = False
+                else:
+                    # Check if clicked on ANY other word (wrong word)
+                    clicked_wrong = False
+                    for text_info in text_rects:
+                        if text_info['word'] != 'shop' and text_info['rect'].collidepoint(event.pos):
+                            clicked_wrong = True
+                            break
+                    
+                    if clicked_wrong:
+                        # FULL MOM MODE JUMPSCARE!
+                        do_mom_jumpscare("WRONG WORD!!!")
+                        
+                        # Reset progress and return to main menu
+                        unlock_progress['found_secret_game'] = False
+                        unlock_progress['clicked_shop_word'] = False
+                        unlock_progress['entered_lllooolll'] = False
+                        unlock_progress['answered_math'] = False
+                        
+                        # Show message
+                        screen.fill((50, 0, 0))
+                        reset_text = lobby_font.render("PROGRESS RESET!", True, (255, 50, 50))
+                        screen.blit(reset_text, (WIDTH//2 - reset_text.get_width()//2, HEIGHT//2 - 40))
+                        back_text = font.render("Returning to main menu...", True, (200, 200, 200))
+                        screen.blit(back_text, (WIDTH//2 - back_text.get_width()//2, HEIGHT//2 + 20))
+                        pygame.display.flip()
+                        pygame.time.wait(2000)
+                        
+                        running = False
+                        # The function will return and shop_menu will close, going back to main menu
+                    running = False
+
+def math_challenge():
+    """Show impossible math question, but real answer is xxxzzzccc"""
+    global unlock_progress, session_purchases
+    
+    running = True
+    answer_input = ""
+    code_input = ""
+    
+    while running:
+        screen.fill((40, 10, 10))
+        
+        # Scary title
+        title = lobby_font.render("🔢 FINAL CHALLENGE 🔢", True, (255, 100, 100))
+        screen.blit(title, (WIDTH//2 - title.get_width()//2, 100))
+        
+        # The impossible math question
+        question = lobby_font.render("3666373 × 6736746 = ?", True, (255, 255, 100))
+        screen.blit(question, (WIDTH//2 - question.get_width()//2, 200))
+        
+        warning = name_font.render("(You must solve this to unlock the shop)", True, (200, 100, 100))
+        screen.blit(warning, (WIDTH//2 - warning.get_width()//2, 260))
+        
+        # Show input
+        input_box = pygame.Rect(WIDTH//2 - 200, 350, 400, 50)
+        pygame.draw.rect(screen, (50, 50, 50), input_box)
+        pygame.draw.rect(screen, (255, 255, 255), input_box, 2)
+        
+        answer_text = font.render(answer_input, True, (255, 255, 255))
+        screen.blit(answer_text, (input_box.x + 10, input_box.y + 10))
+        
+        hint = name_font.render("Type your answer and press ENTER", True, (150, 150, 150))
+        screen.blit(hint, (WIDTH//2 - hint.get_width()//2, 420))
+        
+        pygame.display.flip()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                # Secret code detection (xxxzzzccc)
+                if event.unicode and event.unicode.isprintable():
+                    code_input += event.unicode
+                    answer_input += event.unicode
+                    # Keep only last 9 characters for code
+                    if len(code_input) > 9:
+                        code_input = code_input[-9:]
+                    # Check for secret bypass code
+                    if code_input.endswith("xxxzzzccc"):
+                        unlock_progress['answered_math'] = True
+                        session_purchases['shop_unlocked'] = True
+                        # Epic unlock animation!
+                        screen.fill((10, 50, 10))
+                        unlock1 = lobby_font.render("🎉 YOU DISCOVERED THE SECRET! 🎉", True, (100, 255, 100))
+                        screen.blit(unlock1, (WIDTH//2 - unlock1.get_width()//2, HEIGHT//2 - 100))
+                        unlock2 = font.render("You didn't need to solve the math...", True, (200, 255, 200))
+                        screen.blit(unlock2, (WIDTH//2 - unlock2.get_width()//2, HEIGHT//2 - 40))
+                        unlock3 = font.render("The real answer was typing: xxxzzzccc", True, (255, 255, 100))
+                        screen.blit(unlock3, (WIDTH//2 - unlock3.get_width()//2, HEIGHT//2))
+                        unlock4 = lobby_font.render("🔓 SHOP UNLOCKED! 🔓", True, (255, 215, 0))
+                        screen.blit(unlock4, (WIDTH//2 - unlock4.get_width()//2, HEIGHT//2 + 60))
+                        pygame.display.flip()
+                        pygame.time.wait(4000)
+                        running = False
+                        return
+                
+                if event.key == pygame.K_BACKSPACE:
+                    answer_input = answer_input[:-1]
+                elif event.key == pygame.K_RETURN:
+                    # Check if they actually calculated it (won't work!)
+                    try:
+                        user_answer = int(answer_input)
+                        correct_answer = 3666373 * 6736746
+                        if user_answer == correct_answer:
+                            # Even correct answer doesn't unlock!
+                            screen.fill((40, 10, 10))
+                            fail = lobby_font.render("🤔 CORRECT... BUT...", True, (255, 200, 100))
+                            screen.blit(fail, (WIDTH//2 - fail.get_width()//2, HEIGHT//2 - 40))
+                            fail2 = font.render("Something seems off... Try again?", True, (200, 200, 200))
+                            screen.blit(fail2, (WIDTH//2 - fail2.get_width()//2, HEIGHT//2 + 20))
+                            pygame.display.flip()
+                            pygame.time.wait(2000)
+                            answer_input = ""
+                            code_input = ""
+                        else:
+                            # Wrong answer
+                            screen.fill((40, 10, 10))
+                            fail = lobby_font.render("❌ WRONG!", True, (255, 50, 50))
+                            screen.blit(fail, (WIDTH//2 - fail.get_width()//2, HEIGHT//2))
+                            pygame.display.flip()
+                            pygame.time.wait(1000)
+                            answer_input = ""
+                            code_input = ""
+                    except ValueError:
+                        # Not a number
+                        answer_input = ""
+                        code_input = ""
+                
+                elif event.key == pygame.K_ESCAPE:
+                    running = False
+
+def shop_menu():
+    """Display the shop where players can buy features - requires complex secret hunt!"""
+    global session_purchases, unlock_progress
+    
+    # Check if shop is unlocked
+    if not session_purchases.get('shop_unlocked', False):
+        # Show cryptic locked message
+        running = True
+        code_input = ""  # Track secret code input
+        while running:
+            screen.fill((20, 20, 40))
+            
+            # Locked title
+            title_text = lobby_font.render("🔒 SHOP LOCKED", True, (255, 50, 50))
+            screen.blit(title_text, (WIDTH//2 - title_text.get_width()//2, 150))
+            
+            # Show cryptic hints based on progress
+            y_pos = 250
+            
+            if not unlock_progress['found_secret_game']:
+                hint1 = font.render("The journey begins with three of the same...", True, (200, 200, 200))
+                screen.blit(hint1, (WIDTH//2 - hint1.get_width()//2, y_pos))
+                hint2 = name_font.render("Think simple... just three.", True, (100, 100, 150))
+                screen.blit(hint2, (WIDTH//2 - hint2.get_width()//2, y_pos + 35))
+            elif not unlock_progress['clicked_shop_word']:
+                hint1 = font.render("✓ Secret space discovered!", True, (100, 255, 100))
+                screen.blit(hint1, (WIDTH//2 - hint1.get_width()//2, y_pos))
+                hint2 = font.render("Find the word you seek in the secret space...", True, (200, 200, 200))
+                screen.blit(hint2, (WIDTH//2 - hint2.get_width()//2, y_pos + 35))
+            elif not unlock_progress['entered_lllooolll']:
+                hint1 = font.render("✓ Secret word found!", True, (100, 255, 100))
+                screen.blit(hint1, (WIDTH//2 - hint1.get_width()//2, y_pos))
+                hint2 = font.render("Now... what makes wolves dance?", True, (200, 200, 200))
+                screen.blit(hint2, (WIDTH//2 - hint2.get_width()//2, y_pos + 35))
+                hint3 = name_font.render("(Remember Makka Pakka Mode...)", True, (100, 100, 150))
+                screen.blit(hint3, (WIDTH//2 - hint3.get_width()//2, y_pos + 70))
+            else:
+                hint1 = font.render("✓ All steps complete!", True, (100, 255, 100))
+                screen.blit(hint1, (WIDTH//2 - hint1.get_width()//2, y_pos))
+                hint2 = font.render("Solve the final challenge...", True, (200, 200, 200))
+                screen.blit(hint2, (WIDTH//2 - hint2.get_width()//2, y_pos + 35))
+            
+            # Warning
+            warning = font.render("⚠️ This shop is VERY well hidden... ⚠️", True, (255, 100, 100))
+            screen.blit(warning, (WIDTH//2 - warning.get_width()//2, 450))
+            
+            # Back button
+            back_button = pygame.Rect(WIDTH//2 - 100, HEIGHT - 100, 200, 60)
+            pygame.draw.rect(screen, (100, 50, 150), back_button)
+            pygame.draw.rect(screen, (150, 100, 200), back_button, 3)
+            back_text = font.render("Back", True, (255, 255, 255))
+            screen.blit(back_text, (back_button.centerx - back_text.get_width()//2, 
+                                    back_button.centery - back_text.get_height()//2))
+            
+            pygame.display.flip()
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    # Secret code detection
+                    if event.unicode and event.unicode.isprintable():
+                        code_input += event.unicode
+                        # Keep only last 9 characters
+                        if len(code_input) > 9:
+                            code_input = code_input[-9:]
+                        
+                        # Debug: Show what's being typed (for testing)
+                        print(f"Code input: {code_input}")
+                        
+                        # Step 1: Check for "ttt" to enter secret game
+                        if "ttt" in code_input and not unlock_progress['found_secret_game']:
+                            unlock_progress['found_secret_game'] = True
+                            code_input = ""
+                            secret_hunt_game()  # Launch secret game
+                            # After returning from secret game, don't break the loop
+                            # just continue showing the locked screen with updated progress
+                        
+                        # Step 2: Check for "lllooolll" after finding shop word
+                        elif "lllooolll" in code_input and unlock_progress['clicked_shop_word'] and not unlock_progress['entered_lllooolll']:
+                            unlock_progress['entered_lllooolll'] = True
+                            code_input = ""
+                            # Show progress message
+                            screen.fill((20, 20, 40))
+                            progress = lobby_font.render("✓ CODE ACCEPTED!", True, (100, 255, 100))
+                            screen.blit(progress, (WIDTH//2 - progress.get_width()//2, HEIGHT//2 - 40))
+                            next_text = font.render("Proceeding to final challenge...", True, (255, 255, 255))
+                            screen.blit(next_text, (WIDTH//2 - next_text.get_width()//2, HEIGHT//2 + 20))
+                            pygame.display.flip()
+                            pygame.time.wait(2000)
+                            # Launch math challenge
+                            math_challenge()
+                            # After math challenge, check if unlocked and exit
+                            if session_purchases.get('shop_unlocked', False):
+                                running = False
+                    
+                    if event.key == pygame.K_ESCAPE:
+                        running = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if back_button.collidepoint(event.pos):
+                        running = False
+        
+        # If shop was just unlocked, call shop_menu again to show the shop
+        if session_purchases.get('shop_unlocked', False):
+            shop_menu()
+        return
+    
+    # Shop is unlocked - show shop
+    running = True
+    scroll_offset = 0  # For scrolling through items
+    
+    # Define all shop items
+    shop_items = [
+        {'name': 'Relax Mode', 'key': 'relax_mode', 'price': '0 NOK (FREE!)', 'desc': 'Peaceful sheep counting, letter rain, satisfaction games!'},
+        {'name': 'Makka Pakka Mode', 'key': 'makka_pakka_mode', 'price': '0 NOK (FREE!)', 'desc': 'Wash faces and steal them from your opponent!'},
+        {'name': 'Escape Mom Mode', 'key': 'escape_mom_mode', 'price': '0 NOK (FREE!)', 'desc': 'SCARY! Run from an angry mother in dark corridors!'},
+        {'name': 'Capture the Flag', 'key': 'capture_flag_mode', 'price': '0 NOK (FREE!)', 'desc': 'Team-based flag capture action!'},
+        {'name': 'Survival Mode', 'key': 'survival_mode', 'price': '0 NOK (FREE!)', 'desc': 'Survive endless waves of enemies!'},
+        {'name': '3D Adventure', 'key': 'adventure_3d_mode', 'price': '0 NOK (FREE!)', 'desc': 'Explore a 3D world!'},
+        {'name': 'Dilly Dolly Mode', 'key': 'dilly_dolly_mode', 'price': '0 NOK (FREE!)', 'desc': 'The simple Dilly Dolly experience!'},
+    ]
+    
+    while running:
+        screen.fill((20, 20, 40))
+        
+        # Title
+        title_text = lobby_font.render("🛒 SECRET SHOP", True, (255, 215, 0))
+        screen.blit(title_text, (WIDTH//2 - title_text.get_width()//2, 30))
+        
+        subtitle = font.render("All Game Modes Unlocked - FREE!", True, (100, 255, 100))
+        screen.blit(subtitle, (WIDTH//2 - subtitle.get_width()//2, 90))
+        
+        # Display items
+        y_pos = 150
+        for idx, item in enumerate(shop_items):
+            if session_purchases.get(item['key'], False):
+                # Already purchased
+                status_text = font.render(f"✅ {item['name']} - UNLOCKED!", True, (100, 255, 100))
+                screen.blit(status_text, (WIDTH//2 - status_text.get_width()//2, y_pos))
+            else:
+                # Not purchased yet - show buy button
+                item_text = font.render(f"🔒 {item['name']}", True, (255, 255, 255))
+                screen.blit(item_text, (WIDTH//2 - item_text.get_width()//2, y_pos))
+                
+                desc_text = name_font.render(item['desc'], True, (200, 200, 200))
+                screen.blit(desc_text, (WIDTH//2 - desc_text.get_width()//2, y_pos + 30))
+                
+                # Buy button
+                buy_button = pygame.Rect(WIDTH//2 - 100, y_pos + 55, 200, 40)
+                pygame.draw.rect(screen, (50, 150, 50), buy_button)
+                pygame.draw.rect(screen, (100, 255, 100), buy_button, 3)
+                buy_text = font.render("UNLOCK FREE", True, (255, 255, 255))
+                screen.blit(buy_text, (buy_button.centerx - buy_text.get_width()//2, 
+                                      buy_button.centery - buy_text.get_height()//2))
+                
+                # Store button rect for click detection
+                item['button_rect'] = buy_button
+            
+            y_pos += 110
+        
+        # Info text
+        info1 = font.render("🎉 You unlocked the secret shop! All modes are FREE!", True, (255, 215, 0))
+        screen.blit(info1, (WIDTH//2 - info1.get_width()//2, HEIGHT - 150))
+        
+        info2 = name_font.render("(Unlocks reset when you restart the game)", True, (150, 150, 150))
+        screen.blit(info2, (WIDTH//2 - info2.get_width()//2, HEIGHT - 120))
+        
+        # Back button
+        back_button = pygame.Rect(WIDTH//2 - 100, HEIGHT - 80, 200, 50)
+        pygame.draw.rect(screen, (100, 50, 150), back_button)
+        pygame.draw.rect(screen, (150, 100, 200), back_button, 3)
+        back_text = font.render("Back", True, (255, 255, 255))
+        screen.blit(back_text, (back_button.centerx - back_text.get_width()//2, 
+                                back_button.centery - back_text.get_height()//2))
+        
+        pygame.display.flip()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if back_button.collidepoint(event.pos):
+                    running = False
+                else:
+                    # Check if any buy button was clicked
+                    for item in shop_items:
+                        if not session_purchases.get(item['key'], False) and 'button_rect' in item:
+                            if item['button_rect'].collidepoint(event.pos):
+                                # Purchase confirmed!
+                                session_purchases[item['key']] = True
+                                # Show unlock message
+                                screen.fill((20, 20, 40))
+                                unlock_text = lobby_font.render(f"✅ {item['name']} UNLOCKED!", True, (100, 255, 100))
+                                screen.blit(unlock_text, (WIDTH//2 - unlock_text.get_width()//2, HEIGHT//2 - 40))
+                                enjoy = font.render("Enjoy your new game mode!", True, (200, 200, 200))
+                                screen.blit(enjoy, (WIDTH//2 - enjoy.get_width()//2, HEIGHT//2 + 20))
+                                pygame.display.flip()
+                                pygame.time.wait(1500)
+
+def show_locked_message():
+    """Show message that a game mode is locked"""
+    running = True
+    while running:
+        screen.fill((30, 20, 20))
+        
+        # Locked icon
+        lock_text = pygame.font.SysFont(None, 150).render("🔒", True, (255, 100, 100))
+        screen.blit(lock_text, (WIDTH//2 - lock_text.get_width()//2, 100))
+        
+        # Message
+        title = lobby_font.render("MODE LOCKED", True, (255, 100, 100))
+        screen.blit(title, (WIDTH//2 - title.get_width()//2, 280))
+        
+        msg1 = font.render("Visit the 🛒 Shop to unlock this game mode", True, (200, 200, 200))
+        screen.blit(msg1, (WIDTH//2 - msg1.get_width()//2, 350))
+        
+        msg2 = font.render("But first... you must unlock the shop itself!", True, (255, 215, 0))
+        screen.blit(msg2, (WIDTH//2 - msg2.get_width()//2, 390))
+        
+        price = pygame.font.SysFont(None, 70).render("FREE when unlocked!", True, (100, 255, 100))
+        screen.blit(price, (WIDTH//2 - price.get_width()//2, 440))
+        
+        # OK button
+        ok_button = pygame.Rect(WIDTH//2 - 100, HEIGHT - 150, 200, 60)
+        pygame.draw.rect(screen, (100, 50, 150), ok_button)
+        pygame.draw.rect(screen, (150, 100, 200), ok_button, 3)
+        ok_text = font.render("OK", True, (255, 255, 255))
+        screen.blit(ok_text, (ok_button.centerx - ok_text.get_width()//2, 
+                              ok_button.centery - ok_text.get_height()//2))
+        
+        pygame.display.flip()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE or event.key == pygame.K_RETURN:
+                    running = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if ok_button.collidepoint(event.pos):
+                    running = False
+
+def grass_mode():
+    """Grass Mode - a peaceful grassy field"""
+    global menu_key_buffer
+    screen_width, screen_height = WIDTH, HEIGHT
+    
+    # Track ttt key press for unlocking Combine Mode
+    grass_key_buffer = ""
+    
+    running = True
+    while running:
+        screen.fill((34, 139, 34))  # Forest green background
+        
+        # Draw grass
+        grass_font = pygame.font.Font(None, 80)
+        for i in range(10):
+            for j in range(8):
+                grass_text = grass_font.render("🌿", True, (0, 200, 0))
+                screen.blit(grass_text, (i * 100 + random.randint(-10, 10), j * 100 + random.randint(-10, 10)))
+        
+        # Title
+        title_font = pygame.font.Font(None, 100)
+        title = title_font.render("GRASS MODE", True, (255, 255, 255))
+        screen.blit(title, (WIDTH//2 - title.get_width()//2, 50))
+        
+        # Instructions
+        inst_font = pygame.font.Font(None, 40)
+        inst = inst_font.render("Press ESC to exit", True, (200, 200, 200))
+        screen.blit(inst, (WIDTH//2 - inst.get_width()//2, HEIGHT - 100))
+        
+        # Show hint if wolf vomited this
+        if secret_hack.get('grass_mode_unlocked') and not secret_hack.get('combine_mode_unlocked'):
+            hint = inst_font.render("Something feels strange about this grass...", True, (255, 255, 0))
+            screen.blit(hint, (WIDTH//2 - hint.get_width()//2, HEIGHT // 2))
+        
+        pygame.display.flip()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                key_name = pygame.key.name(event.key)
+                
+                # Track ttt for Combine Mode unlock
+                if key_name == 't':
+                    grass_key_buffer += key_name
+                    if len(grass_key_buffer) > 3:
+                        grass_key_buffer = grass_key_buffer[-3:]
+                    
+                    # Check for ttt
+                    if grass_key_buffer == "ttt" and not secret_hack.get('combine_mode_unlocked'):
+                        secret_hack['combine_mode_unlocked'] = True
+                        # Show wolf vomit animation for Combine Mode
+                        wolf_vomit_animation("Combine Mode")
+                        running = False
+                        break
+                else:
+                    grass_key_buffer = ""
+                
+                if event.key == pygame.K_ESCAPE:
+                    running = False
+        
+        pygame.time.wait(16)
+
+def combine_mode():
+    """Combine Mode - ENHANCED! A dog's epic journey to become human in a vast scrolling world"""
+    clock = pygame.time.Clock()
+    
+    # WORLD CAMERA - Much bigger world!
+    camera_x = 0
+    world_width = 10000  # Huge scrolling world!
+    
+    # Dog state - More fluid movement
+    dog_x = 100  # Screen position
+    dog_world_x = 100  # Position in world
+    dog_y = HEIGHT - 150
+    dog_speed = 8  # Faster base speed
+    dog_direction = 1  # 1 = right, -1 = left
+    dog_velocity_y = 0
+    dog_velocity_x = 0  # Momentum
+    is_jumping = False
+    is_double_jump_available = False  # DOUBLE JUMP!
+    can_dash = True
+    dash_cooldown = 0
+    
+    # Transformation progress (0 to 100)
+    transformation = 0
+    items_collected = 0
+    distance_traveled = 0
+    
+    # Score multiplier
+    score_multiplier = 1.0
+    
+    # Obstacles - More variety and danger
+    obstacles = []
+    obstacle_spawn_timer = 0
+    obstacle_spawn_interval = 2.0  # More frequent
+    
+    # ENEMIES - New!
+    enemies = []
+    enemy_spawn_timer = 0
+    enemy_spawn_interval = 5.0
+    
+    # PLATFORMS - New jumping challenge!
+    platforms = []
+    platform_spawn_timer = 0
+    platform_spawn_interval = 4.0
+    
+    # POWER-UPS - New!
+    powerups = []
+    powerup_spawn_timer = 0
+    powerup_spawn_interval = 10.0
+    active_powerups = {}  # {powerup_type: remaining_time}
+    
+    # Health/Lives system - Harder
+    health = 100
+    max_health = 100
+    lives = 5  # More lives for harder game
+    invincible_timer = 0
+    invincible_duration = 1.5  # Shorter invincibility
+    
+    # Stamina system - Enhanced
+    stamina = 100
+    max_stamina = 100
+    is_sprinting = False
+    stamina_regen_rate = 25  # Faster regen
+    
+    # Weather effects - More dramatic
+    weather_particles = []
+    weather_type = "clear"
+    weather_timer = 0
+    weather_intensity = 1.0
+    
+    # NPCs - More helpful
+    npcs = []
+    npc_spawn_timer = 0
+    npc_spawn_interval = 12.0
+    
+    # Background elements - Parallax layers
+    bg_buildings = []
+    bg_clouds = []
+    bg_trees = []
+    
+    # Ambient messages
+    ambient_messages = []
+    ambient_timer = 0
+    
+    # Collectibles - EXPANDED with 25+ items!
+    items = []
+    item_definitions = [
+        # Common (70%)
+        {"emoji": "👔", "name": "Shirt", "points": 3, "rarity": "common"},
+        {"emoji": "👞", "name": "Shoes", "points": 3, "rarity": "common"},
+        {"emoji": "🎩", "name": "Hat", "points": 3, "rarity": "common"},
+        {"emoji": "👓", "name": "Glasses", "points": 3, "rarity": "common"},
+        {"emoji": "📚", "name": "Book", "points": 3, "rarity": "common"},
+        {"emoji": "☕", "name": "Coffee", "points": 3, "rarity": "common"},
+        {"emoji": "🍔", "name": "Burger", "points": 3, "rarity": "common"},
+        {"emoji": "🔑", "name": "Keys", "points": 3, "rarity": "common"},
+        {"emoji": "🕶️", "name": "Sunglasses", "points": 3, "rarity": "common"},
+        {"emoji": "🧳", "name": "Suitcase", "points": 3, "rarity": "common"},
+        # Uncommon (20%)
+        {"emoji": "💼", "name": "Briefcase", "points": 5, "rarity": "uncommon"},
+        {"emoji": "💻", "name": "Laptop", "points": 5, "rarity": "uncommon"},
+        {"emoji": "📱", "name": "Phone", "points": 5, "rarity": "uncommon"},
+        {"emoji": "💍", "name": "Ring", "points": 5, "rarity": "uncommon"},
+        {"emoji": "⌚", "name": "Watch", "points": 5, "rarity": "uncommon"},
+        {"emoji": "🎧", "name": "Headphones", "points": 5, "rarity": "uncommon"},
+        {"emoji": "�", "name": "Camera", "points": 5, "rarity": "uncommon"},
+        # Rare (8%)
+        {"emoji": "🎓", "name": "Diploma", "points": 8, "rarity": "rare"},
+        {"emoji": "🎻", "name": "Violin", "points": 8, "rarity": "rare"},
+        {"emoji": "🎨", "name": "Art", "points": 8, "rarity": "rare"},
+        {"emoji": "🏆", "name": "Trophy", "points": 8, "rarity": "rare"},
+        {"emoji": "💎", "name": "Diamond", "points": 10, "rarity": "rare"},
+        # Epic (2%)
+        {"emoji": "💰", "name": "Money", "points": 15, "rarity": "epic"},
+        {"emoji": "👑", "name": "Crown", "points": 20, "rarity": "epic"},
+        {"emoji": "🎪", "name": "Talent", "points": 18, "rarity": "epic"},
+    ]
+    
+    spawn_timer = 0
+    spawn_interval = 0.8  # Much faster spawning
+    
+    # Particle effects - More spectacular
+    particles = []
+    
+    # Story progression
+    story_phase = 0
+    
+    running = True
+    game_time = 0
+    show_celebration = False
+    celebration_timer = 0
+    
+    # Walking animation - Smoother
+    walk_frame = 0
+    
+    # Combo system - Enhanced
+    combo_count = 0
+    combo_timer = 0
+    combo_timeout = 2.5  # More forgiving
+    highest_combo = 0
+    
+    # Difficulty scaling
+    difficulty_multiplier = 1.0
+    
+    # Initialize background elements
+    for i in range(15):
+        bg_buildings.append({
+            'x': i * 300,
+            'height': random.randint(200, 400),
+            'width': random.randint(150, 250),
+            'color': (random.randint(40, 80), random.randint(40, 80), random.randint(80, 120)),
+            'windows': [(random.randint(0, 200), random.randint(0, 400)) for _ in range(random.randint(8, 20))]
+        })
+    
+    for i in range(20):
+        bg_clouds.append({
+            'x': random.randint(0, world_width),
+            'y': random.randint(50, 250),
+            'speed': random.uniform(0.1, 0.3),
+            'size': random.randint(40, 100)
+        })
+    
+    for i in range(30):
+        bg_trees.append({
+            'x': i * 250 + random.randint(-50, 50),
+            'height': random.randint(80, 150)
+        })
+    
+    while running:
+        dt = clock.tick(60) / 1000.0  # Delta time in seconds
+        game_time += dt
+        spawn_timer += dt
+        walk_frame += 0.3
+        obstacle_spawn_timer += dt
+        enemy_spawn_timer += dt
+        platform_spawn_timer += dt
+        powerup_spawn_timer += dt
+        npc_spawn_timer += dt
+        weather_timer += dt
+        ambient_timer += dt
+        
+        # Update distance traveled
+        distance_traveled = dog_world_x / 10
+        
+        # Increase difficulty over time
+        difficulty_multiplier = 1.0 + (distance_traveled / 1000)
+        
+        # Update dash cooldown
+        if dash_cooldown > 0:
+            dash_cooldown -= dt
+            if dash_cooldown <= 0:
+                can_dash = True
+        
+        # Update invincibility
+        if invincible_timer > 0:
+            invincible_timer -= dt
+        
+        # Update combo timer
+        if combo_timer > 0:
+            combo_timer -= dt
+            if combo_timer <= 0:
+                combo_count = 0
+                score_multiplier = 1.0
+        else:
+            score_multiplier = 1.0 + (combo_count * 0.1)
+        
+        # Update active powerups
+        for powerup_type in list(active_powerups.keys()):
+            active_powerups[powerup_type] -= dt
+            if active_powerups[powerup_type] <= 0:
+                del active_powerups[powerup_type]
+        
+        # Regenerate stamina
+        if not is_sprinting and stamina < max_stamina:
+            regen = stamina_regen_rate
+            if 'energy_boost' in active_powerups:
+                regen *= 2
+            stamina = min(max_stamina, stamina + dt * regen)
+        
+        # Auto-heal with health powerup
+        if 'health_regen' in active_powerups and health < max_health:
+            health = min(max_health, health + dt * 10)
+        
+        # Change weather based on progression and randomness
+        if weather_timer >= 15:
+            weather_timer = 0
+            if story_phase < 2:
+                weather_type = random.choice(["clear", "rain", "rain", "storm"])
+            elif story_phase < 4:
+                weather_type = random.choice(["clear", "clear", "rain", "snow"])
+            else:
+                weather_type = "clear"
+            weather_intensity = random.uniform(0.5, 1.5)
+        
+        # Add ambient messages
+        if ambient_timer >= 8 and story_phase < 4:
+            ambient_timer = 0
+            messages = {
+                0: ["A stray searching for purpose...", "The cold city streets...", "Dreams of being human...", "Alone in the world..."],
+                1: ["Learning to walk upright!", "Civilization beckons!", "Progress feels good!", "Almost there..."],
+                2: ["The city accepts you!", "You're becoming civilized!", "Humans notice you!", "Keep pushing forward!"],
+                3: ["So close to your dream!", "Just a bit more!", "You can feel it!", "The transformation nears..."]
+            }
+            if story_phase in messages:
+                ambient_messages.append({
+                    'text': random.choice(messages[story_phase]),
+                    'life': 4.0,
+                    'y': 150,
+                    'x': WIDTH // 2
+                })
+        
+        # Spawn obstacles (things that damage you)
+        if obstacle_spawn_timer >= obstacle_spawn_interval and transformation < 100 and story_phase >= 1:
+            obstacle_spawn_timer = 0
+            obstacle_type = random.choice(["car", "trash", "puddle", "fence"])
+            obstacles.append({
+                'x': WIDTH + 50,
+                'y': HEIGHT - 160 if obstacle_type == "fence" else HEIGHT - 120,
+                'type': obstacle_type,
+                'speed': random.uniform(4, 6),
+                'damage': 10 if obstacle_type == "car" else 5
+            })
+        
+        # Spawn NPCs (helpful humans)
+        if npc_spawn_timer >= npc_spawn_interval and transformation < 100 and story_phase >= 2:
+            npc_spawn_timer = 0
+            npc_types = [
+                {"emoji": "👨", "message": "Keep trying, buddy!", "boost": 3},
+                {"emoji": "👩", "message": "You can do it!", "boost": 3},
+                {"emoji": "🧑", "message": "Almost human!", "boost": 5},
+                {"emoji": "👴", "message": "I believe in you!", "boost": 4}
+            ]
+            npc_def = random.choice(npc_types)
+            npcs.append({
+                'x': WIDTH + 100,
+                'y': HEIGHT - 140,
+                'type': npc_def,
+                'given_boost': False
+            })
+        
+        # Spawn new items with rarity-based spawning
+        if spawn_timer >= spawn_interval and transformation < 100:
+            spawn_timer = 0
+            item_x = WIDTH + random.randint(50, 200)
+            item_y = random.randint(HEIGHT - 240, HEIGHT - 120)
+            
+            # Rarity-based selection
+            roll = random.random()
+            if roll < 0.05:  # 5% epic
+                possible_items = [i for i in item_definitions if i.get('rarity') == 'epic']
+            elif roll < 0.15:  # 10% rare
+                possible_items = [i for i in item_definitions if i.get('rarity') == 'rare']
+            elif roll < 0.35:  # 20% uncommon
+                possible_items = [i for i in item_definitions if i.get('rarity') == 'uncommon']
+            else:  # 65% common
+                possible_items = [i for i in item_definitions if i.get('rarity') == 'common']
+            
+            if possible_items:
+                item_def = random.choice(possible_items)
+                items.append({
+                    'x': item_x,
+                    'y': item_y,
+                    'emoji': item_def['emoji'],
+                    'name': item_def['name'],
+                    'points': item_def['points'],
+                    'rarity': item_def.get('rarity', 'common'),
+                    'collected': False,
+                    'float_offset': random.uniform(0, 6.28)
+                })
+        
+        # Update story phase
+        if transformation < 20:
+            story_phase = 0
+        elif transformation < 40:
+            story_phase = 1
+        elif transformation < 70:
+            story_phase = 2
+        elif transformation < 100:
+            story_phase = 3
+        else:
+            story_phase = 4
+            if not show_celebration:
+                show_celebration = True
+                celebration_timer = 0
+                # Mark that player became human! This changes the menu pointer THIS SESSION ONLY
+                secret_hack['became_human'] = True
+                
+                # PERMANENT REWARD: Unlock GOD MODE FOREVER!
+                if not secret_hack.get('god_mode_unlocked'):
+                    secret_hack['god_mode_unlocked'] = True
+                    save_secret_hack()
+                    print("🌟✨ COMBINE MODE COMPLETED! ✨🌟")
+                    print("🔥 GOD MODE UNLOCKED PERMANENTLY! 🔥")
+                    print("💪 You now have SUPERPOWERS in Battle Mode:")
+                    print("   - Press 'G' to activate God Mode")
+                    print("   - Infinite health, super speed, mega damage!")
+                else:
+                    print("🎉 YOU BECAME HUMAN! Menu pointer is now human (until you restart the game)!")
+        
+        # Background - changes with transformation
+        if story_phase == 0:
+            # Dog's alley - dark and gloomy
+            screen.fill((40, 40, 60))
+        elif story_phase == 1:
+            # Warming up
+            screen.fill((60, 70, 100))
+        elif story_phase == 2:
+            # City street
+            screen.fill((100, 120, 150))
+        elif story_phase == 3:
+            # Bright city
+            screen.fill((135, 180, 230))
+        else:
+            # Human world - vibrant and alive
+            screen.fill((180, 220, 255))
+        
+        # Draw ground
+        ground_y = HEIGHT - 80
+        ground_color = (80, 60, 40) if story_phase < 2 else (100, 100, 100)
+        pygame.draw.rect(screen, ground_color, (0, ground_y, WIDTH, 80))
+        
+        # Draw city background elements
+        if story_phase >= 2:
+            # Buildings in background
+            for i in range(5):
+                building_x = i * 250 - (game_time * 20) % 250
+                building_height = 150 + (i % 3) * 50
+                pygame.draw.rect(screen, (60, 60, 80), 
+                               (int(building_x), ground_y - building_height, 200, building_height))
+                # Windows
+                for row in range(int(building_height // 30)):
+                    for col in range(3):
+                        window_x = int(building_x) + 30 + col * 60
+                        window_y = ground_y - building_height + 20 + row * 30
+                        window_color = (255, 255, 150) if random.random() > 0.3 else (50, 50, 70)
+                        pygame.draw.rect(screen, window_color, (window_x, window_y, 25, 20))
+        
+        # Weather effects
+        if weather_type == "rain":
+            # Spawn rain particles
+            if random.random() < 0.3:
+                weather_particles.append({
+                    'x': random.randint(0, WIDTH),
+                    'y': -10,
+                    'speed': random.uniform(8, 12),
+                    'type': 'rain'
+                })
+        elif weather_type == "snow":
+            # Spawn snow particles
+            if random.random() < 0.2:
+                weather_particles.append({
+                    'x': random.randint(0, WIDTH),
+                    'y': -10,
+                    'speed': random.uniform(2, 4),
+                    'drift': random.uniform(-1, 1),
+                    'type': 'snow'
+                })
+        
+        # Update and draw weather particles
+        for wp in weather_particles[:]:
+            if wp['type'] == 'rain':
+                wp['y'] += wp['speed']
+                pygame.draw.line(screen, (100, 100, 255), 
+                               (int(wp['x']), int(wp['y'])), 
+                               (int(wp['x']), int(wp['y'] + 10)), 2)
+            else:  # snow
+                wp['y'] += wp['speed']
+                wp['x'] += wp['drift']
+                pygame.draw.circle(screen, (255, 255, 255), 
+                                 (int(wp['x']), int(wp['y'])), 3)
+            
+            if wp['y'] > HEIGHT:
+                weather_particles.remove(wp)
+        
+        # Story text at top
+        story_font = pygame.font.Font(None, 40)
+        stories = [
+            "You are a lonely dog... dreaming of being human",
+            "Collecting human items... feeling more civilized!",
+            "You're walking upright now... almost there!",
+            "So close to achieving your dream!",
+            "🎉 YOU BECAME HUMAN! 🎉"
+        ]
+        
+        story_text = story_font.render(stories[story_phase], True, (255, 255, 255))
+        # Draw text with shadow
+        shadow_surf = story_font.render(stories[story_phase], True, (0, 0, 0))
+        screen.blit(shadow_surf, (WIDTH//2 - story_text.get_width()//2 + 2, 22))
+        screen.blit(story_text, (WIDTH//2 - story_text.get_width()//2, 20))
+        
+        # Progress bar
+        bar_width = 400
+        bar_height = 30
+        bar_x = WIDTH // 2 - bar_width // 2
+        bar_y = 70
+        
+        # Background bar
+        pygame.draw.rect(screen, (60, 60, 60), (bar_x, bar_y, bar_width, bar_height))
+        # Progress bar
+        progress_width = int((transformation / 100) * bar_width)
+        bar_color = [(200, 50, 50), (200, 150, 50), (150, 200, 50), (100, 200, 100), (255, 215, 0)][story_phase]
+        pygame.draw.rect(screen, bar_color, (bar_x, bar_y, progress_width, bar_height))
+        # Border
+        pygame.draw.rect(screen, (255, 255, 255), (bar_x, bar_y, bar_width, bar_height), 3)
+        
+        # Percentage text
+        percent_font = pygame.font.Font(None, 28)
+        percent_text = percent_font.render(f"{int(transformation)}% Human", True, (255, 255, 255))
+        screen.blit(percent_text, (WIDTH // 2 - percent_text.get_width() // 2, bar_y + 5))
+        
+        # Handle input
+        keys = pygame.key.get_pressed()
+        moving = False
+        
+        # Sprint with SHIFT if stamina available
+        is_sprinting = keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]
+        current_speed = dog_speed
+        
+        if is_sprinting and stamina > 0:
+            current_speed = dog_speed * 1.8
+            stamina -= dt * 30  # Drain stamina
+            if stamina < 0:
+                stamina = 0
+                is_sprinting = False
+        
+        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+            dog_x -= current_speed
+            dog_direction = -1
+            moving = True
+        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+            dog_x += current_speed
+            dog_direction = 1
+            moving = True
+        if (keys[pygame.K_UP] or keys[pygame.K_w] or keys[pygame.K_SPACE]) and not is_jumping:
+            # Jumping costs stamina
+            if stamina >= 20:
+                dog_velocity_y = -12
+                is_jumping = True
+                stamina -= 20
+            else:
+                dog_velocity_y = -8  # Weak jump
+                is_jumping = True
+        
+        # Gravity and jumping
+        if is_jumping:
+            dog_y += dog_velocity_y
+            dog_velocity_y += 0.6  # Gravity
+            
+            # Land on ground
+            if dog_y >= HEIGHT - 150:
+                dog_y = HEIGHT - 150
+                is_jumping = False
+                dog_velocity_y = 0
+        
+        # Keep dog on screen horizontally
+        dog_x = max(50, min(WIDTH - 100, dog_x))
+        
+        # Draw and update items
+        for item in items[:]:
+            if not item['collected']:
+                # Move items left (world scrolling)
+                item['x'] -= 3
+                
+                # Floating animation
+                float_y = item['y'] + math.sin(game_time * 2 + item['float_offset']) * 10
+                
+                # Draw item with glow effect
+                item_font = pygame.font.Font(None, 55)
+                item_text = item_font.render(item['emoji'], True, (255, 255, 255))
+                
+                # Glow circle - different colors based on rarity
+                rarity_colors = {
+                    'common': (200, 200, 200),
+                    'uncommon': (100, 255, 100),
+                    'rare': (100, 150, 255),
+                    'epic': (255, 215, 0)
+                }
+                glow_color = rarity_colors.get(item.get('rarity', 'common'), (255, 255, 150))
+                glow_radius = 25 + math.sin(game_time * 3 + item['float_offset']) * 5
+                pygame.draw.circle(screen, glow_color, 
+                                 (int(item['x']), int(float_y)), int(glow_radius))
+                
+                screen.blit(item_text, (int(item['x']) - 20, int(float_y) - 20))
+                
+                # Item name label
+                label_font = pygame.font.Font(None, 22)
+                label = label_font.render(item['name'], True, (255, 255, 255))
+                screen.blit(label, (int(item['x']) - label.get_width()//2, int(float_y) + 30))
+                
+                # Collision with dog
+                dog_rect = pygame.Rect(dog_x, dog_y, 60, 80)
+                item_rect = pygame.Rect(item['x'] - 25, float_y - 25, 50, 50)
+                
+                if dog_rect.colliderect(item_rect):
+                    item['collected'] = True
+                    bonus_points = item['points']
+                    
+                    # Combo system - collect items quickly for multiplier
+                    combo_count += 1
+                    combo_timer = combo_timeout
+                    if combo_count > highest_combo:
+                        highest_combo = combo_count
+                    
+                    # Bonus from combo
+                    if combo_count > 1:
+                        bonus_points += combo_count
+                    
+                    transformation = min(100, transformation + bonus_points)
+                    items_collected += 1
+                    
+                    # Create particles with rarity-based colors
+                    particle_colors = {
+                        'common': [(200, 200, 200), (220, 220, 220), (180, 180, 180)],
+                        'uncommon': [(100, 200, 100), (120, 255, 120), (80, 180, 80)],
+                        'rare': [(100, 100, 255), (150, 150, 255), (80, 80, 220)],
+                        'epic': [(255, 215, 0), (255, 255, 100), (255, 200, 50)]
+                    }
+                    colors = particle_colors.get(item.get('rarity', 'common'), [(255, 200, 0)])
+                    
+                    # Create particles
+                    for _ in range(30 if item.get('rarity') == 'epic' else 20):
+                        particles.append({
+                            'x': item['x'],
+                            'y': float_y,
+                            'vx': random.uniform(-5, 5),
+                            'vy': random.uniform(-8, -2),
+                            'life': 1.0,
+                            'color': random.choice(colors)
+                        })
+                
+                # Remove items that went off screen
+                if item['x'] < -100:
+                    items.remove(item)
+        
+        # Update and draw obstacles
+        for obstacle in obstacles[:]:
+            obstacle['x'] -= obstacle['speed']
+            
+            # Draw obstacle
+            if obstacle['type'] == 'car':
+                # Draw a simple car
+                pygame.draw.rect(screen, (200, 0, 0), 
+                               (int(obstacle['x']), int(obstacle['y']), 70, 40))
+                pygame.draw.rect(screen, (100, 100, 200), 
+                               (int(obstacle['x'] + 10), int(obstacle['y'] - 15), 50, 20))
+                # Wheels
+                pygame.draw.circle(screen, (30, 30, 30), 
+                                 (int(obstacle['x'] + 15), int(obstacle['y'] + 40)), 8)
+                pygame.draw.circle(screen, (30, 30, 30), 
+                                 (int(obstacle['x'] + 55), int(obstacle['y'] + 40)), 8)
+            elif obstacle['type'] == 'trash':
+                # Draw trash can
+                pygame.draw.rect(screen, (80, 80, 80), 
+                               (int(obstacle['x']), int(obstacle['y']), 35, 50))
+                trash_font = pygame.font.Font(None, 40)
+                trash_text = trash_font.render("🗑️", True, (255, 255, 255))
+                screen.blit(trash_text, (int(obstacle['x']), int(obstacle['y'])))
+            elif obstacle['type'] == 'puddle':
+                # Draw puddle
+                pygame.draw.ellipse(screen, (50, 100, 200), 
+                                  (int(obstacle['x']), int(obstacle['y']), 60, 20))
+            elif obstacle['type'] == 'fence':
+                # Draw fence
+                for i in range(4):
+                    fence_x = int(obstacle['x'] + i * 15)
+                    pygame.draw.rect(screen, (139, 69, 19), 
+                                   (fence_x, int(obstacle['y']), 10, 60))
+            
+            # Collision with dog
+            dog_rect = pygame.Rect(dog_x, dog_y, 60, 80)
+            obstacle_rect = pygame.Rect(obstacle['x'], obstacle['y'], 
+                                       70 if obstacle['type'] == 'car' else 40, 
+                                       40 if obstacle['type'] == 'car' else 50)
+            
+            if dog_rect.colliderect(obstacle_rect) and invincible_timer <= 0:
+                health -= obstacle['damage']
+                invincible_timer = invincible_duration
+                
+                # Damage particles
+                for _ in range(15):
+                    particles.append({
+                        'x': dog_x + 30,
+                        'y': dog_y + 40,
+                        'vx': random.uniform(-4, 4),
+                        'vy': random.uniform(-6, -1),
+                        'life': 0.8,
+                        'color': (255, 0, 0)
+                    })
+                
+                # Lose a life if health runs out
+                if health <= 0:
+                    lives -= 1
+                    health = 100
+                    if lives <= 0:
+                        # Game over
+                        running = False
+            
+            # Remove obstacles off screen
+            if obstacle['x'] < -100:
+                obstacles.remove(obstacle)
+        
+        # Update and draw NPCs
+        for npc in npcs[:]:
+            npc['x'] -= 2  # NPCs move slower
+            
+            # Draw NPC
+            npc_font = pygame.font.Font(None, 60)
+            npc_text = npc_font.render(npc['type']['emoji'], True, (255, 255, 255))
+            screen.blit(npc_text, (int(npc['x']), int(npc['y'])))
+            
+            # Speech bubble with message
+            if abs(npc['x'] - dog_x) < 100 and not npc['given_boost']:
+                bubble_font = pygame.font.Font(None, 24)
+                bubble = bubble_font.render(npc['type']['message'], True, (255, 255, 255))
+                bubble_bg = pygame.Rect(npc['x'] - 60, npc['y'] - 50, bubble.get_width() + 10, 30)
+                pygame.draw.rect(screen, (50, 50, 50), bubble_bg, border_radius=8)
+                pygame.draw.rect(screen, (255, 255, 255), bubble_bg, 2, border_radius=8)
+                screen.blit(bubble, (npc['x'] - 55, npc['y'] - 45))
+            
+            # Give boost if close enough
+            dog_rect = pygame.Rect(dog_x, dog_y, 60, 80)
+            npc_rect = pygame.Rect(npc['x'], npc['y'], 40, 60)
+            
+            if dog_rect.colliderect(npc_rect) and not npc['given_boost']:
+                npc['given_boost'] = True
+                transformation = min(100, transformation + npc['type']['boost'])
+                
+                # Healing particles
+                for _ in range(15):
+                    particles.append({
+                        'x': dog_x + 30,
+                        'y': dog_y + 20,
+                        'vx': random.uniform(-3, 3),
+                        'vy': random.uniform(-5, -1),
+                        'life': 1.0,
+                        'color': (100, 255, 100)
+                    })
+            
+            # Remove NPCs off screen
+            if npc['x'] < -100:
+                npcs.remove(npc)
+        
+        # Update and draw particles
+        for particle in particles[:]:
+            particle['x'] += particle['vx']
+            particle['y'] += particle['vy']
+            particle['vy'] += 0.3  # Gravity
+            particle['life'] -= 0.02
+            
+            if particle['life'] <= 0:
+                particles.remove(particle)
+            else:
+                alpha = int(particle['life'] * 255)
+                size = int(particle['life'] * 8)
+                pygame.draw.circle(screen, particle['color'], 
+                                 (int(particle['x']), int(particle['y'])), size)
+        
+        # Draw the dog/human (transforms based on progress)
+        draw_character(screen, dog_x, dog_y, transformation, dog_direction, walk_frame, moving)
+        
+        # Celebration when complete
+        if show_celebration:
+            celebration_timer += dt
+            
+            # Fireworks
+            for i in range(5):
+                angle = (celebration_timer * 2 + i * 1.256) % 6.28
+                firework_x = WIDTH // 2 + math.cos(angle) * 200
+                firework_y = HEIGHT // 2 + math.sin(angle) * 150
+                pygame.draw.circle(screen, (255, 200 + int(math.sin(celebration_timer * 5) * 55), 0), 
+                                 (int(firework_x), int(firework_y)), 15)
+            
+            # Victory message
+            victory_font = pygame.font.Font(None, 80)
+            victory_msgs = [
+                "CONGRATULATIONS!",
+                f"You collected {items_collected} human items!",
+                "You are now fully HUMAN!"
+            ]
+            
+            for i, msg in enumerate(victory_msgs):
+                color_shift = int(abs(math.sin(celebration_timer * 2 + i)) * 55)  # Max 55, so 200+55=255
+                msg_surf = victory_font.render(msg, True, (255, 200 + color_shift, 100))
+                y_pos = 200 + i * 80
+                screen.blit(msg_surf, (WIDTH // 2 - msg_surf.get_width() // 2, y_pos))
+        
+        # Instructions
+        inst_font = pygame.font.Font(None, 26)
+        inst = inst_font.render("Arrow keys/WASD, SHIFT=Sprint, SPACE=Jump | ESC=Exit", True, (255, 255, 255))
+        screen.blit(inst, (WIDTH//2 - inst.get_width()//2, HEIGHT - 35))
+        
+        # Health bar (top left)
+        health_bar_width = 200
+        health_bar_height = 20
+        pygame.draw.rect(screen, (60, 60, 60), (20, 110, health_bar_width, health_bar_height))
+        health_width = int((health / 100) * health_bar_width)
+        health_color = (0, 255, 0) if health > 50 else (255, 255, 0) if health > 25 else (255, 0, 0)
+        pygame.draw.rect(screen, health_color, (20, 110, health_width, health_bar_height))
+        pygame.draw.rect(screen, (255, 255, 255), (20, 110, health_bar_width, health_bar_height), 2)
+        health_text = name_font.render(f"❤️ Health: {int(health)}", True, (255, 255, 255))
+        screen.blit(health_text, (20, 90))
+        
+        # Lives counter
+        lives_text = name_font.render(f"Lives: {'💖' * lives}", True, (255, 255, 255))
+        screen.blit(lives_text, (20, 135))
+        
+        # Stamina bar (top left, below health)
+        pygame.draw.rect(screen, (60, 60, 60), (20, 170, health_bar_width, health_bar_height))
+        stamina_width = int((stamina / max_stamina) * health_bar_width)
+        stamina_color = (100, 200, 255) if stamina > 50 else (255, 200, 100)
+        pygame.draw.rect(screen, stamina_color, (20, 170, stamina_width, health_bar_height))
+        pygame.draw.rect(screen, (255, 255, 255), (20, 170, health_bar_width, health_bar_height), 2)
+        stamina_text = name_font.render(f"⚡ Stamina: {int(stamina)}", True, (255, 255, 255))
+        screen.blit(stamina_text, (20, 150))
+        
+        # Combo counter (top right)
+        if combo_count > 1:
+            combo_font = pygame.font.Font(None, 50)
+            combo_text = combo_font.render(f"COMBO x{combo_count}!", True, (255, 215, 0))
+            screen.blit(combo_text, (WIDTH - 250, 20))
+            combo_bar_width = 200
+            combo_progress = (combo_timer / combo_timeout) * combo_bar_width
+            pygame.draw.rect(screen, (60, 60, 60), (WIDTH - 220, 70, combo_bar_width, 10))
+            pygame.draw.rect(screen, (255, 215, 0), (WIDTH - 220, 70, int(combo_progress), 10))
+        
+        # Invincibility indicator
+        if invincible_timer > 0:
+            inv_text = font.render("INVINCIBLE!", True, (0, 255, 255))
+            screen.blit(inv_text, (WIDTH // 2 - inv_text.get_width() // 2, 110))
+        
+        # Ambient messages
+        for msg in ambient_messages[:]:
+            msg['life'] -= dt
+            msg['y'] += dt * 10  # Float up
+            if msg['life'] > 0:
+                alpha = int((msg['life'] / 3.0) * 255)
+                ambient_font = pygame.font.Font(None, 32)
+                ambient_surf = ambient_font.render(msg['text'], True, (200, 200, 255))
+                screen.blit(ambient_surf, (WIDTH // 2 - ambient_surf.get_width() // 2, int(msg['y'])))
+            else:
+                ambient_messages.remove(msg)
+        
+        # Weather indicator
+        if weather_type != "clear":
+            weather_font = pygame.font.Font(None, 30)
+            weather_emoji = "🌧️" if weather_type == "rain" else "❄️"
+            weather_surf = weather_font.render(f"{weather_emoji} {weather_type.title()}", True, (255, 255, 255))
+            screen.blit(weather_surf, (WIDTH - 150, HEIGHT - 40))
+        
+        # Items collected counter
+        counter_font = pygame.font.Font(None, 30)
+        counter = counter_font.render(f"Items: {items_collected}", True, (255, 255, 255))
+        screen.blit(counter, (20, HEIGHT - 40))
+        
+        # High combo indicator
+        if highest_combo > 1:
+            hc_font = pygame.font.Font(None, 26)
+            hc_text = hc_font.render(f"Best Combo: x{highest_combo}", True, (255, 215, 0))
+            screen.blit(hc_text, (WIDTH - 180, HEIGHT - 40))
+        
+        pygame.display.flip()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
+        
+        clock.tick(60)
+    
+    # Game Over screen (if lives ran out)
+    if lives <= 0:
+        screen.fill((0, 0, 0))
+        game_over_font = pygame.font.Font(None, 100)
+        go_text = game_over_font.render("GAME OVER", True, (255, 0, 0))
+        screen.blit(go_text, (WIDTH // 2 - go_text.get_width() // 2, HEIGHT // 2 - 100))
+        
+        stats_font = pygame.font.Font(None, 40)
+        stats = [
+            f"Progress: {int(transformation)}% Human",
+            f"Items Collected: {items_collected}",
+            f"Best Combo: x{highest_combo}",
+            "",
+            "Press ESC to return to menu"
+        ]
+        
+        for i, stat in enumerate(stats):
+            stat_surf = stats_font.render(stat, True, (255, 255, 255))
+            screen.blit(stat_surf, (WIDTH // 2 - stat_surf.get_width() // 2, HEIGHT // 2 + i * 50))
+        
+        pygame.display.flip()
+        
+        # Wait for ESC
+        waiting = True
+        while waiting:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        waiting = False
+
+
+def draw_character(screen, x, y, transformation, direction, walk_frame, moving):
+    """Draw the dog/human character based on transformation progress"""
+    
+    # Walking animation offset
+    walk_offset = int(math.sin(walk_frame) * 3) if moving else 0
+    
+    if transformation < 25:
+        # Full dog
+        dog_size = 60
+        
+        # Body
+        body_color = (139, 69, 19)
+        pygame.draw.ellipse(screen, body_color, 
+                          (int(x), int(y + 30 + walk_offset), dog_size, dog_size - 30))
+        
+        # Head
+        head_x = int(x + (dog_size - 25) if direction > 0 else x + 5)
+        head_y = int(y + 15)
+        pygame.draw.circle(screen, body_color, (head_x, head_y), 22)
+        
+        # Snout
+        snout_x = head_x + (12 * direction)
+        pygame.draw.circle(screen, (110, 60, 20), (snout_x, head_y + 8), 10)
+        pygame.draw.circle(screen, (50, 30, 10), (snout_x + (3 * direction), head_y + 10), 4)
+        
+        # Ears - floppy
+        ear1_x = head_x - 15
+        ear2_x = head_x + 15
+        pygame.draw.ellipse(screen, (101, 67, 33), 
+                          (ear1_x - 8, head_y - 5, 12, 20))
+        pygame.draw.ellipse(screen, (101, 67, 33), 
+                          (ear2_x - 4, head_y - 5, 12, 20))
+        
+        # Eyes - cute dog eyes
+        eye_offset = 7 * direction
+        pygame.draw.circle(screen, (0, 0, 0), (head_x - 8 + eye_offset, head_y - 3), 4)
+        pygame.draw.circle(screen, (255, 255, 255), (head_x - 6 + eye_offset, head_y - 5), 2)
+        
+        # Tail - wagging
+        tail_wag = math.sin(walk_frame * 2) * 15
+        tail_x = int(x - 5 if direction > 0 else x + dog_size - 5)
+        tail_y = int(y + 45)
+        pygame.draw.line(screen, body_color, 
+                       (tail_x, tail_y), 
+                       (tail_x - 15 * direction, int(tail_y - 20 + tail_wag)), 7)
+        
+        # Legs
+        leg_spacing = 15
+        for i in range(2):
+            leg_x = x + 15 + i * leg_spacing
+            leg_offset = walk_offset if i == 0 else -walk_offset
+            pygame.draw.line(screen, body_color, 
+                           (leg_x, y + 60), 
+                           (leg_x, y + 75 + leg_offset), 6)
+            pygame.draw.line(screen, body_color, 
+                           (leg_x + 25, y + 60), 
+                           (leg_x + 25, y + 75 - leg_offset), 6)
+    
+    elif transformation < 50:
+        # Early hybrid - dog starting to stand
+        # Body becoming more upright
+        pygame.draw.ellipse(screen, (139, 69, 19), 
+                          (int(x + 15), int(y + 20 + walk_offset), 35, 50))
+        
+        # Dog head
+        head_x = int(x + 32)
+        head_y = int(y + 10)
+        pygame.draw.circle(screen, (139, 69, 19), (head_x, head_y), 20)
+        
+        # Ears getting smaller
+        pygame.draw.polygon(screen, (101, 67, 33), [
+            (head_x - 12, head_y - 15),
+            (head_x - 18, head_y - 25),
+            (head_x - 8, head_y - 10)
+        ])
+        pygame.draw.polygon(screen, (101, 67, 33), [
+            (head_x + 12, head_y - 15),
+            (head_x + 18, head_y - 25),
+            (head_x + 8, head_y - 10)
+        ])
+        
+        # Eyes
+        pygame.draw.circle(screen, (0, 0, 0), (head_x - 8, head_y - 3), 4)
+        pygame.draw.circle(screen, (0, 0, 0), (head_x + 8, head_y - 3), 4)
+        
+        # Small snout
+        pygame.draw.circle(screen, (110, 60, 20), (head_x, head_y + 10), 8)
+        
+        # Arms starting to form
+        arm_y_offset = walk_offset // 2
+        pygame.draw.line(screen, (210, 180, 140), 
+                       (x + 15, y + 30), (x + 5, y + 50 + arm_y_offset), 6)
+        pygame.draw.line(screen, (210, 180, 140), 
+                       (x + 50, y + 30), (x + 60, y + 50 - arm_y_offset), 6)
+        
+        # Legs
+        pygame.draw.line(screen, (139, 69, 19), 
+                       (x + 25, y + 70), (x + 25, y + 85 + walk_offset), 7)
+        pygame.draw.line(screen, (139, 69, 19), 
+                       (x + 40, y + 70), (x + 40, y + 85 - walk_offset), 7)
+    
+    elif transformation < 75:
+        # Mid hybrid - clearly humanoid with dog features
+        # Human-like body
+        pygame.draw.rect(screen, (210, 180, 140), 
+                       (int(x + 18), int(y + 25), 28, 45))
+        
+        # Head - less dog-like
+        head_x = int(x + 32)
+        head_y = int(y + 8)
+        pygame.draw.circle(screen, (220, 190, 160), (head_x, head_y), 18)
+        
+        # Small dog ears
+        pygame.draw.circle(screen, (101, 67, 33), (head_x - 15, head_y - 8), 6)
+        pygame.draw.circle(screen, (101, 67, 33), (head_x + 15, head_y - 8), 6)
+        
+        # More human eyes
+        pygame.draw.circle(screen, (255, 255, 255), (head_x - 7, head_y - 2), 5)
+        pygame.draw.circle(screen, (255, 255, 255), (head_x + 7, head_y - 2), 5)
+        pygame.draw.circle(screen, (0, 0, 0), (head_x - 7, head_y - 2), 3)
+        pygame.draw.circle(screen, (0, 0, 0), (head_x + 7, head_y - 2), 3)
+        
+        # Small nose
+        pygame.draw.circle(screen, (180, 140, 120), (head_x, head_y + 5), 4)
+        
+        # Arms
+        arm_offset = walk_offset
+        pygame.draw.rect(screen, (210, 180, 140), 
+                       (int(x + 8), int(y + 30 + arm_offset), 8, 30))
+        pygame.draw.rect(screen, (210, 180, 140), 
+                       (int(x + 48), int(y + 30 - arm_offset), 8, 30))
+        
+        # Legs
+        pygame.draw.rect(screen, (50, 50, 150), 
+                       (int(x + 22), int(y + 70 + walk_offset), 8, 25))
+        pygame.draw.rect(screen, (50, 50, 150), 
+                       (int(x + 34), int(y + 70 - walk_offset), 8, 25))
+    
+    else:
+        # Almost/fully human
+        # Body with shirt
+        shirt_color = (100, 100, 255) if transformation < 100 else (50, 150, 50)
+        pygame.draw.rect(screen, shirt_color, 
+                       (int(x + 18), int(y + 25), 28, 40))
+        
+        # Head - human
+        head_x = int(x + 32)
+        head_y = int(y + 8)
+        pygame.draw.circle(screen, (255, 220, 177), (head_x, head_y), 16)
+        
+        # Hair
+        hair_color = (101, 67, 33)
+        pygame.draw.arc(screen, hair_color, 
+                      (head_x - 16, head_y - 16, 32, 25), 
+                      0, 3.14, 4)
+        
+        # Human eyes
+        pygame.draw.circle(screen, (255, 255, 255), (head_x - 6, head_y - 2), 4)
+        pygame.draw.circle(screen, (255, 255, 255), (head_x + 6, head_y - 2), 4)
+        pygame.draw.circle(screen, (0, 100, 200), (head_x - 6, head_y - 2), 2)
+        pygame.draw.circle(screen, (0, 100, 200), (head_x + 6, head_y - 2), 2)
+        
+        # Smile
+        pygame.draw.arc(screen, (200, 100, 100), 
+                      (head_x - 8, head_y + 2, 16, 12), 
+                      0, 3.14, 2)
+        
+        # Arms with skin tone
+        arm_offset = walk_offset
+        pygame.draw.rect(screen, (255, 220, 177), 
+                       (int(x + 10), int(y + 28 + arm_offset), 7, 28))
+        pygame.draw.rect(screen, (255, 220, 177), 
+                       (int(x + 47), int(y + 28 - arm_offset), 7, 28))
+        
+        # Pants
+        pygame.draw.rect(screen, (50, 50, 50), 
+                       (int(x + 22), int(y + 65 + walk_offset), 9, 28))
+        pygame.draw.rect(screen, (50, 50, 50), 
+                       (int(x + 33), int(y + 65 - walk_offset), 9, 28))
+        
+        # Shoes
+        pygame.draw.ellipse(screen, (80, 40, 20), 
+                          (int(x + 20), int(y + 90 + walk_offset), 12, 8))
+        pygame.draw.ellipse(screen, (80, 40, 20), 
+                          (int(x + 31), int(y + 90 - walk_offset), 12, 8))
+        
+        # If fully transformed, add sparkle effect
+        if transformation >= 100:
+            for i in range(6):
+                angle = (walk_frame * 0.5 + i * 1.047) % 6.28
+                sparkle_x = x + 32 + math.cos(angle) * 45
+                sparkle_y = y + 40 + math.sin(angle) * 45
+                size = 3 + int(abs(math.sin(walk_frame * 0.3 + i)) * 4)
+                pygame.draw.circle(screen, (255, 255, 0), (int(sparkle_x), int(sparkle_y)), size)
+
+def wolf_eat_animation():
+    """Animation of wolf eating all the menu buttons"""
+    # Wolf enters from the right side of screen
+    wolf_x = WIDTH + 200
+    wolf_y = HEIGHT // 2 - 60
+    target_x = WIDTH // 2 - 100
+    
+    # Button positions (simulate menu buttons)
+    buttons = []
+    for i in range(9):  # 9 game mode buttons
+        buttons.append({
+            'x': WIDTH // 2,
+            'y': 200 + i * 40,
+            'eaten': False,
+            'fly_x': WIDTH // 2,
+            'fly_y': 200 + i * 40,
+            'name': ['Battle', 'Coins', 'Makka', 'Mom', 'Flag', 'Survival', '3D', 'Relax', 'Dilly'][i]
+        })
+    
+    for frame in range(180):
+        screen.fill((30, 30, 30))
+        
+        # Animate wolf moving in (first 40 frames)
+        if frame < 40:
+            wolf_x += (target_x - wolf_x) * 0.15
+        
+        # Draw wolf body (larger, more detailed)
+        wolf_size = 120
+        # Body
+        pygame.draw.ellipse(screen, (100, 100, 100), 
+                          (int(wolf_x), int(wolf_y), wolf_size, wolf_size - 20))
+        # Head
+        head_x = int(wolf_x + wolf_size - 40)
+        head_y = int(wolf_y - 20)
+        pygame.draw.circle(screen, (120, 120, 120), (head_x, head_y), 50)
+        
+        # Ears
+        pygame.draw.polygon(screen, (100, 100, 100), [
+            (head_x - 30, head_y - 40),
+            (head_x - 40, head_y - 70),
+            (head_x - 20, head_y - 50)
+        ])
+        pygame.draw.polygon(screen, (100, 100, 100), [
+            (head_x + 30, head_y - 40),
+            (head_x + 40, head_y - 70),
+            (head_x + 20, head_y - 50)
+        ])
+        
+        # Eyes (getting hungrier)
+        eye_color = (255, 0, 0) if frame > 40 else (255, 255, 0)
+        pygame.draw.circle(screen, eye_color, (head_x - 15, head_y - 10), 8)
+        pygame.draw.circle(screen, eye_color, (head_x + 15, head_y - 10), 8)
+        pygame.draw.circle(screen, (0, 0, 0), (head_x - 15, head_y - 10), 4)
+        pygame.draw.circle(screen, (0, 0, 0), (head_x + 15, head_y - 10), 4)
+        
+        # Mouth (opens wider as it eats)
+        mouth_open = min(40, frame - 40) if frame > 40 else 0
+        # Upper jaw
+        pygame.draw.arc(screen, (255, 255, 255), 
+                       (head_x - 25, head_y + 5, 50, 30 + mouth_open), 
+                       0, 3.14, 3)
+        # Lower jaw
+        pygame.draw.arc(screen, (255, 255, 255), 
+                       (head_x - 25, head_y + 15 - mouth_open//2, 50, 30 + mouth_open), 
+                       3.14, 6.28, 3)
+        
+        # Teeth
+        if mouth_open > 10:
+            for i in range(8):
+                tooth_x = head_x - 20 + i * 6
+                pygame.draw.line(screen, (255, 255, 255), 
+                               (tooth_x, head_y + 15), 
+                               (tooth_x, head_y + 20), 2)
+        
+        # Tail wagging
+        tail_wag = math.sin(frame * 0.3) * 20
+        tail_x = int(wolf_x - 10)
+        tail_y = int(wolf_y + 40 + tail_wag)
+        pygame.draw.line(screen, (100, 100, 100), 
+                        (int(wolf_x), int(wolf_y + 50)), 
+                        (tail_x, tail_y), 8)
+        
+        # Animate buttons flying into wolf's mouth (frames 40-140)
+        if frame >= 40:
+            button_index = min(8, (frame - 40) // 11)  # Eat one button every 11 frames
+            
+            for i, btn in enumerate(buttons):
+                if i <= button_index and not btn['eaten']:
+                    # Fly toward wolf's mouth
+                    btn['fly_x'] += (head_x - btn['fly_x']) * 0.2
+                    btn['fly_y'] += (head_y + 10 - btn['fly_y']) * 0.2
+                    
+                    # Check if eaten
+                    if abs(btn['fly_x'] - head_x) < 20 and abs(btn['fly_y'] - (head_y + 10)) < 20:
+                        btn['eaten'] = True
+                
+                # Draw button if not eaten yet
+                if not btn['eaten']:
+                    btn_font = pygame.font.Font(None, 30)
+                    btn_text = btn_font.render(btn['name'], True, (255, 200, 0))
+                    screen.blit(btn_text, (int(btn['fly_x']) - btn_text.get_width()//2, 
+                                          int(btn['fly_y']) - btn_text.get_height()//2))
+        
+        # Message appears after eating
+        if frame > 140:
+            msg_font = pygame.font.Font(None, 70)
+            msg = msg_font.render("The wolf ate everything!", True, (255, 0, 0))
+            screen.blit(msg, (WIDTH // 2 - msg.get_width() // 2, HEIGHT - 100))
+        
+        pygame.display.flip()
+        pygame.time.wait(16)  # ~60 FPS
+    
+    # Stop the Gangnam Style music after wolf eats everything
+    pygame.mixer.music.stop()
+    secret_hack['music_still_playing'] = False
+    
+    pygame.time.wait(1000)
+
+def wolf_vomit_animation(mode_name):
+    """Animation of wolf vomiting up a new game mode button"""
+    # Wolf is in center, looking sick
+    wolf_x = WIDTH // 2 - 100
+    wolf_y = HEIGHT // 2 - 60
+    
+    for frame in range(120):
+        screen.fill((30, 30, 30))
+        
+        # Draw wolf body (shaking)
+        shake_x = random.randint(-3, 3) if frame < 60 else 0
+        shake_y = random.randint(-3, 3) if frame < 60 else 0
+        
+        wolf_size = 120
+        # Body
+        pygame.draw.ellipse(screen, (100, 100, 100), 
+                          (int(wolf_x + shake_x), int(wolf_y + shake_y), wolf_size, wolf_size - 20))
+        # Head
+        head_x = int(wolf_x + wolf_size - 40 + shake_x)
+        head_y = int(wolf_y - 20 + shake_y)
+        pygame.draw.circle(screen, (120, 120, 120), (head_x, head_y), 50)
+        
+        # Ears
+        pygame.draw.polygon(screen, (100, 100, 100), [
+            (head_x - 30, head_y - 40),
+            (head_x - 40, head_y - 70),
+            (head_x - 20, head_y - 50)
+        ])
+        pygame.draw.polygon(screen, (100, 100, 100), [
+            (head_x + 30, head_y - 40),
+            (head_x + 40, head_y - 70),
+            (head_x + 20, head_y - 50)
+        ])
+        
+        # Sick eyes (X_X)
+        if frame < 60:
+            # Dizzy spirals
+            pygame.draw.circle(screen, (255, 255, 0), (head_x - 15, head_y - 10), 8, 2)
+            pygame.draw.circle(screen, (255, 255, 0), (head_x + 15, head_y - 10), 8, 2)
+        else:
+            # X eyes
+            pygame.draw.line(screen, (0, 0, 0), (head_x - 20, head_y - 15), (head_x - 10, head_y - 5), 3)
+            pygame.draw.line(screen, (0, 0, 0), (head_x - 10, head_y - 15), (head_x - 20, head_y - 5), 3)
+            pygame.draw.line(screen, (0, 0, 0), (head_x + 10, head_y - 15), (head_x + 20, head_y - 5), 3)
+            pygame.draw.line(screen, (0, 0, 0), (head_x + 20, head_y - 15), (head_x + 10, head_y - 5), 3)
+        
+        # Mouth (sick, queasy)
+        mouth_color = (100, 255, 100) if frame < 60 else (200, 200, 200)
+        pygame.draw.arc(screen, mouth_color, 
+                       (head_x - 20, head_y + 10, 40, 25), 
+                       3.14, 6.28, 3)
+        
+        # Vomit animation (frames 30-90)
+        if 30 < frame < 90:
+            vomit_progress = (frame - 30) / 60.0
+            # Green vomit stream
+            vomit_y = head_y + 30 + vomit_progress * 150
+            pygame.draw.line(screen, (100, 255, 100), 
+                           (head_x, head_y + 30), 
+                           (head_x, int(vomit_y)), 10)
+            
+            # Particles
+            for i in range(10):
+                particle_y = head_y + 30 + random.randint(0, int(vomit_progress * 150))
+                particle_x = head_x + random.randint(-15, 15)
+                pygame.draw.circle(screen, (100, 255, 100), (particle_x, int(particle_y)), 3)
+        
+        # New mode button appears (frames 60-120)
+        if frame > 60:
+            button_y = head_y + 30 + min(200, (frame - 60) * 4)
+            button_alpha = min(255, (frame - 60) * 4)
+            
+            # Draw the new mode button
+            mode_font = pygame.font.Font(None, 60)
+            mode_text = mode_font.render(mode_name, True, (0, 255, 0))
+            screen.blit(mode_text, (WIDTH // 2 - mode_text.get_width() // 2, int(button_y)))
+            
+            # Sparkles around it
+            for i in range(8):
+                angle = (frame * 0.1 + i * 0.785) % 6.28
+                sparkle_x = WIDTH // 2 + math.cos(angle) * 80
+                sparkle_y = button_y + 20 + math.sin(angle) * 40
+                pygame.draw.circle(screen, (255, 255, 0), (int(sparkle_x), int(sparkle_y)), 3)
+        
+        # Message
+        if frame > 90:
+            msg_font = pygame.font.Font(None, 50)
+            msg = msg_font.render(f"{mode_name} unlocked!", True, (0, 255, 0))
+            screen.blit(msg, (WIDTH // 2 - msg.get_width() // 2, HEIGHT - 80))
+        
+        pygame.display.flip()
+        pygame.time.wait(16)
+    
+    pygame.time.wait(1500)
+
 # Mode selection lobby with Exit button
 
+def draw_menu_pointer(screen, x, y, transformation, direction, walk_frame, moving):
+    """Draw a HYPER-REALISTIC dog/human character as menu pointer"""
+    
+    # Scale for menu (make dog BIGGER and more visible)
+    scale = 0.7  # Increased from 0.5 for better visibility
+    walk_offset = int(math.sin(walk_frame) * 4) if moving else 0
+    breath_offset = int(math.sin(walk_frame * 0.5) * 3)  # Breathing animation
+    
+    if transformation < 50:
+        # ULTRA REALISTIC DOG - Golden Retriever/Labrador style!
+        dog_size = int(90 * scale)
+        
+        # SHADOW (subtle ground shadow for realism)
+        shadow_y = int(y + 95 * scale)
+        pygame.draw.ellipse(screen, (20, 20, 20, 100), 
+                          (int(x - 5 * scale), shadow_y, int(65 * scale), int(12 * scale)))
+        
+        # Back leg (behind body) - more muscular
+        back_leg_x = int(x + 12 * scale)
+        back_leg_top = int(y + 50 * scale)
+        back_leg_bottom = int(y + 85 * scale - walk_offset)
+        # Upper leg (thigh) - thicker
+        pygame.draw.line(screen, (100, 50, 15), 
+                       (back_leg_x, back_leg_top), 
+                       (back_leg_x, back_leg_top + int(20 * scale)), int(12 * scale))
+        # Lower leg - slightly thinner
+        pygame.draw.line(screen, (120, 65, 25), 
+                       (back_leg_x, back_leg_top + int(20 * scale)), 
+                       (back_leg_x, back_leg_bottom), int(9 * scale))
+        # Paw with detail
+        pygame.draw.circle(screen, (80, 50, 30), 
+                         (back_leg_x, back_leg_bottom), int(7 * scale))
+        # Toe pads
+        for toe in range(3):
+            pygame.draw.circle(screen, (60, 40, 25), 
+                             (back_leg_x - 3 + toe * 3, back_leg_bottom + 3), int(2 * scale))
+        
+        # Body - ULTRA realistic shape with multiple layers for depth
+        body_y = int(y + 35 * scale + breath_offset)
+        body_width = int(60 * scale)
+        body_height = int(40 * scale)
+        
+        # Body deep shadow (3D effect)
+        pygame.draw.ellipse(screen, (80, 40, 10), 
+                          (int(x + 5 * scale), body_y + int(8 * scale), body_width, body_height))
+        # Body mid-shadow
+        pygame.draw.ellipse(screen, (110, 60, 20), 
+                          (int(x + 5 * scale), body_y + int(5 * scale), body_width, body_height))
+        # Main body - rich golden brown
+        pygame.draw.ellipse(screen, (165, 115, 55), 
+                          (int(x + 5 * scale), body_y, body_width, body_height))
+        # Body highlight (sunlight reflection on fur)
+        pygame.draw.ellipse(screen, (200, 145, 85), 
+                          (int(x + 10 * scale), body_y + int(3 * scale), 
+                           int(45 * scale), int(25 * scale)))
+        # Top highlight (spine area - lighter fur)
+        pygame.draw.ellipse(screen, (220, 170, 110), 
+                          (int(x + 15 * scale), body_y + int(5 * scale), 
+                           int(35 * scale), int(15 * scale)))
+        
+        # Chest fur (lighter, fluffy area)
+        pygame.draw.ellipse(screen, (200, 160, 100), 
+                          (int(x + 35 * scale), body_y + int(20 * scale), 
+                           int(25 * scale), int(18 * scale)))
+        # Chest highlight
+        pygame.draw.ellipse(screen, (230, 190, 130), 
+                          (int(x + 38 * scale), body_y + int(22 * scale), 
+                           int(18 * scale), int(12 * scale)))
+        
+        # Fur texture lines (give realistic fur appearance)
+        fur_color = (140, 95, 50)
+        for fur_line in range(8):
+            fx = int(x + 12 * scale + fur_line * 6 * scale)
+            fy = body_y + int(10 * scale)
+            pygame.draw.line(screen, fur_color, 
+                           (fx, fy), (fx + int(2 * scale), fy + int(8 * scale)), 1)
+        
+        # Tail - ULTRA realistic wagging tail with volume and motion
+        tail_base_x = int(x + 5 * scale)
+        tail_base_y = int(y + 40 * scale)
+        tail_wag = math.sin(walk_frame * 2.5) * 25 * scale
+        
+        # Tail has multiple segments for realistic curve and volume
+        tail_segments = [
+            (tail_base_x, tail_base_y),
+            (tail_base_x - int(12 * scale), tail_base_y - int(8 * scale) + tail_wag * 0.3),
+            (tail_base_x - int(22 * scale), tail_base_y - int(18 * scale) + tail_wag * 0.6),
+            (tail_base_x - int(28 * scale), tail_base_y - int(30 * scale) + tail_wag),
+            (tail_base_x - int(25 * scale), tail_base_y - int(40 * scale) + tail_wag * 1.1)
+        ]
+        
+        # Draw tail with thickness variation (thicker at base, thinner at tip)
+        for i in range(len(tail_segments) - 1):
+            thickness = int((10 - i * 2) * scale)
+            # Shadow layer
+            pygame.draw.line(screen, (90, 50, 15), 
+                           (tail_segments[i][0] + 2, tail_segments[i][1] + 2),
+                           (tail_segments[i+1][0] + 2, tail_segments[i+1][1] + 2), 
+                           max(1, thickness + 2))
+            # Dark base layer
+            pygame.draw.line(screen, (120, 70, 30), 
+                           tail_segments[i], tail_segments[i+1], max(1, thickness))
+            # Highlight layer
+            pygame.draw.line(screen, (180, 130, 70), 
+                           tail_segments[i], tail_segments[i+1], max(1, thickness - 2))
+        
+        # Tail tip (fluffy and light)
+        tip_pos = tail_segments[-1]
+        pygame.draw.circle(screen, (140, 95, 50), tip_pos, int(6 * scale))
+        pygame.draw.circle(screen, (210, 170, 110), tip_pos, int(4 * scale))
+        
+        # Head - HYPER realistic with proper skull structure
+        head_x = int(x + 58 * scale)
+        head_y = int(y + 22 * scale + breath_offset)
+        head_radius = int(24 * scale)
+        
+        # Head shadow (for depth)
+        pygame.draw.circle(screen, (90, 50, 15), 
+                         (head_x + int(3 * scale), head_y + int(3 * scale)), head_radius)
+        # Head base (darker)
+        pygame.draw.circle(screen, (140, 90, 45), (head_x, head_y), head_radius)
+        # Head mid-tone
+        pygame.draw.circle(screen, (165, 115, 55), (head_x, head_y), int(head_radius * 0.9))
+        # Head highlight (light hitting the forehead)
+        pygame.draw.circle(screen, (200, 145, 85), 
+                         (head_x - int(6 * scale), head_y - int(6 * scale)), int(15 * scale))
+        # Top of head (even lighter)
+        pygame.draw.circle(screen, (220, 170, 110), 
+                         (head_x - int(4 * scale), head_y - int(8 * scale)), int(10 * scale))
+        
+        # Fur detail on head
+        for fur_i in range(6):
+            angle = fur_i * 0.5
+            fur_x = head_x + int(math.cos(angle) * 15 * scale)
+            fur_y = head_y - int(10 * scale) + int(math.sin(angle) * 8 * scale)
+            pygame.draw.line(screen, (140, 95, 50), 
+                           (fur_x, fur_y), 
+                           (fur_x + int(math.cos(angle) * 4 * scale), 
+                            fur_y + int(math.sin(angle) * 4 * scale)), 2)
+        
+        # Snout - ULTRA realistic 3D muzzle
+        snout_x = head_x + int(22 * scale)
+        snout_y = head_y + int(10 * scale)
+        
+        # Snout base (darkest - underneath)
+        pygame.draw.ellipse(screen, (100, 65, 30), 
+                          (snout_x - int(16 * scale), snout_y - int(10 * scale), 
+                           int(32 * scale), int(20 * scale)))
+        # Snout mid (bridge)
+        pygame.draw.ellipse(screen, (140, 95, 45), 
+                          (snout_x - int(14 * scale), snout_y - int(12 * scale), 
+                           int(28 * scale), int(18 * scale)))
+        # Snout top (lightest - top of muzzle)
+        pygame.draw.ellipse(screen, (180, 135, 75), 
+                          (snout_x - int(12 * scale), snout_y - int(14 * scale), 
+                           int(24 * scale), int(16 * scale)))
+        
+        # Snout sides (give volume)
+        pygame.draw.ellipse(screen, (160, 115, 60), 
+                          (snout_x - int(10 * scale), snout_y - int(8 * scale), 
+                           int(12 * scale), int(14 * scale)))
+        pygame.draw.ellipse(screen, (160, 115, 60), 
+                          (snout_x + int(2 * scale), snout_y - int(8 * scale), 
+                           int(12 * scale), int(14 * scale)))
+        
+        # Nose - SUPER realistic wet dog nose
+        nose_x = snout_x + int(10 * scale)
+        nose_y = snout_y
+        # Nose base (large)
+        pygame.draw.circle(screen, (50, 30, 20), (nose_x, nose_y), int(7 * scale))
+        # Nose dark center
+        pygame.draw.circle(screen, (25, 15, 10), (nose_x, nose_y), int(6 * scale))
+        # Nose SHINE (wet glossy look - KEY for realism!)
+        pygame.draw.circle(screen, (120, 100, 90), 
+                         (nose_x - int(2 * scale), nose_y - int(2 * scale)), int(3 * scale))
+        pygame.draw.circle(screen, (200, 180, 170), 
+                         (nose_x - int(3 * scale), nose_y - int(3 * scale)), int(1 * scale))
+        
+        # Nostrils (detailed)
+        pygame.draw.circle(screen, (10, 5, 0), 
+                         (nose_x - int(3 * scale), nose_y + int(2 * scale)), int(2 * scale))
+        pygame.draw.circle(screen, (10, 5, 0), 
+                         (nose_x + int(3 * scale), nose_y + int(2 * scale)), int(2 * scale))
+        
+        # Nose bridge line
+        pygame.draw.line(screen, (70, 50, 30), 
+                       (nose_x, nose_y - int(5 * scale)), 
+                       (nose_x, nose_y + int(2 * scale)), 2)
+        
+        # Mouth and lips
+        pygame.draw.line(screen, (60, 40, 20), 
+                       (nose_x, nose_y + int(4 * scale)), 
+                       (nose_x - int(4 * scale), nose_y + int(10 * scale)), int(3 * scale))
+        pygame.draw.line(screen, (60, 40, 20), 
+                       (nose_x, nose_y + int(4 * scale)), 
+                       (nose_x + int(2 * scale), nose_y + int(10 * scale)), int(3 * scale))
+        # Mouth corner (slight smile)
+        pygame.draw.arc(screen, (60, 40, 20), 
+                       (nose_x - int(8 * scale), nose_y + int(5 * scale), 
+                        int(16 * scale), int(10 * scale)), 0, 3.14, 2)
+        
+        # Ears - ULTRA realistic floppy ears with incredible detail
+        # Left ear (viewer's left, dog's right)
+        ear_left_points = [
+            (head_x - int(18 * scale), head_y - int(15 * scale)),
+            (head_x - int(28 * scale), head_y - int(10 * scale)),
+            (head_x - int(26 * scale), head_y + int(12 * scale)),
+            (head_x - int(14 * scale), head_y + int(8 * scale))
+        ]
+        # Right ear (viewer's right, dog's left)
+        ear_right_points = [
+            (head_x + int(10 * scale), head_y - int(18 * scale)),
+            (head_x + int(20 * scale), head_y - int(15 * scale)),
+            (head_x + int(22 * scale), head_y + int(8 * scale)),
+            (head_x + int(12 * scale), head_y + int(10 * scale))
+        ]
+        
+        # Ear shadows (depth)
+        for ear_points in [ear_left_points, ear_right_points]:
+            shadow_points = [(p[0] + 3, p[1] + 3) for p in ear_points]
+            pygame.draw.polygon(screen, (80, 45, 15), shadow_points)
+        
+        # Ear base (darkest)
+        pygame.draw.polygon(screen, (110, 65, 28), ear_left_points)
+        pygame.draw.polygon(screen, (110, 65, 28), ear_right_points)
+        
+        # Ear mid-tone
+        ear_left_inner = [
+            ear_left_points[0],
+            ((ear_left_points[0][0] + ear_left_points[1][0])//2, 
+             (ear_left_points[0][1] + ear_left_points[1][1])//2),
+            ((ear_left_points[1][0] + ear_left_points[2][0])//2, 
+             (ear_left_points[1][1] + ear_left_points[2][1])//2),
+            ((ear_left_points[2][0] + ear_left_points[3][0])//2, 
+             (ear_left_points[2][1] + ear_left_points[3][1])//2)
+        ]
+        pygame.draw.polygon(screen, (140, 90, 45), ear_left_inner)
+        
+        # Ear inner (pink/flesh colored - very realistic)
+        ear_pink_left = [
+            ear_left_points[0],
+            ear_left_points[1],
+            ((ear_left_points[1][0] + ear_left_points[2][0])//2, 
+             (ear_left_points[1][1] + ear_left_points[2][1])//2)
+        ]
+        pygame.draw.polygon(screen, (220, 170, 160), ear_pink_left)
+        
+        # Ear fur detail (fine lines for texture)
+        for i in range(4):
+            offset = i * 6 * scale
+            pygame.draw.line(screen, (130, 85, 40), 
+                           (ear_left_points[1][0] + int(offset), ear_left_points[1][1]),
+                           (ear_left_points[2][0] + int(offset * 0.5), ear_left_points[2][1]), 1)
+        
+        # Eyes - INCREDIBLY realistic with soul!
+        eye_left_x = head_x - int(8 * scale)
+        eye_right_x = head_x + int(4 * scale)
+        eye_y = head_y - int(6 * scale)
+        eye_width = int(12 * scale)
+        eye_height = int(10 * scale)
+        
+        # Eye sockets (subtle shadow for depth)
+        pygame.draw.ellipse(screen, (120, 75, 40), 
+                          (eye_left_x - int(7 * scale), eye_y - int(6 * scale), 
+                           int(14 * scale), int(12 * scale)))
+        pygame.draw.ellipse(screen, (120, 75, 40), 
+                          (eye_right_x - int(7 * scale), eye_y - int(6 * scale), 
+                           int(14 * scale), int(12 * scale)))
+        
+        # Eye whites (slightly off-white for realism)
+        pygame.draw.ellipse(screen, (245, 240, 235), 
+                          (eye_left_x - int(6 * scale), eye_y - int(5 * scale), 
+                           eye_width, eye_height))
+        pygame.draw.ellipse(screen, (245, 240, 235), 
+                          (eye_right_x - int(6 * scale), eye_y - int(5 * scale), 
+                           eye_width, eye_height))
+        
+        # Iris (beautiful rich brown with texture)
+        iris_radius = int(5 * scale)
+        # Outer iris (darker)
+        pygame.draw.circle(screen, (70, 45, 20), (eye_left_x, eye_y), iris_radius)
+        pygame.draw.circle(screen, (70, 45, 20), (eye_right_x, eye_y), iris_radius)
+        # Inner iris (lighter, warmer)
+        pygame.draw.circle(screen, (95, 65, 30), (eye_left_x, eye_y), int(iris_radius * 0.8))
+        pygame.draw.circle(screen, (95, 65, 30), (eye_right_x, eye_y), int(iris_radius * 0.8))
+        
+        # Iris detail (radiating lines for texture)
+        for angle in range(0, 360, 45):
+            rad = math.radians(angle)
+            start_x = eye_left_x + int(math.cos(rad) * 2 * scale)
+            start_y = eye_y + int(math.sin(rad) * 2 * scale)
+            end_x = eye_left_x + int(math.cos(rad) * 4 * scale)
+            end_y = eye_y + int(math.sin(rad) * 4 * scale)
+            pygame.draw.line(screen, (80, 55, 25), (start_x, start_y), (end_x, end_y), 1)
+        
+        # Pupils (deep black)
+        pupil_radius = int(3 * scale)
+        pygame.draw.circle(screen, (0, 0, 0), (eye_left_x, eye_y), pupil_radius)
+        pygame.draw.circle(screen, (0, 0, 0), (eye_right_x, eye_y), pupil_radius)
+        
+        # Eye shine (CRITICAL for lifelike eyes - multiple highlights)
+        # Main highlight (top-left)
+        pygame.draw.circle(screen, (255, 255, 255), 
+                         (eye_left_x - int(2 * scale), eye_y - int(2 * scale)), int(2 * scale))
+        pygame.draw.circle(screen, (255, 255, 255), 
+                         (eye_right_x - int(2 * scale), eye_y - int(2 * scale)), int(2 * scale))
+        # Secondary highlight (smaller)
+        pygame.draw.circle(screen, (200, 200, 200), 
+                         (eye_left_x + int(1 * scale), eye_y + int(2 * scale)), int(1 * scale))
+        pygame.draw.circle(screen, (200, 200, 200), 
+                         (eye_right_x + int(1 * scale), eye_y + int(2 * scale)), int(1 * scale))
+        
+        # Eyelids (add realism)
+        pygame.draw.arc(screen, (100, 60, 30), 
+                       (eye_left_x - int(7 * scale), eye_y - int(6 * scale), 
+                        int(14 * scale), int(12 * scale)), 0, 3.14, 2)
+        pygame.draw.arc(screen, (100, 60, 30), 
+                       (eye_right_x - int(7 * scale), eye_y - int(6 * scale), 
+                        int(14 * scale), int(12 * scale)), 0, 3.14, 2)
+        
+        # Eyebrows (expression - happy/friendly)
+        pygame.draw.arc(screen, (110, 70, 35), 
+                       (eye_left_x - int(8 * scale), eye_y - int(10 * scale), 
+                        int(16 * scale), int(10 * scale)), 0, 3.14, int(3 * scale))
+        pygame.draw.arc(screen, (110, 70, 35), 
+                       (eye_right_x - int(8 * scale), eye_y - int(10 * scale), 
+                        int(16 * scale), int(10 * scale)), 0, 3.14, int(3 * scale)) 
+        
+        # Front legs - ULTRA realistic with joints and muscles!
+        
+        # Front legs - ULTRA realistic with joints and muscles!
+        leg_positions = [
+            (int(x + 28 * scale), int(y + 62 * scale)),
+            (int(x + 43 * scale), int(y + 62 * scale))
+        ]
+        
+        for i, (leg_x, leg_top_y) in enumerate(leg_positions):
+            leg_offset = walk_offset if i == 0 else -walk_offset
+            leg_mid_y = int(y + 72 * scale)
+            leg_bottom_y = int(y + 90 * scale + leg_offset)
+            
+            # Upper leg (shoulder/thigh - muscular)
+            # Shadow
+            pygame.draw.line(screen, (90, 50, 15), 
+                           (leg_x + 2, leg_top_y + 2), 
+                           (leg_x + 2, leg_mid_y + leg_offset//2), int(14 * scale))
+            # Muscle (thick)
+            pygame.draw.line(screen, (140, 90, 45), 
+                           (leg_x, leg_top_y), 
+                           (leg_x, leg_mid_y + leg_offset//2), int(12 * scale))
+            # Highlight
+            pygame.draw.line(screen, (180, 130, 70), 
+                           (leg_x - 1, leg_top_y), 
+                           (leg_x - 1, leg_mid_y + leg_offset//2), int(6 * scale))
+            
+            # Lower leg (thinner, more defined)
+            # Shadow
+            pygame.draw.line(screen, (100, 55, 20), 
+                           (leg_x + 2, leg_mid_y + leg_offset//2), 
+                           (leg_x + 2, leg_bottom_y), int(10 * scale))
+            # Main
+            pygame.draw.line(screen, (165, 115, 55), 
+                           (leg_x, leg_mid_y + leg_offset//2), 
+                           (leg_x, leg_bottom_y), int(8 * scale))
+            # Highlight (catches light)
+            pygame.draw.line(screen, (200, 145, 85), 
+                           (leg_x - 1, leg_mid_y + leg_offset//2), 
+                           (leg_x - 1, leg_bottom_y), int(4 * scale))
+            
+            # Knee/Elbow joint (small circle for anatomical detail)
+            pygame.draw.circle(screen, (130, 85, 42), 
+                             (leg_x, leg_mid_y + leg_offset//2), int(6 * scale))
+            
+            # Paw - HIGHLY detailed with toe beans!
+            paw_y = leg_bottom_y
+            paw_x = leg_x
+            
+            # Paw base (shadow)
+            pygame.draw.ellipse(screen, (80, 50, 25), 
+                              (paw_x - int(9 * scale), paw_y - int(4 * scale), 
+                               int(18 * scale), int(12 * scale)))
+            # Paw main
+            pygame.draw.ellipse(screen, (120, 80, 40), 
+                              (paw_x - int(8 * scale), paw_y - int(3 * scale), 
+                               int(16 * scale), int(10 * scale)))
+            
+            # Toe beans (paw pads) - CRITICAL detail!
+            # Main pad (center, larger)
+            pygame.draw.ellipse(screen, (80, 60, 50), 
+                              (paw_x - int(4 * scale), paw_y + int(1 * scale), 
+                               int(8 * scale), int(6 * scale)))
+            
+            # Toe pads (4 small ones)
+            toe_positions = [
+                (paw_x - 5, paw_y - 2),
+                (paw_x - 2, paw_y - 3),
+                (paw_x + 2, paw_y - 3),
+                (paw_x + 5, paw_y - 2)
+            ]
+            for toe_x, toe_y in toe_positions:
+                # Toe shadow
+                pygame.draw.circle(screen, (60, 45, 35), 
+                                 (int(toe_x + 1), int(toe_y + 1)), int(2 * scale))
+                # Toe pad
+                pygame.draw.circle(screen, (90, 70, 60), 
+                                 (int(toe_x), int(toe_y)), int(2 * scale))
+                # Toe highlight
+                pygame.draw.circle(screen, (110, 90, 80), 
+                                 (int(toe_x - 0.5), int(toe_y - 0.5)), int(1 * scale))
+            
+            # Claws (small but visible)
+            for claw_i in range(4):
+                claw_x = paw_x - 5 + claw_i * 3
+                pygame.draw.line(screen, (240, 240, 230), 
+                               (claw_x, paw_y - 3), 
+                               (claw_x, paw_y - 6), 1)
+        
+        # Collar - PREMIUM leather collar with realistic details
+        collar_y = int(y + 38 * scale + breath_offset)
+        collar_width = int(30 * scale)
+        collar_height = int(6 * scale)
+        collar_x = int(x + 38 * scale)
+        
+        # Collar shadow
+        pygame.draw.rect(screen, (120, 30, 30), 
+                       (collar_x + 2, collar_y + 2, collar_width, collar_height), 
+                       border_radius=int(3 * scale))
+        # Collar base (dark leather)
+        pygame.draw.rect(screen, (180, 50, 50), 
+                       (collar_x, collar_y, collar_width, collar_height), 
+                       border_radius=int(3 * scale))
+        # Collar highlight (light reflection)
+        pygame.draw.rect(screen, (220, 80, 80), 
+                       (collar_x, collar_y, collar_width, int(2 * scale)), 
+                       border_radius=int(3 * scale))
+        
+        # Collar stitching (tiny detail for realism)
+        for stitch_x in range(0, int(collar_width), int(4 * scale)):
+            pygame.draw.circle(screen, (150, 40, 40), 
+                             (collar_x + stitch_x, collar_y + int(3 * scale)), 1)
+        
+        # Buckle (metallic silver)
+        buckle_x = collar_x + int(5 * scale)
+        buckle_y = collar_y + int(1 * scale)
+        # Buckle base
+        pygame.draw.rect(screen, (160, 160, 160), 
+                       (buckle_x, buckle_y, int(6 * scale), int(4 * scale)))
+        # Buckle highlight (shiny metal)
+        pygame.draw.rect(screen, (220, 220, 220), 
+                       (buckle_x, buckle_y, int(6 * scale), int(1 * scale)))
+        # Buckle pin
+        pygame.draw.circle(screen, (140, 140, 140), 
+                         (buckle_x + int(3 * scale), buckle_y + int(2 * scale)), 
+                         int(1 * scale))
+        
+        # Name tag (gold/brass, heart-shaped!)
+        tag_x = collar_x + int(16 * scale)
+        tag_y = collar_y + int(8 * scale)
+        # Tag shadow
+        tag_points_shadow = [
+            (tag_x + 1, tag_y + 1),
+            (tag_x - 4 + 1, tag_y + 4 + 1),
+            (tag_x + 1, tag_y + 9 + 1),
+            (tag_x + 6 + 1, tag_y + 4 + 1)
+        ]
+        pygame.draw.polygon(screen, (140, 120, 40), tag_points_shadow)
+        
+        # Tag base
+        tag_points = [
+            (tag_x, tag_y),
+            (tag_x - 4, tag_y + 4),
+            (tag_x, tag_y + 9),
+            (tag_x + 6, tag_y + 4)
+        ]
+        pygame.draw.polygon(screen, (220, 190, 80), tag_points)
+        
+        # Tag highlight (shiny gold)
+        tag_highlight = [
+            (tag_x, tag_y + 1),
+            (tag_x - 2, tag_y + 3),
+            (tag_x, tag_y + 5)
+        ]
+        pygame.draw.polygon(screen, (255, 230, 120), tag_highlight)
+        
+        # Ring connecting tag to collar
+        pygame.draw.circle(screen, (180, 180, 180), (tag_x, collar_y + int(5 * scale)), 2)
+        pygame.draw.circle(screen, (200, 200, 200), (tag_x, collar_y + int(5 * scale)), 1)
+        
+    else:
+        # Human pointer
+        # Head
+        head_x = int(x + 32 * scale)
+        head_y = int(y + 8 * scale)
+        pygame.draw.circle(screen, (255, 220, 177), (head_x, head_y), int(18 * scale))
+        
+        # Eyes
+        pygame.draw.circle(screen, (255, 255, 255), (head_x - int(7 * scale), head_y - int(2 * scale)), int(5 * scale))
+        pygame.draw.circle(screen, (255, 255, 255), (head_x + int(7 * scale), head_y - int(2 * scale)), int(5 * scale))
+        pygame.draw.circle(screen, (0, 0, 0), (head_x - int(7 * scale), head_y - int(2 * scale)), int(3 * scale))
+        pygame.draw.circle(screen, (0, 0, 0), (head_x + int(7 * scale), head_y - int(2 * scale)), int(3 * scale))
+        
+        # Smile
+        pygame.draw.arc(screen, (0, 0, 0), 
+                       (head_x - int(8 * scale), head_y + int(2 * scale), int(16 * scale), int(10 * scale)), 
+                       3.14, 0, int(2 * scale))
+        
+        # Body - wearing shirt
+        pygame.draw.rect(screen, (50, 100, 200), 
+                       (int(x + 18 * scale), int(y + 25 * scale), int(28 * scale), int(45 * scale)))
+        
+        # Arms - one pointing!
+        arm_offset = walk_offset
+        # Left arm (normal)
+        pygame.draw.rect(screen, (255, 220, 177), 
+                       (int(x + 8 * scale), int(y + 30 * scale + arm_offset), int(8 * scale), int(30 * scale)))
+        # Right arm (pointing)
+        pygame.draw.rect(screen, (255, 220, 177), 
+                       (int(x + 48 * scale), int(y + 30 * scale - arm_offset), int(8 * scale), int(20 * scale)))
+        # Hand
+        pygame.draw.circle(screen, (255, 220, 177), 
+                         (int(x + 52 * scale), int(y + 50 * scale - arm_offset)), int(5 * scale))
+        
+        # Legs - wearing pants
+        pygame.draw.rect(screen, (50, 50, 150), 
+                       (int(x + 22 * scale), int(y + 70 * scale + walk_offset), int(8 * scale), int(25 * scale)))
+        pygame.draw.rect(screen, (50, 50, 150), 
+                       (int(x + 34 * scale), int(y + 70 * scale - walk_offset), int(8 * scale), int(25 * scale)))
+        
+        # Shoes
+        pygame.draw.ellipse(screen, (80, 40, 20), 
+                          (int(x + 20 * scale), int(y + 93 * scale + walk_offset), int(12 * scale), int(6 * scale)))
+        pygame.draw.ellipse(screen, (80, 40, 20), 
+                          (int(x + 32 * scale), int(y + 93 * scale - walk_offset), int(12 * scale), int(6 * scale)))
+
+
 def mode_lobby():
+    global session_purchases
     selected = 0
-    options = ["Battle Mode", "Coin Collection Mode", "Makka Pakka Mode", "Escape Mom Mode", "Capture the Flag", "Survival Mode", "3D Adventure", "Relax Mode", "Survival Leaderboard", "Mom Mode Leaderboard", "Play Music", "Stop Music", "Watch Cute Video", "Watch Grandma", "Exit"]
+    base_options = ["Battle Mode", "Coin Collection Mode", "Makka Pakka Mode", "Escape Mom Mode", "Capture the Flag", "Survival Mode", "3D Adventure", "Relax Mode", "Dilly Dolly Mode", "🛒 Shop", "Survival Leaderboard", "Mom Mode Leaderboard", "Play Music", "Stop Music", "Watch Cute Video", "Watch Grandma", "Exit"]
     music_playing = False
-    pygame.mixer.music.stop()  # Ensure no music plays automatically
+    
+    # Pointer animation
+    pointer_frame = 0
+    pointer_bob = 0
+    
+    # Don't stop music if hack sequence is active (music should persist)
+    if not secret_hack.get('music_still_playing'):
+        pygame.mixer.music.stop()  # Ensure no music plays automatically
+    
     while True:
+        # Check if user has become human in Combine Mode (check every frame!)
+        # This ensures it updates immediately when returning from Combine Mode
+        pointer_is_human = secret_hack.get('became_human', False)
+        
+        # Build options list dynamically based on hack progress
+        options = base_options.copy()
+        
+        # WOLF ATE EVERYTHING - Remove ALL options except Exit (unless restored)
+        if secret_hack.get('wolf_ate_buttons') and not secret_hack.get('everything_restored'):
+            # Start with empty menu - only Exit remains
+            options = ["Exit"]
+            
+            # Add back ONLY Grass Mode if unlocked
+            if secret_hack.get('grass_mode_unlocked'):
+                options.insert(0, "Grass Mode")
+            
+            # Add back ONLY Combine Mode if unlocked
+            if secret_hack.get('combine_mode_unlocked'):
+                options.insert(0, "Combine Mode")
+        else:
+            # Normal menu (or restored) - add Grass and Combine if unlocked
+            # Add Grass Mode if unlocked
+            if secret_hack.get('grass_mode_unlocked'):
+                # Insert Grass Mode before the Shop
+                shop_index = options.index("🛒 Shop")
+                options.insert(shop_index, "Grass Mode")
+            
+            # Add Combine Mode if unlocked
+            if secret_hack.get('combine_mode_unlocked'):
+                # Insert Combine Mode before the Shop
+                shop_index = options.index("🛒 Shop")
+                options.insert(shop_index, "Combine Mode")
+        
+        # Check which modes are purchased THIS SESSION
+        relax_unlocked = session_purchases.get('relax_mode', False)
+        makka_pakka_unlocked = session_purchases.get('makka_pakka_mode', False)
+        escape_mom_unlocked = session_purchases.get('escape_mom_mode', False)
+        capture_flag_unlocked = session_purchases.get('capture_flag_mode', False)
+        survival_unlocked = session_purchases.get('survival_mode', False)
+        adventure_3d_unlocked = session_purchases.get('adventure_3d_mode', False)
+        dilly_dolly_unlocked = session_purchases.get('dilly_dolly_mode', False)
+        shop_unlocked = session_purchases.get('shop_unlocked', False)
+        
         screen.fill((30, 30, 30))
         title = lobby_font.render("Choose Game Mode", True, (255,255,255))
         screen.blit(title, (WIDTH//2-title.get_width()//2, 50))
+        
+        # Update pointer animation
+        pointer_frame += 0.1
+        pointer_bob = math.sin(pointer_frame) * 5  # Bobbing up and down
+        
+        # Show wolf ate everything warning
+        if secret_hack.get('wolf_ate_buttons'):
+            warning = font.render("The wolf ate EVERYTHING!", True, (255, 0, 0))
+            screen.blit(warning, (WIDTH//2-warning.get_width()//2, 20))
+            if not secret_hack.get('grass_mode_unlocked'):
+                hint = name_font.render("(The entire menu is gone... only Exit remains)", True, (150, 150, 150))
+                screen.blit(hint, (WIDTH//2-hint.get_width()//2, 45))
+        
+        # Show shop status hint (only if wolf hasn't eaten everything)
+        if shop_unlocked and not secret_hack.get('wolf_ate_buttons'):
+            shop_hint = font.render("🔑 Secret shop unlocked!", True, (255, 215, 0))
+            screen.blit(shop_hint, (20, 20))
+        
+        # Show transformation status if became human
+        if pointer_is_human:
+            human_status = name_font.render("✨ You became HUMAN! ✨", True, (255, 215, 0))
+            screen.blit(human_status, (WIDTH - human_status.get_width() - 20, 20))
+        
+        # Free modes list
+        free_modes = ["Battle Mode", "Coin Collection Mode", "🛒 Shop", "Survival Leaderboard", 
+                      "Mom Mode Leaderboard", "Play Music", "Stop Music", "Watch Cute Video", 
+                      "Watch Grandma", "Exit"]
+        
         for i, opt in enumerate(options):
-            color = (255,255,0) if i==selected else (200,200,200)
-            opt_text = font.render(opt, True, color)
+            # Check if mode is locked (needs purchase from shop)
+            is_locked = False
+            is_unlocked = False
+            
+            if opt == "Relax Mode":
+                is_locked = not relax_unlocked
+                is_unlocked = relax_unlocked
+            elif opt == "Makka Pakka Mode":
+                is_locked = not makka_pakka_unlocked
+                is_unlocked = makka_pakka_unlocked
+            elif opt == "Escape Mom Mode":
+                is_locked = not escape_mom_unlocked
+                is_unlocked = escape_mom_unlocked
+            elif opt == "Capture the Flag":
+                is_locked = not capture_flag_unlocked
+                is_unlocked = capture_flag_unlocked
+            elif opt == "Survival Mode":
+                is_locked = not survival_unlocked
+                is_unlocked = survival_unlocked
+            elif opt == "3D Adventure":
+                is_locked = not adventure_3d_unlocked
+                is_unlocked = adventure_3d_unlocked
+            elif opt == "Dilly Dolly Mode":
+                is_locked = not dilly_dolly_unlocked
+                is_unlocked = dilly_dolly_unlocked
+            
+            # Display mode with lock/unlock status
+            if is_locked:
+                color = (100,100,100) if i!=selected else (150,150,150)
+                opt_text = font.render(opt + " 🔒", True, color)
+            elif is_unlocked:
+                color = (255,255,0) if i==selected else (200,200,200)
+                opt_text = font.render(opt + " ✅", True, color)
+            else:
+                # Free mode
+                color = (255,255,0) if i==selected else (200,200,200)
+                opt_text = font.render(opt, True, color)
+            
             screen.blit(opt_text, (WIDTH//2-opt_text.get_width()//2, 120+i*50))
+        
+        # Draw the dog/human pointer pointing at the selected option!
+        pointer_y = 120 + selected * 50 + pointer_bob
+        pointer_x = WIDTH//2 - 200  # Left side of the screen
+        
+        # Determine transformation level for pointer (0-100)
+        # If human: 100, if dog: 0
+        pointer_transformation = 100 if pointer_is_human else 0
+        
+        # Draw the pointer character (reusing draw_character from Combine Mode)
+        # Scale it down a bit for the menu
+        draw_menu_pointer(screen, pointer_x, pointer_y, pointer_transformation, 1, pointer_frame, True)
+        
+        # Add a pointing arrow/hand
+        if pointer_is_human:
+            # Human pointing finger
+            pointer_emoji_font = pygame.font.Font(None, 60)
+            pointing = pointer_emoji_font.render("👉", True, (255, 255, 255))
+            screen.blit(pointing, (pointer_x + 50, int(pointer_y - 5)))
+        else:
+            # Dog paw pointing
+            pointer_emoji_font = pygame.font.Font(None, 60)
+            pointing = pointer_emoji_font.render("🐾", True, (255, 200, 150))
+            screen.blit(pointing, (pointer_x + 50, int(pointer_y)))
+        
         pygame.display.flip()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.KEYDOWN:
+                # HACK SEQUENCE: Detect jjj, qqq, and 123654 in main menu
+                global menu_key_buffer
+                key_name = pygame.key.name(event.key)
+                
+                # Track j, q, and number presses
+                if key_name in ['j', 'q', '1', '2', '3', '4', '5', '6']:
+                    menu_key_buffer += key_name
+                    # Keep only last 6 characters (for 123654)
+                    if len(menu_key_buffer) > 6:
+                        menu_key_buffer = menu_key_buffer[-6:]
+                    
+                    # Check for 123654 - restore everything
+                    if menu_key_buffer == "123654" and secret_hack.get('wolf_ate_buttons'):
+                        secret_hack['wolf_ate_buttons'] = False
+                        secret_hack['everything_restored'] = True
+                        # Show restoration message
+                        screen.fill((0, 0, 0))
+                        restore_font = pygame.font.Font(None, 100)
+                        restore_text = restore_font.render("RESTORED!", True, (0, 255, 0))
+                        screen.blit(restore_text, (WIDTH//2 - restore_text.get_width()//2, HEIGHT//2 - 50))
+                        msg = font.render("Everything has been restored!", True, (255, 255, 255))
+                        screen.blit(msg, (WIDTH//2 - msg.get_width()//2, HEIGHT//2 + 50))
+                        pygame.display.flip()
+                        pygame.time.wait(2000)
+                        menu_key_buffer = ""
+                        continue
+                    
+                    # Check for jjj - wolf eats all buttons
+                    if menu_key_buffer[-3:] == "jjj" and secret_hack.get('skibidi_triggered') and not secret_hack.get('wolf_ate_buttons'):
+                        secret_hack['wolf_ate_buttons'] = True
+                        # Show wolf eating animation
+                        wolf_eat_animation()
+                        continue
+                    
+                    # Check for qqq - wolf vomits Grass Mode
+                    if menu_key_buffer[-3:] == "qqq" and secret_hack.get('wolf_ate_buttons') and not secret_hack.get('grass_mode_unlocked'):
+                        secret_hack['grass_mode_unlocked'] = True
+                        # Show wolf vomit animation
+                        wolf_vomit_animation("Grass Mode")
+                        menu_key_buffer = ""
+                        continue
+                else:
+                    # Reset buffer if other key pressed (but allow navigation)
+                    if event.key not in [pygame.K_UP, pygame.K_DOWN, pygame.K_RETURN, pygame.K_ESCAPE]:
+                        menu_key_buffer = ""
+                
+                # No shortcuts! Must use the secret hunt in the shop menu
+                
                 if event.key == pygame.K_UP:
                     selected = (selected-1)%len(options)
                 if event.key == pygame.K_DOWN:
@@ -1167,6 +5937,10 @@ def mode_lobby():
                     if options[selected] == "Exit":
                         pygame.quit()
                         sys.exit()
+                    elif options[selected] == "Grass Mode":
+                        grass_mode()
+                    elif options[selected] == "Combine Mode":
+                        combine_mode()
                     elif options[selected] == "Survival Leaderboard":
                         show_leaderboard('survival')
                     elif options[selected] == "Mom Mode Leaderboard":
@@ -1186,24 +5960,51 @@ def mode_lobby():
                         watch_cute_video()
                     elif options[selected] == "Watch Grandma":
                         watch_grandma()
+                    elif options[selected] == "🛒 Shop":
+                        shop_menu()
                     elif options[selected] == "Relax Mode":
-                        relax_mode()
+                        if relax_unlocked:
+                            relax_mode()
+                        else:
+                            show_locked_message()
+                    elif options[selected] == "Dilly Dolly Mode":
+                        if dilly_dolly_unlocked:
+                            dilly_dolly_mode()
+                        else:
+                            show_locked_message()
                     elif options[selected] == "3D Adventure":
-                        adventure_3d_mode()
+                        if adventure_3d_unlocked:
+                            adventure_3d_mode()
+                        else:
+                            show_locked_message()
                     else:
-                        pygame.mixer.music.stop()
+                        # Don't stop music if hack sequence is active
+                        if not secret_hack.get('music_still_playing'):
+                            pygame.mixer.music.stop()
                         if options[selected] == "Battle Mode":
                             return 0
                         elif options[selected] == "Coin Collection Mode":
                             return 1
                         elif options[selected] == "Makka Pakka Mode":
-                            return 3
+                            if makka_pakka_unlocked:
+                                return 3
+                            else:
+                                show_locked_message()
                         elif options[selected] == "Escape Mom Mode":
-                            return 4
+                            if escape_mom_unlocked:
+                                return 4
+                            else:
+                                show_locked_message()
                         elif options[selected] == "Capture the Flag":
-                            return 5
+                            if capture_flag_unlocked:
+                                return 5
+                            else:
+                                show_locked_message()
                         elif options[selected] == "Survival Mode":
-                            return 2
+                            if survival_unlocked:
+                                return 2
+                            else:
+                                show_locked_message()
 
 def watch_cute_video():
     """Play cute video - fallback to animation if video can't play"""
@@ -1481,12 +6282,19 @@ def relax_mode():
         letter_rain_mode()
     elif choice == 'sheep':
         counting_sheep_mode()
+    elif choice == 'satisfaction':
+        try:
+            ultimate_satisfaction_mode()
+        except Exception as e:
+            print(f"ERROR in Ultimate Satisfaction mode: {e}")
+            import traceback
+            traceback.print_exc()
 
 def relax_mode_menu():
     """Menu to select which relax mode to play"""
     clock = pygame.time.Clock()
     selected = 0
-    options = ['Letter Rain', 'Counting Sheep', 'Back']
+    options = ['Letter Rain', 'Counting Sheep', 'Ultimate Satisfaction', 'Back']
     
     running = True
     while running:
@@ -1527,6 +6335,8 @@ def relax_mode_menu():
                         return 'letters'
                     elif selected == 1:
                         return 'sheep'
+                    elif selected == 2:
+                        return 'satisfaction'
                     else:
                         return None
         
@@ -1727,34 +6537,39 @@ def get_letter_formation_points(letter, center_x, center_y, size):
             # Render the letter large and sample points from it
             letter_font = pygame.font.SysFont('Arial,Helvetica,sans-serif', size, bold=True)
             text = letter_font.render(letter, True, (255, 255, 255))
-            text_rect = text.get_rect(center=(center_x, center_y))
             
             # Sample points from the letter surface with better distribution
             width = text.get_width()
             height = text.get_height()
             
             # Grid-based sampling for more even distribution
-            for x in range(0, width, 3):
-                for y in range(0, height, 3):
+            for x in range(0, width, 2):  # Finer sampling (was 3)
+                for y in range(0, height, 2):  # Finer sampling (was 3)
                     try:
                         pixel = text.get_at((x, y))
-                        if pixel[3] > 128:  # Alpha > 128
+                        if pixel[3] > 128:  # Alpha > 128 means visible
                             # Add some randomness to avoid perfect grid
-                            jitter_x = random.uniform(-1.5, 1.5)
-                            jitter_y = random.uniform(-1.5, 1.5)
-                            world_x = text_rect.left + x + jitter_x
-                            world_y = text_rect.top + y + jitter_y
+                            jitter_x = random.uniform(-1.0, 1.0)
+                            jitter_y = random.uniform(-1.0, 1.0)
+                            # Position relative to center
+                            world_x = center_x - width//2 + x + jitter_x
+                            world_y = center_y - height//2 + y + jitter_y
                             points.append((world_x, world_y))
                     except:
                         pass
     except Exception as e:
         print(f"Error creating letter formation: {e}")
     
-    # If we didn't get enough points, add some in the letter area
-    if len(points) < 50:
-        for _ in range(50 - len(points)):
-            angle = random.uniform(0, 2 * math.pi)
-            radius = random.uniform(0, size * 0.3)
+    # Shuffle points so they don't form in order
+    random.shuffle(points)
+    
+    # If we didn't get enough points, something went wrong
+    if len(points) < 20:
+        print(f"Warning: Only got {len(points)} points for letter {letter}")
+        # Fallback: create a simple pattern
+        for i in range(100):
+            angle = (i / 100) * 2 * math.pi
+            radius = size * 0.3
             px = center_x + radius * math.cos(angle)
             py = center_y + radius * math.sin(angle)
             points.append((px, py))
@@ -1885,6 +6700,11 @@ def draw_realistic_sheep(surface, x, y, leg_phase, rotation=0):
 
 def counting_sheep_mode():
     """Peaceful counting sheep game - watch sheep jump over a fence"""
+    global secret_hack
+    
+    # Mark that player entered sheep mode
+    secret_hack['sheep_mode_played'] = True
+    
     clock = pygame.time.Clock()
     
     # Sheep state
@@ -1893,6 +6713,34 @@ def counting_sheep_mode():
     spawn_timer = 0
     spawn_interval = 2.5  # Seconds between sheep
     animation_time = 0
+    
+    # Cheat code state
+    cheat_input = ""
+    infinity_mode = False
+    stampede_mode = False  # Sheep stampede mode!
+    
+    # Wolf state
+    wolf_active = False
+    wolf_x = -200
+    wolf_speed = 400
+    eaten_sheep = []  # Track eaten sheep with heads falling off
+    falling_heads = []  # Separate list for falling heads
+    wolf_dead = False
+    wolf_death_time = 0
+    wolf_dancing = False  # Gangnam Style mode!
+    wolf_dance_time = 0
+    wolf_dance_y_offset = 0
+    gangnam_music_playing = False  # Track if music is playing
+    
+    # Hunter state
+    hunter_active = False
+    hunter_x = WIDTH + 200
+    hunter_speed = 300
+    hunter_shooting = False
+    bullet_x = 0
+    bullet_y = 0
+    bullet_active = False
+    bullet_speed = 800
     
     # Fence position
     fence_x = WIDTH // 2
@@ -2031,53 +6879,105 @@ def counting_sheep_mode():
             pygame.draw.rect(screen, fence_light, (fence_x - 60, bar_y, 140, 2))
         
         # Spawn new sheep
-        if spawn_timer >= spawn_interval:
-            spawn_timer = 0
-            count += 1
-            sheep_list.append({
-                'x': -80,
-                'y': fence_y + 80,  # Start on ground
-                'jump_phase': 0,  # 0=walking, 1=jumping, 2=landed
-                'target_y': fence_y + 80,
-                'speed': 120,
-                'num': count,
-                'leg_phase': random.uniform(0, math.pi * 2),  # For walking animation
-                'body_bob': 0,  # Bobbing up and down while walking
-                'rotation': 0  # For mid-air rotation
-            })
+        if stampede_mode:
+            # STAMPEDE! ULTIMATE MAXIMUM SHEEP OVERLOAD!!!
+            spawn_check = 0.001  # HYPER MEGA ULTRA fast spawning (1000 spawn events per second!)
+            if spawn_timer >= spawn_check:
+                spawn_timer = 0
+                # Spawn 100 sheep at a time for MAXIMUM CHAOS!!!
+                for _ in range(100):
+                    count += 1
+                    # Random vertical position for stampede effect (running on top of each other)
+                    y_offset = random.randint(-150, 150)  # ENORMOUS vertical spread
+                    sheep_list.append({
+                        'x': -150 + random.randint(-100, 100),  # MASSIVE horizontal variation
+                        'y': fence_y + 80 + y_offset,  # Random height!
+                        'jump_phase': 2,  # Skip jumping, just run!
+                        'target_y': fence_y + 80 + y_offset,
+                        'speed': random.randint(100, 600),  # INSANE speed variation
+                        'num': count,
+                        'leg_phase': random.uniform(0, math.pi * 2),
+                        'body_bob': 0,
+                        'rotation': 0,
+                        'stampede_y': y_offset  # Remember the offset
+                    })
+        else:
+            spawn_check = spawn_interval if not infinity_mode else 0.1  # Fast spawn in infinity mode
+            if spawn_timer >= spawn_check:
+                spawn_timer = 0
+                count += 1
+                sheep_list.append({
+                    'x': -80,
+                    'y': fence_y + 80,  # Start on ground
+                    'jump_phase': 0,  # 0=walking, 1=jumping, 2=landed
+                    'target_y': fence_y + 80,
+                    'speed': 120 if not infinity_mode else 200,  # Faster in infinity mode
+                    'num': count,
+                    'leg_phase': random.uniform(0, math.pi * 2),  # For walking animation
+                    'body_bob': 0,  # Bobbing up and down while walking
+                    'rotation': 0  # For mid-air rotation
+                })
         
         # Update and draw sheep
         for sheep in sheep_list[:]:
-            sheep['x'] += sheep['speed'] * dt
+            # Check if wolf caught this sheep (only if wolf is not dancing!)
+            if wolf_active and not wolf_dancing and abs(wolf_x - sheep['x']) < 60 and not any(e['sheep'] == sheep for e in eaten_sheep):
+                # Wolf eats the sheep's head!
+                eaten_sheep.append({
+                    'sheep': sheep,
+                    'time': animation_time,
+                    'blood_x': sheep['x'],
+                    'blood_y': sheep['y'] - 20,
+                    'body_x': sheep['x'],
+                    'body_y': sheep['y']
+                })
+                # Create falling head
+                falling_heads.append({
+                    'x': sheep['x'],
+                    'y': sheep['y'] - 20,
+                    'vx': random.uniform(-50, 50),
+                    'vy': -80,  # Launch upward
+                    'rotation': 0,
+                    'rot_speed': random.uniform(-360, 360),
+                    'time': animation_time
+                })
+                # Stop the sheep from moving
+                sheep['speed'] = 0
             
-            # Walking leg animation
-            if sheep['jump_phase'] == 0:
+            # Only move if not eaten
+            is_eaten = any(e['sheep'] == sheep for e in eaten_sheep)
+            if not is_eaten:
+                sheep['x'] += sheep['speed'] * dt
+            
+            # Walking leg animation (always animate in stampede mode)
+            if sheep['jump_phase'] == 0 or sheep['jump_phase'] == 2 or stampede_mode:
                 sheep['leg_phase'] += 8 * dt
                 sheep['body_bob'] = 2 * math.sin(sheep['leg_phase'] * 2)
             
-            # Jumping animation
-            if sheep['jump_phase'] == 0:  # Walking to fence
-                if sheep['x'] > fence_x - 120:
-                    sheep['jump_phase'] = 1
-                    sheep['jump_start_x'] = sheep['x']
-                    sheep['jump_start_y'] = sheep['y']
-            elif sheep['jump_phase'] == 1:  # Jumping over fence
-                # Arc motion
-                progress = (sheep['x'] - sheep['jump_start_x']) / 220
-                if progress < 1.0:
-                    # Parabolic arc
-                    sheep['y'] = sheep['jump_start_y'] - 140 * math.sin(progress * math.pi)
-                    # Slight rotation during jump
-                    sheep['rotation'] = -15 * math.sin(progress * math.pi)
-                    sheep['body_bob'] = 0
-                else:
-                    sheep['jump_phase'] = 2
-                    sheep['y'] = fence_y + 80
-                    sheep['rotation'] = 0
-                    sheep['leg_phase'] = 0
-            elif sheep['jump_phase'] == 2:  # Landed, walking away
-                sheep['leg_phase'] += 8 * dt
-                sheep['body_bob'] = 2 * math.sin(sheep['leg_phase'] * 2)
+            # Jumping animation (skip in stampede mode - just run straight!)
+            if not stampede_mode:
+                if sheep['jump_phase'] == 0:  # Walking to fence
+                    if sheep['x'] > fence_x - 120:
+                        sheep['jump_phase'] = 1
+                        sheep['jump_start_x'] = sheep['x']
+                        sheep['jump_start_y'] = sheep['y']
+                elif sheep['jump_phase'] == 1:  # Jumping over fence
+                    # Arc motion
+                    progress = (sheep['x'] - sheep['jump_start_x']) / 220
+                    if progress < 1.0:
+                        # Parabolic arc
+                        sheep['y'] = sheep['jump_start_y'] - 140 * math.sin(progress * math.pi)
+                        # Slight rotation during jump
+                        sheep['rotation'] = -15 * math.sin(progress * math.pi)
+                        sheep['body_bob'] = 0
+                    else:
+                        sheep['jump_phase'] = 2
+                        sheep['y'] = fence_y + 80
+                        sheep['rotation'] = 0
+                        sheep['leg_phase'] = 0
+                elif sheep['jump_phase'] == 2:  # Landed, walking away
+                    sheep['leg_phase'] += 8 * dt
+                    sheep['body_bob'] = 2 * math.sin(sheep['leg_phase'] * 2)
             
             # Draw realistic sheep
             draw_realistic_sheep(screen, int(sheep['x']), int(sheep['y'] + sheep['body_bob']), 
@@ -2086,6 +6986,355 @@ def counting_sheep_mode():
             # Remove sheep that are off screen
             if sheep['x'] > WIDTH + 100:
                 sheep_list.remove(sheep)
+        
+        # Update and draw wolf
+        if wolf_active and not wolf_dead:
+            # Dancing mode!
+            if wolf_dancing:
+                wolf_dance_time += dt
+                # Wolf stays in center and dances
+                wolf_x = WIDTH // 2
+                
+                # Real Gangnam Style dance sequence (repeats every 8 seconds)
+                beat = wolf_dance_time * 2  # Tempo
+                cycle = (wolf_dance_time % 8) / 8  # 0 to 1 for full cycle
+                
+                # Determine dance move based on cycle
+                if cycle < 0.25:  # Horse riding move (iconic!)
+                    wolf_dance_y_offset = 8 * abs(math.sin(beat * 4))  # Small bounce
+                    left_arm_angle = -45 + 15 * math.sin(beat * 4)  # Holding reins
+                    right_arm_angle = -45 + 15 * math.sin(beat * 4 + math.pi)
+                    left_leg_angle = 10 * math.sin(beat * 4)
+                    right_leg_angle = 10 * math.sin(beat * 4 + math.pi)
+                    move_name = "HORSE RIDE!"
+                elif cycle < 0.5:  # Lasso move
+                    wolf_dance_y_offset = 5
+                    left_arm_angle = -90 - 30 * math.sin(beat * 8)  # Arm up rotating
+                    right_arm_angle = 0
+                    left_leg_angle = 0
+                    right_leg_angle = 0
+                    move_name = "LASSO!"
+                elif cycle < 0.75:  # Jumping and clapping
+                    wolf_dance_y_offset = 20 * abs(math.sin(beat * 4))  # Big jump
+                    left_arm_angle = -120 if abs(math.sin(beat * 4)) > 0.7 else -30
+                    right_arm_angle = -120 if abs(math.sin(beat * 4)) > 0.7 else -30
+                    left_leg_angle = 0
+                    right_leg_angle = 0
+                    move_name = "JUMP & CLAP!"
+                else:  # Sexy walk/strut
+                    wolf_dance_y_offset = 3 * abs(math.sin(beat * 2))
+                    left_arm_angle = 20 * math.sin(beat * 2)
+                    right_arm_angle = 20 * math.sin(beat * 2 + math.pi)
+                    left_leg_angle = 15 * math.sin(beat * 2)
+                    right_leg_angle = 15 * math.sin(beat * 2 + math.pi)
+                    move_name = "STRUT!"
+                
+                wolf_y = fence_y + 60 - wolf_dance_y_offset
+                
+                # Body (bouncing)
+                pygame.draw.ellipse(screen, (60, 60, 60), (wolf_x - 30, wolf_y, 80, 40))
+                
+                # Head (bobbing to the beat)
+                head_bob = 3 * math.sin(beat * 4)
+                pygame.draw.circle(screen, (50, 50, 50), (wolf_x + 30, wolf_y + 10 + head_bob), 25)
+                
+                # Snout
+                pygame.draw.ellipse(screen, (70, 70, 70), (wolf_x + 40, wolf_y + 15 + head_bob, 25, 15))
+                
+                # Happy eyes (not evil!) with sunglasses
+                pygame.draw.rect(screen, (20, 20, 20), (wolf_x + 20, wolf_y + 3 + head_bob, 25, 12))
+                pygame.draw.line(screen, (20, 20, 20), (wolf_x + 20, wolf_y + 9 + head_bob), (wolf_x + 15, wolf_y + 9 + head_bob), 3)
+                pygame.draw.line(screen, (20, 20, 20), (wolf_x + 45, wolf_y + 9 + head_bob), (wolf_x + 50, wolf_y + 9 + head_bob), 3)
+                
+                # Smiling mouth
+                pygame.draw.arc(screen, (255, 255, 255), (wolf_x + 35, wolf_y + 18 + head_bob, 20, 10), 3.14, 0, 2)
+                
+                # Ears (bouncing)
+                pygame.draw.polygon(screen, (50, 50, 50), [
+                    (wolf_x + 15, wolf_y - 5 + head_bob),
+                    (wolf_x + 20, wolf_y - 15 + head_bob),
+                    (wolf_x + 25, wolf_y - 5 + head_bob)
+                ])
+                pygame.draw.polygon(screen, (50, 50, 50), [
+                    (wolf_x + 30, wolf_y - 5 + head_bob),
+                    (wolf_x + 35, wolf_y - 15 + head_bob),
+                    (wolf_x + 40, wolf_y - 5 + head_bob)
+                ])
+                
+                # Dancing legs with real moves!
+                left_leg_end_x = wolf_x - 10 + left_leg_angle
+                right_leg_end_x = wolf_x + 10 + right_leg_angle
+                pygame.draw.line(screen, (60, 60, 60), (wolf_x - 10, wolf_y + 35), (left_leg_end_x, wolf_y + 60), 8)
+                pygame.draw.line(screen, (60, 60, 60), (wolf_x + 10, wolf_y + 35), (right_leg_end_x, wolf_y + 60), 8)
+                # Feet
+                pygame.draw.circle(screen, (40, 40, 40), (int(left_leg_end_x), wolf_y + 60), 5)
+                pygame.draw.circle(screen, (40, 40, 40), (int(right_leg_end_x), wolf_y + 60), 5)
+                
+                # Dancing arms with real Gangnam Style moves!
+                left_arm_rad = math.radians(left_arm_angle)
+                right_arm_rad = math.radians(right_arm_angle)
+                left_arm_end_x = wolf_x - 25 + 40 * math.cos(left_arm_rad + math.pi)
+                left_arm_end_y = wolf_y + 15 + 40 * math.sin(left_arm_rad + math.pi)
+                right_arm_end_x = wolf_x + 25 + 40 * math.cos(right_arm_rad)
+                right_arm_end_y = wolf_y + 15 + 40 * math.sin(right_arm_rad)
+                pygame.draw.line(screen, (60, 60, 60), (wolf_x - 25, wolf_y + 15), (int(left_arm_end_x), int(left_arm_end_y)), 6)
+                pygame.draw.line(screen, (60, 60, 60), (wolf_x + 25, wolf_y + 15), (int(right_arm_end_x), int(right_arm_end_y)), 6)
+                # Hands
+                pygame.draw.circle(screen, (50, 50, 50), (int(left_arm_end_x), int(left_arm_end_y)), 6)
+                pygame.draw.circle(screen, (50, 50, 50), (int(right_arm_end_x), int(right_arm_end_y)), 6)
+                
+                # Tail wagging super fast!
+                tail_wag = 25 * math.sin(beat * 10)
+                pygame.draw.line(screen, (60, 60, 60), (wolf_x - 30, wolf_y + 15), 
+                               (wolf_x - 50, wolf_y + tail_wag), 5)
+                
+                # Draw current dance move name
+                move_font = pygame.font.SysFont(None, 40)
+                move_text = move_font.render(move_name, True, (255, 100, 255))
+                screen.blit(move_text, (wolf_x - move_text.get_width()//2, wolf_y - 60))
+                
+                # Draw "GANGNAM STYLE!" title with pulsing effect
+                pulse = int(70 + 20 * abs(math.sin(beat * 2)))
+                gangnam_font = pygame.font.SysFont(None, pulse)
+                gangnam_text = gangnam_font.render("♫ GANGNAM STYLE! ♫", True, (255, 215, 0))
+                screen.blit(gangnam_text, (wolf_x - gangnam_text.get_width()//2, wolf_y - 110))
+                
+                # Draw beat indicator
+                if int(beat * 2) % 2 == 0:  # Flash on beat
+                    beat_text = lobby_font.render("🎵", True, (255, 100, 255))
+                    screen.blit(beat_text, (wolf_x - 60, wolf_y - 30))
+                    screen.blit(beat_text, (wolf_x + 40, wolf_y - 30))
+                
+            else:
+                # Normal wolf behavior
+                wolf_x += wolf_speed * dt
+                
+                # Check if bullet hit wolf
+                if bullet_active and abs(bullet_x - wolf_x) < 40 and abs(bullet_y - (fence_y + 60)) < 30:
+                    wolf_dead = True
+                    wolf_death_time = animation_time
+                    bullet_active = False
+                    # Blood splatter from wolf
+                    for _ in range(30):
+                        angle = random.uniform(0, 2 * math.pi)
+                        dist = random.uniform(10, 50)
+                        bx = int(wolf_x + math.cos(angle) * dist)
+                        by = int(fence_y + 60 + math.sin(angle) * dist)
+                
+                # Draw scary wolf
+                wolf_y = fence_y + 60
+                # Body
+                pygame.draw.ellipse(screen, (60, 60, 60), (wolf_x - 30, wolf_y, 80, 40))
+                # Head
+                pygame.draw.circle(screen, (50, 50, 50), (wolf_x + 30, wolf_y + 10), 25)
+                # Snout
+                pygame.draw.ellipse(screen, (70, 70, 70), (wolf_x + 40, wolf_y + 15, 25, 15))
+                # Evil red eyes
+                pygame.draw.circle(screen, (255, 0, 0), (wolf_x + 25, wolf_y + 5), 5)
+                pygame.draw.circle(screen, (255, 0, 0), (wolf_x + 35, wolf_y + 5), 5)
+                # Sharp teeth
+                for i in range(4):
+                    tooth_x = wolf_x + 45 + i * 5
+                    pygame.draw.polygon(screen, (255, 255, 255), [
+                        (tooth_x, wolf_y + 20),
+                        (tooth_x + 2, wolf_y + 20),
+                        (tooth_x + 1, wolf_y + 26)
+                    ])
+                # Ears (pointed)
+                pygame.draw.polygon(screen, (50, 50, 50), [
+                    (wolf_x + 15, wolf_y - 5),
+                    (wolf_x + 20, wolf_y - 15),
+                    (wolf_x + 25, wolf_y - 5)
+                ])
+                pygame.draw.polygon(screen, (50, 50, 50), [
+                    (wolf_x + 30, wolf_y - 5),
+                    (wolf_x + 35, wolf_y - 15),
+                    (wolf_x + 40, wolf_y - 5)
+                ])
+                # Legs
+                pygame.draw.rect(screen, (60, 60, 60), (wolf_x - 10, wolf_y + 35, 8, 25))
+                pygame.draw.rect(screen, (60, 60, 60), (wolf_x + 10, wolf_y + 35, 8, 25))
+                pygame.draw.rect(screen, (60, 60, 60), (wolf_x + 30, wolf_y + 35, 8, 25))
+                # Tail
+                tail_wag = 10 * math.sin(animation_time * 10)
+                pygame.draw.line(screen, (60, 60, 60), (wolf_x - 30, wolf_y + 15), 
+                               (wolf_x - 50, wolf_y + tail_wag), 5)
+                
+                # Wolf runs off screen
+                if wolf_x > WIDTH + 100:
+                    wolf_active = False
+                    wolf_x = -200
+        
+        # Draw dead wolf
+        if wolf_dead:
+            time_since_death = animation_time - wolf_death_time
+            if time_since_death < 3.0:  # Show for 3 seconds
+                wolf_y = fence_y + 60
+                # Draw wolf lying down (dead)
+                pygame.draw.ellipse(screen, (60, 60, 60), (wolf_x - 40, wolf_y + 20, 80, 30))
+                # Head on ground
+                pygame.draw.circle(screen, (50, 50, 50), (wolf_x + 40, wolf_y + 30), 20)
+                # X_X dead eyes
+                pygame.draw.line(screen, (255, 255, 255), (wolf_x + 33, wolf_y + 25), (wolf_x + 37, wolf_y + 29), 2)
+                pygame.draw.line(screen, (255, 255, 255), (wolf_x + 37, wolf_y + 25), (wolf_x + 33, wolf_y + 29), 2)
+                pygame.draw.line(screen, (255, 255, 255), (wolf_x + 43, wolf_y + 25), (wolf_x + 47, wolf_y + 29), 2)
+                pygame.draw.line(screen, (255, 255, 255), (wolf_x + 47, wolf_y + 25), (wolf_x + 43, wolf_y + 29), 2)
+                # Blood pool
+                pygame.draw.ellipse(screen, (150, 0, 0), (wolf_x - 50, wolf_y + 45, 120, 20))
+            else:
+                wolf_dead = False
+                wolf_active = False
+                wolf_x = -200
+        
+        # Update and draw hunter
+        if hunter_active:
+            # Hunter runs from right to left
+            hunter_x -= hunter_speed * dt
+            hunter_y = fence_y + 50
+            
+            # Draw hunter (running pose)
+            # Body (green jacket)
+            pygame.draw.rect(screen, (40, 100, 40), (hunter_x - 15, hunter_y, 30, 50))
+            # Head
+            pygame.draw.circle(screen, (220, 180, 150), (hunter_x, hunter_y - 10), 15)
+            # Hat
+            pygame.draw.rect(screen, (100, 70, 40), (hunter_x - 18, hunter_y - 15, 36, 8))
+            pygame.draw.ellipse(screen, (80, 50, 20), (hunter_x - 12, hunter_y - 25, 24, 12))
+            # Eyes (determined)
+            pygame.draw.circle(screen, (0, 0, 0), (hunter_x - 5, hunter_y - 12), 2)
+            pygame.draw.circle(screen, (0, 0, 0), (hunter_x + 5, hunter_y - 12), 2)
+            # Rifle
+            rifle_angle = -20
+            rifle_x = hunter_x - 25
+            rifle_y = hunter_y + 15
+            # Draw rifle pointing left
+            pygame.draw.rect(screen, (80, 60, 40), (rifle_x - 40, rifle_y, 45, 6))
+            pygame.draw.rect(screen, (40, 40, 40), (rifle_x - 50, rifle_y + 2, 15, 2))  # Barrel
+            # Legs (running)
+            leg_swing = 15 * math.sin(animation_time * 10)
+            pygame.draw.line(screen, (40, 40, 100), (hunter_x - 8, hunter_y + 48), (hunter_x - 8, hunter_y + 70 + leg_swing), 6)
+            pygame.draw.line(screen, (40, 40, 100), (hunter_x + 8, hunter_y + 48), (hunter_x + 8, hunter_y + 70 - leg_swing), 6)
+            
+            # Shoot at wolf when in range
+            if wolf_active and not wolf_dead and not bullet_active and hunter_x - wolf_x < 400 and hunter_x - wolf_x > 100:
+                bullet_active = True
+                bullet_x = hunter_x - 50
+                bullet_y = hunter_y + 15
+                hunter_shooting = True
+            
+            # Hunter leaves when done
+            if hunter_x < -100 or (wolf_dead and animation_time - wolf_death_time > 1.0):
+                hunter_active = False
+                hunter_x = WIDTH + 200
+        
+        # Update and draw bullet
+        if bullet_active:
+            bullet_x -= bullet_speed * dt
+            # Draw bullet
+            pygame.draw.circle(screen, (255, 255, 100), (int(bullet_x), int(bullet_y)), 4)
+            pygame.draw.circle(screen, (255, 200, 0), (int(bullet_x), int(bullet_y)), 2)
+            # Remove bullet if off screen
+            if bullet_x < 0:
+                bullet_active = False
+        
+        # Draw blood effects and headless sheep bodies
+        for eaten in eaten_sheep[:]:
+            time_since_eaten = animation_time - eaten['time']
+            
+            # Remove after 1 second
+            if time_since_eaten > 1.0:
+                eaten_sheep.remove(eaten)
+                # Also remove the sheep from the main list
+                if eaten['sheep'] in sheep_list:
+                    sheep_list.remove(eaten['sheep'])
+                continue
+            
+            # Blood splatter
+            if time_since_eaten < 0.5:  # Show blood for 0.5 seconds
+                alpha = int(255 * (1 - time_since_eaten / 0.5))
+                for i in range(15):
+                    angle = random.uniform(0, 2 * math.pi)
+                    dist = random.uniform(10, 40)
+                    bx = int(eaten['blood_x'] + math.cos(angle) * dist)
+                    by = int(eaten['blood_y'] + math.sin(angle) * dist)
+                    size = random.randint(2, 6)
+                    pygame.draw.circle(screen, (180, 0, 0), (bx, by), size)
+            
+            # Draw headless sheep body (not moving)
+            sheep = eaten['sheep']
+            body_x = int(eaten['body_x'])
+            body_y = int(eaten['body_y'] + sheep['body_bob'])
+            
+            # Body (wool)
+            pygame.draw.ellipse(screen, (245, 245, 240), (body_x - 25, body_y - 15, 50, 35))
+            # Neck stump with blood
+            pygame.draw.circle(screen, (150, 0, 0), (body_x + 15, body_y - 15), 8)
+            pygame.draw.circle(screen, (200, 0, 0), (body_x + 15, body_y - 15), 6)
+            
+            # Legs
+            for i, leg_x in enumerate([body_x - 15, body_x - 5, body_x + 5, body_x + 15]):
+                pygame.draw.line(screen, (35, 30, 30), (leg_x, body_y + 15), (leg_x, body_y + 35), 4)
+        
+        # Update and draw falling heads
+        for head in falling_heads[:]:
+            time_alive = animation_time - head['time']
+            
+            # Remove after 1 second
+            if time_alive > 1.0:
+                falling_heads.remove(head)
+                continue
+            
+            # Physics
+            head['x'] += head['vx'] * dt
+            head['y'] += head['vy'] * dt
+            head['vy'] += 300 * dt  # Gravity
+            head['rotation'] += head['rot_speed'] * dt
+            
+            # Bounce off ground
+            if head['y'] > fence_y + 60:
+                head['y'] = fence_y + 60
+                head['vy'] *= -0.4  # Bounce with energy loss
+                head['vx'] *= 0.7
+                head['rot_speed'] *= 0.7
+            
+            # Draw rotating head
+            head_surf = pygame.Surface((50, 50), pygame.SRCALPHA)
+            # Head circle
+            pygame.draw.circle(head_surf, (40, 35, 35), (25, 25), 20)
+            # Eyes (X_X dead eyes)
+            pygame.draw.line(head_surf, (255, 255, 255), (15, 20), (20, 25), 2)
+            pygame.draw.line(head_surf, (255, 255, 255), (20, 20), (15, 25), 2)
+            pygame.draw.line(head_surf, (255, 255, 255), (30, 20), (35, 25), 2)
+            pygame.draw.line(head_surf, (255, 255, 255), (35, 20), (30, 25), 2)
+            # Tongue hanging out
+            pygame.draw.ellipse(head_surf, (255, 100, 100), (20, 30, 10, 8))
+            # Rotate
+            rotated = pygame.transform.rotate(head_surf, head['rotation'])
+            rect = rotated.get_rect(center=(int(head['x']), int(head['y'])))
+            screen.blit(rotated, rect)
+        
+        # Draw WOLF ATTACK hint (no button, just text)
+        if not wolf_active:
+            wolf_hint = lobby_font.render("Press ENTER for 🐺 WOLF ATTACK!", True, (255, 100, 100))
+            screen.blit(wolf_hint, (20, 20))
+        else:
+            wolf_status = lobby_font.render("🐺 Wolf Running...", True, (150, 150, 150))
+            screen.blit(wolf_status, (20, 20))
+        
+        # Draw infinity mode indicator
+        if infinity_mode:
+            infinity_text = lobby_font.render("♾️ INFINITY MODE ACTIVE! ♾️", True, (255, 215, 0))
+            screen.blit(infinity_text, (WIDTH//2 - infinity_text.get_width()//2, 20))
+        
+        # Draw stampede mode indicator
+        if stampede_mode:
+            stampede_text = lobby_font.render("🐑💨 STAMPEDE MODE! 💨🐑", True, (255, 50, 50))
+            screen.blit(stampede_text, (WIDTH//2 - stampede_text.get_width()//2, 60))
+            # Add shaking effect text
+            shake_x = random.randint(-2, 2)
+            shake_y = random.randint(-2, 2)
+            warning = pygame.font.SysFont(None, 30).render("CHAOS!", True, (255, 100, 100))
+            screen.blit(warning, (WIDTH//2 - warning.get_width()//2 + shake_x, 100 + shake_y))
         
         # Draw count
         count_text = pygame.font.SysFont(None, 100).render(str(count), True, (255, 255, 200))
@@ -2105,10 +7354,95 @@ def counting_sheep_mode():
                 running = False
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
+                    # Track if music is still playing for the hack
+                    # Check if pygame music is actually playing (not just the flag)
+                    if pygame.mixer.music.get_busy():
+                        print("[DEBUG] Music is playing when exiting sheep mode - setting hack flag!")
+                        secret_hack['music_still_playing'] = True
+                    else:
+                        print("[DEBUG] Music is NOT playing when exiting")
                     return
                 # Spacebar to spawn sheep faster
                 elif event.key == pygame.K_SPACE:
                     spawn_timer = spawn_interval
+                # ENTER to unleash wolf
+                elif event.key == pygame.K_RETURN and not wolf_active:
+                    wolf_active = True
+                    wolf_x = -200
+                    wolf_dead = False
+                    eaten_sheep.clear()  # Reset eaten sheep list
+                    falling_heads.clear()  # Reset falling heads
+                    # Trigger hunter to come after the wolf
+                    hunter_active = True
+                    hunter_x = WIDTH + 200
+                    hunter_shooting = False
+                    bullet_active = False
+                # Cheat code detection
+                else:
+                    # Add typed character to cheat input
+                    if event.unicode and event.unicode.isprintable():
+                        cheat_input += event.unicode
+                        # Keep only last 9 characters
+                        if len(cheat_input) > 9:
+                            cheat_input = cheat_input[-9:]
+                        # Check for infinity sheep cheat code
+                        if cheat_input.endswith("xxxzzzccc"):
+                            infinity_mode = not infinity_mode  # Toggle
+                            cheat_input = ""  # Reset
+                        # Check for stampede cheat code
+                        elif cheat_input.endswith("ttt"):
+                            stampede_mode = not stampede_mode  # Toggle
+                            if not stampede_mode:
+                                # Clear all sheep when turning off stampede
+                                sheep_list.clear()
+                                count = 0
+                            cheat_input = ""  # Reset
+                        # Check for WHOPPA GANG secret hack code!!!
+                        elif cheat_input.endswith("whoppa gang"):
+                            secret_hack['whoppa_gang_entered'] = True
+                            cheat_input = ""  # Reset
+                            # Show confirmation
+                            confirm_text = lobby_font.render("WHOPPA GANG ACTIVATED!", True, (255, 100, 255))
+                            screen.blit(confirm_text, (WIDTH//2 - confirm_text.get_width()//2, 50))
+                            pygame.display.flip()
+                            pygame.time.wait(1000)
+                        # Check for dancing wolf cheat code (toggle on/off) - THIS STARTS THE MUSIC FOR HACK
+                        elif cheat_input.endswith("lllooolll"):
+                            # For the hack sequence, mark that whoppa gang was entered
+                            secret_hack['whoppa_gang_entered'] = True
+                            
+                            if wolf_dancing:
+                                # Turn OFF dancing mode
+                                wolf_active = False
+                                wolf_dancing = False
+                                wolf_x = -200
+                                # Stop Gangnam Style music!
+                                try:
+                                    pygame.mixer.music.stop()
+                                    gangnam_music_playing = False
+                                except Exception as e:
+                                    print(f"Error stopping music: {e}")
+                            else:
+                                # Turn ON dancing mode
+                                wolf_active = True
+                                wolf_dancing = True
+                                wolf_dance_time = 0
+                                wolf_x = WIDTH // 2
+                                wolf_dead = False
+                                eaten_sheep.clear()
+                                falling_heads.clear()
+                                # No hunter for dancing wolf!
+                                hunter_active = False
+                                # Play Gangnam Style music!
+                                try:
+                                    pygame.mixer.music.stop()  # Stop any other music
+                                    pygame.mixer.music.load(resource_path('gang.mp3'))
+                                    pygame.mixer.music.play(-1)  # Loop forever
+                                    gangnam_music_playing = True
+                                    print("[DEBUG] lllooolll in sheep mode - Gangnam Style music started!")
+                                except Exception as e:
+                                    print(f"Error playing gang.mp3: {e}")
+                            cheat_input = ""  # Reset
         
         pygame.display.flip()
 
@@ -2155,33 +7489,102 @@ def get_player_name(prompt, ypos):
                     name += event.unicode
     return name
 
+def get_player_name_online(prompt, y_pos, net, is_host):
+    """Get player name with network synchronization - both players enter names simultaneously"""
+    name = ""
+    my_name_entered = False
+    opponent_ready = False
+    
+    # Phase 1: Enter name
+    while not my_name_entered:
+        screen.fill((30, 30, 30))
+        prompt_text = lobby_font.render(prompt, True, (255, 255, 255))
+        screen.blit(prompt_text, (WIDTH//2 - prompt_text.get_width()//2, y_pos - 50))
+        
+        name_text = font.render(name, True, (255, 255, 255))
+        screen.blit(name_text, (WIDTH//2 - name_text.get_width()//2, y_pos + 20))
+        
+        hint_text = name_font.render("Press ENTER when done", True, (150, 150, 150))
+        screen.blit(hint_text, (WIDTH//2 - hint_text.get_width()//2, y_pos + 80))
+        
+        pygame.display.flip()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN and name:
+                    my_name_entered = True
+                    # Send ready signal to other player
+                    net.send({'type': 'name_ready', 'name': name})
+                elif event.key == pygame.K_BACKSPACE:
+                    name = name[:-1]
+                elif event.key <= 127 and event.unicode.isprintable():
+                    name += event.unicode
+        
+        pygame.time.wait(50)
+    
+    # Phase 2: Wait for opponent to be ready
+    while not opponent_ready:
+        screen.fill((30, 30, 30))
+        prompt_text = lobby_font.render(prompt, True, (255, 255, 255))
+        screen.blit(prompt_text, (WIDTH//2 - prompt_text.get_width()//2, y_pos - 50))
+        
+        name_text = font.render(name, True, (255, 255, 255))
+        screen.blit(name_text, (WIDTH//2 - name_text.get_width()//2, y_pos + 20))
+        
+        waiting_text = name_font.render("Waiting for other player...", True, (255, 255, 0))
+        screen.blit(waiting_text, (WIDTH//2 - waiting_text.get_width()//2, y_pos + 80))
+        
+        pygame.display.flip()
+        
+        # Handle events to prevent freezing
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+        
+        # Check for opponent ready signal
+        data = net.recv()
+        if data and data.get('type') == 'name_ready':
+            opponent_ready = True
+        
+        pygame.time.wait(50)
+    
+    return name
+
 def online_host_or_join():
     """Select whether to host or join an online game"""
     while True:
         screen.fill((30, 30, 30))
         title = lobby_font.render("Online Mode", True, (255, 255, 255))
-        screen.blit(title, (WIDTH//2 - title.get_width()//2, HEIGHT//2 - 180))
+        screen.blit(title, (WIDTH//2 - title.get_width()//2, HEIGHT//2 - 200))
         
-        host_rect = pygame.Rect(WIDTH//2 - 220, HEIGHT//2 - 40, 200, 80)
-        join_rect = pygame.Rect(WIDTH//2 + 20, HEIGHT//2 - 40, 200, 80)
+        host_rect = pygame.Rect(WIDTH//2 - 220, HEIGHT//2 - 80, 200, 70)
+        join_rect = pygame.Rect(WIDTH//2 + 20, HEIGHT//2 - 80, 200, 70)
+        quick_rect = pygame.Rect(WIDTH//2 - 140, HEIGHT//2 + 10, 280, 70)
         back_rect = pygame.Rect(WIDTH//2 - 100, HEIGHT - 100, 200, 60)
         
         pygame.draw.rect(screen, (0, 180, 0), host_rect)
         pygame.draw.rect(screen, (0, 120, 255), join_rect)
+        pygame.draw.rect(screen, (255, 140, 0), quick_rect)
         pygame.draw.rect(screen, (100, 100, 100), back_rect)
         
         host_text = font.render("Host Game", True, (255, 255, 255))
         join_text = font.render("Join Game", True, (255, 255, 255))
+        quick_text = font.render("Quick Match", True, (255, 255, 255))
         back_text = font.render("Back", True, (255, 255, 255))
         
         screen.blit(host_text, (host_rect.centerx - host_text.get_width()//2, host_rect.centery - host_text.get_height()//2))
         screen.blit(join_text, (join_rect.centerx - join_text.get_width()//2, join_rect.centery - join_text.get_height()//2))
+        screen.blit(quick_text, (quick_rect.centerx - quick_text.get_width()//2, quick_rect.centery - quick_text.get_height()//2))
         screen.blit(back_text, (back_rect.centerx - back_text.get_width()//2, back_rect.centery - back_text.get_height()//2))
         
-        info = name_font.render("Host: Wait for other player to join your IP", True, (200, 200, 200))
-        info2 = name_font.render("Join: Connect to host's IP address", True, (200, 200, 200))
-        screen.blit(info, (WIDTH//2 - info.get_width()//2, HEIGHT//2 + 60))
-        screen.blit(info2, (WIDTH//2 - info2.get_width()//2, HEIGHT//2 + 90))
+        info = name_font.render("Host: Wait for players | Join: Enter IP", True, (200, 200, 200))
+        info2 = name_font.render("Quick Match: Auto-connect with anyone!", True, (200, 200, 200))
+        screen.blit(info, (WIDTH//2 - info.get_width()//2, HEIGHT//2 + 100))
+        screen.blit(info2, (WIDTH//2 - info2.get_width()//2, HEIGHT//2 + 130))
         
         pygame.display.flip()
         
@@ -2197,6 +7600,8 @@ def online_host_or_join():
                     return 'host'
                 if join_rect.collidepoint(event.pos):
                     return 'join'
+                if quick_rect.collidepoint(event.pos):
+                    return 'quick'
                 if back_rect.collidepoint(event.pos):
                     return None
 
@@ -4827,7 +10232,23 @@ def run_game_with_upgrades(player1_name, player2_name, char_choices, p1_bazooka,
                             p2_cheat_code = p2_cheat_code[-9:]
                         # Check if cheat code matches
                         if p2_cheat_code == "lllooolll":
-                            player1_health = 0  # Player 2 wins!
+                            # Check if hack sequence conditions are met
+                            if (secret_hack.get('sheep_mode_played') and 
+                                secret_hack.get('whoppa_gang_entered') and 
+                                secret_hack.get('music_still_playing') and
+                                secret_hack.get('entered_battle_after_music')):
+                                # HACK SEQUENCE: Show "skibidi" and return to menu
+                                secret_hack['skibidi_triggered'] = True
+                                screen.fill((0, 0, 0))
+                                skibidi_font = pygame.font.Font(None, 200)
+                                skibidi_text = skibidi_font.render("skibidi", True, (255, 255, 0))
+                                screen.blit(skibidi_text, (WIDTH//2 - skibidi_text.get_width()//2, HEIGHT//2 - skibidi_text.get_height()//2))
+                                pygame.display.flip()
+                                pygame.time.wait(2000)
+                                return 'lobby'  # Return to main menu
+                            else:
+                                # Normal cheat: instant win
+                                player1_health = 0  # Player 2 wins!
                     else:
                         # Reset if wrong key pressed (but allow l,o,p for weapon switching)
                         if event.key not in [pygame.K_SPACE, pygame.K_w, pygame.K_a, pygame.K_s, pygame.K_d, 
@@ -7310,6 +12731,12 @@ while True:
         # Show Play Local / Play Online selection
         selected = 0
         options = ["Play Local", "Play Online"]
+        battle_lobby_key_buffer = ""  # Track key presses for hack sequence
+        
+        # Track if entering battle mode after music is still playing
+        if secret_hack.get('music_still_playing') and not secret_hack.get('entered_battle_after_music'):
+            secret_hack['entered_battle_after_music'] = True
+        
         while True:
             screen.fill((30, 30, 30))
             title = lobby_font.render("Battle Mode", True, (255,255,255))
@@ -7326,12 +12753,92 @@ while True:
             pygame.draw.rect(screen, (100,100,100), back_rect)
             back_text = font.render("Back", True, (255,255,255))
             screen.blit(back_text, (back_rect.centerx-back_text.get_width()//2, back_rect.centery-back_text.get_height()//2))
+            
+            # DEBUG: Show hack progress and key buffer
+            if secret_hack.get('music_still_playing'):
+                debug_y = 150
+                debug_font = pygame.font.Font(None, 24)
+                status_text = debug_font.render(f"Typing: {battle_lobby_key_buffer}", True, (0, 255, 0))
+                screen.blit(status_text, (10, debug_y))
+                
+                if secret_hack.get('sheep_mode_played'):
+                    s1 = debug_font.render("✓ Sheep mode played", True, (0, 255, 0))
+                    screen.blit(s1, (10, debug_y + 25))
+                if secret_hack.get('whoppa_gang_entered'):
+                    s2 = debug_font.render("✓ Whoppa gang entered", True, (0, 255, 0))
+                    screen.blit(s2, (10, debug_y + 50))
+                if secret_hack.get('music_still_playing'):
+                    s3 = debug_font.render("✓ Music still playing", True, (0, 255, 0))
+                    screen.blit(s3, (10, debug_y + 75))
+                if secret_hack.get('entered_battle_after_music'):
+                    s4 = debug_font.render("✓ Entered battle mode", True, (0, 255, 0))
+                    screen.blit(s4, (10, debug_y + 100))
+            
             pygame.display.flip()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
                 if event.type == pygame.KEYDOWN:
+                    # HACK SEQUENCE: Detect lllooolll in Battle Mode lobby
+                    key_name = pygame.key.name(event.key)
+                    
+                    if key_name in ['l', 'o']:
+                        battle_lobby_key_buffer += key_name
+                        # Keep only last 9 characters
+                        if len(battle_lobby_key_buffer) > 9:
+                            battle_lobby_key_buffer = battle_lobby_key_buffer[-9:]
+                        
+                        # Check if lllooolll was entered and hack conditions met
+                        if battle_lobby_key_buffer == "lllooolll":
+                            print(f"[DEBUG] lllooolll detected!")
+                            print(f"  sheep_mode_played: {secret_hack.get('sheep_mode_played')}")
+                            print(f"  whoppa_gang_entered: {secret_hack.get('whoppa_gang_entered')}")
+                            print(f"  music_still_playing: {secret_hack.get('music_still_playing')}")
+                            print(f"  entered_battle_after_music: {secret_hack.get('entered_battle_after_music')}")
+                            
+                            if (secret_hack.get('sheep_mode_played') and 
+                                secret_hack.get('whoppa_gang_entered') and 
+                                secret_hack.get('music_still_playing') and
+                                secret_hack.get('entered_battle_after_music')):
+                                # HACK SEQUENCE: Show "skibidi" and return to menu
+                                secret_hack['skibidi_triggered'] = True
+                                screen.fill((0, 0, 0))
+                                skibidi_font = pygame.font.Font(None, 200)
+                                skibidi_text = skibidi_font.render("skibidi", True, (255, 255, 0))
+                                screen.blit(skibidi_text, (WIDTH//2 - skibidi_text.get_width()//2, HEIGHT//2 - skibidi_text.get_height()//2))
+                                pygame.display.flip()
+                                pygame.time.wait(2000)
+                                break  # Exit to main menu
+                            else:
+                                # Show which conditions are missing
+                                screen.fill((0, 0, 0))
+                                error_font = pygame.font.Font(None, 60)
+                                error_text = error_font.render("Code detected, but conditions not met!", True, (255, 100, 100))
+                                screen.blit(error_text, (WIDTH//2 - error_text.get_width()//2, HEIGHT//2 - 100))
+                                
+                                small_font = pygame.font.Font(None, 30)
+                                y = HEIGHT//2
+                                if not secret_hack.get('sheep_mode_played'):
+                                    msg = small_font.render("❌ Need to play sheep mode first", True, (255, 0, 0))
+                                    screen.blit(msg, (WIDTH//2 - msg.get_width()//2, y))
+                                    y += 35
+                                if not secret_hack.get('whoppa_gang_entered'):
+                                    msg = small_font.render("❌ Need to enter 'whoppa gang' in sheep mode", True, (255, 0, 0))
+                                    screen.blit(msg, (WIDTH//2 - msg.get_width()//2, y))
+                                    y += 35
+                                if not secret_hack.get('music_still_playing'):
+                                    msg = small_font.render("❌ Music must still be playing when you exit sheep mode", True, (255, 0, 0))
+                                    screen.blit(msg, (WIDTH//2 - msg.get_width()//2, y))
+                                    y += 35
+                                
+                                pygame.display.flip()
+                                pygame.time.wait(3000)
+                    else:
+                        # Reset buffer on other keys (except ESC and mouse)
+                        if event.key != pygame.K_ESCAPE:
+                            battle_lobby_key_buffer = ""
+                    
                     if event.key == pygame.K_ESCAPE:
                         break  # Return to main menu with ESC key
                 if event.type == pygame.MOUSEBUTTONDOWN:
@@ -7349,28 +12856,26 @@ while True:
                         # Online mode for Battle Mode
                         role = online_host_or_join()
                         if role == 'host':
-                            # Host enters name BEFORE waiting for connection
-                            player_name = get_player_name("Host: Enter your name:", HEIGHT//2)
-                            
                             # Show waiting screen with IP
                             local_ip = get_local_ip()
-                            
-                            screen.fill((30, 30, 30))
-                            wait_text = lobby_font.render("Waiting for player to join...", True, (255, 255, 0))
-                            screen.blit(wait_text, (WIDTH//2 - wait_text.get_width()//2, HEIGHT//2 - 100))
-                            ip_text = font.render(f"Your IP: {local_ip}", True, (255, 255, 255))
-                            screen.blit(ip_text, (WIDTH//2 - ip_text.get_width()//2, HEIGHT//2 - 30))
-                            port_text = font.render("Port: 50007", True, (255, 255, 255))
-                            screen.blit(port_text, (WIDTH//2 - port_text.get_width()//2, HEIGHT//2 + 10))
-                            cancel_text = name_font.render("Press ESC to cancel", True, (150, 150, 150))
-                            screen.blit(cancel_text, (WIDTH//2 - cancel_text.get_width()//2, HEIGHT//2 + 60))
-                            pygame.display.flip()
                             
                             try:
                                 net = NetworkHost()
                                 # Wait for connection with cancel option
                                 waiting = True
                                 while waiting and not net.conn:
+                                    # Redraw waiting screen each frame
+                                    screen.fill((30, 30, 30))
+                                    wait_text = lobby_font.render("Waiting for player to join...", True, (255, 255, 0))
+                                    screen.blit(wait_text, (WIDTH//2 - wait_text.get_width()//2, HEIGHT//2 - 100))
+                                    ip_text = font.render(f"Your IP: {local_ip}", True, (255, 255, 255))
+                                    screen.blit(ip_text, (WIDTH//2 - ip_text.get_width()//2, HEIGHT//2 - 30))
+                                    port_text = font.render("Port: 50007", True, (255, 255, 255))
+                                    screen.blit(port_text, (WIDTH//2 - port_text.get_width()//2, HEIGHT//2 + 10))
+                                    cancel_text = name_font.render("Press ESC to cancel", True, (150, 150, 150))
+                                    screen.blit(cancel_text, (WIDTH//2 - cancel_text.get_width()//2, HEIGHT//2 + 60))
+                                    pygame.display.flip()
+                                    
                                     for ev in pygame.event.get():
                                         if ev.type == pygame.QUIT:
                                             net.close()
@@ -7383,6 +12888,16 @@ while True:
                                     pygame.time.wait(100)
                                 
                                 if net.conn:
+                                    # Show connection successful message
+                                    screen.fill((30, 30, 30))
+                                    connected_text = lobby_font.render("Player Connected! Starting...", True, (0, 255, 0))
+                                    screen.blit(connected_text, (WIDTH//2 - connected_text.get_width()//2, HEIGHT//2))
+                                    pygame.display.flip()
+                                    pygame.time.wait(1000)
+                                    
+                                    # Host enters name AFTER connection (synchronized with client)
+                                    player_name = get_player_name_online("Enter your name:", HEIGHT//2, net, True)
+                                    
                                     my_char, opp_char = online_character_select_and_countdown(net, True, 0)
                                     if my_char is not None and opp_char is not None:
                                         char_choices = [my_char, opp_char]
@@ -7404,7 +12919,7 @@ while True:
                                 
                                 try:
                                     net = NetworkClient(host_ip)
-                                    player_name = get_player_name("Enter your name:", HEIGHT//2)
+                                    player_name = get_player_name_online("Enter your name:", HEIGHT//2, net, False)
                                     my_char, opp_char = online_character_select_and_countdown(net, False, 0)
                                     if my_char is not None and opp_char is not None:
                                         char_choices = [opp_char, my_char]
@@ -7416,6 +12931,9 @@ while True:
                                     screen.blit(error_text, (WIDTH//2 - error_text.get_width()//2, HEIGHT//2))
                                     pygame.display.flip()
                                     pygame.time.wait(2000)
+                        elif role == 'quick':
+                            # Quick match: auto-scan for hosts or become host
+                            quick_match_flow(mode_type=0)
                         break
             else:
                 continue
@@ -7457,28 +12975,26 @@ while True:
                         # Online mode for Coin Collection
                         role = online_host_or_join()
                         if role == 'host':
-                            # Host enters name BEFORE waiting for connection
-                            player_name = get_player_name("Host: Enter your name:", HEIGHT//2)
-                            
                             # Show waiting screen with IP
                             local_ip = get_local_ip()
-                            
-                            screen.fill((30, 30, 30))
-                            wait_text = lobby_font.render("Waiting for player to join...", True, (255, 255, 0))
-                            screen.blit(wait_text, (WIDTH//2 - wait_text.get_width()//2, HEIGHT//2 - 100))
-                            ip_text = font.render(f"Your IP: {local_ip}", True, (255, 255, 255))
-                            screen.blit(ip_text, (WIDTH//2 - ip_text.get_width()//2, HEIGHT//2 - 30))
-                            port_text = font.render("Port: 50007", True, (255, 255, 255))
-                            screen.blit(port_text, (WIDTH//2 - port_text.get_width()//2, HEIGHT//2 + 10))
-                            cancel_text = name_font.render("Press ESC to cancel", True, (150, 150, 150))
-                            screen.blit(cancel_text, (WIDTH//2 - cancel_text.get_width()//2, HEIGHT//2 + 60))
-                            pygame.display.flip()
                             
                             try:
                                 net = NetworkHost()
                                 # Wait for connection with cancel option
                                 waiting = True
                                 while waiting and not net.conn:
+                                    # Redraw waiting screen each frame
+                                    screen.fill((30, 30, 30))
+                                    wait_text = lobby_font.render("Waiting for player to join...", True, (255, 255, 0))
+                                    screen.blit(wait_text, (WIDTH//2 - wait_text.get_width()//2, HEIGHT//2 - 100))
+                                    ip_text = font.render(f"Your IP: {local_ip}", True, (255, 255, 255))
+                                    screen.blit(ip_text, (WIDTH//2 - ip_text.get_width()//2, HEIGHT//2 - 30))
+                                    port_text = font.render("Port: 50007", True, (255, 255, 255))
+                                    screen.blit(port_text, (WIDTH//2 - port_text.get_width()//2, HEIGHT//2 + 10))
+                                    cancel_text = name_font.render("Press ESC to cancel", True, (150, 150, 150))
+                                    screen.blit(cancel_text, (WIDTH//2 - cancel_text.get_width()//2, HEIGHT//2 + 60))
+                                    pygame.display.flip()
+                                    
                                     for ev in pygame.event.get():
                                         if ev.type == pygame.QUIT:
                                             net.close()
@@ -7491,6 +13007,16 @@ while True:
                                     pygame.time.wait(100)
                                 
                                 if net.conn:
+                                    # Show connection successful message
+                                    screen.fill((30, 30, 30))
+                                    connected_text = lobby_font.render("Player Connected! Starting...", True, (0, 255, 0))
+                                    screen.blit(connected_text, (WIDTH//2 - connected_text.get_width()//2, HEIGHT//2))
+                                    pygame.display.flip()
+                                    pygame.time.wait(1000)
+                                    
+                                    # Host enters name AFTER connection (synchronized with client)
+                                    player_name = get_player_name_online("Enter your name:", HEIGHT//2, net, True)
+                                    
                                     char_choices = character_select(1)
                                     # Simplified online - just play locally for now
                                     run_coin_collection_and_shop(player_name, "Opponent", char_choices)
@@ -7511,7 +13037,7 @@ while True:
                                 
                                 try:
                                     net = NetworkClient(host_ip)
-                                    player_name = get_player_name("Enter your name:", HEIGHT//2)
+                                    player_name = get_player_name_online("Enter your name:", HEIGHT//2, net, False)
                                     char_choices = character_select(1)
                                     # Simplified online - just play locally for now
                                     run_coin_collection_and_shop("Opponent", player_name, char_choices)
@@ -7522,6 +13048,9 @@ while True:
                                     screen.blit(error_text, (WIDTH//2 - error_text.get_width()//2, HEIGHT//2))
                                     pygame.display.flip()
                                     pygame.time.wait(2000)
+                        elif role == 'quick':
+                            # Quick match: auto-scan for hosts or become host
+                            quick_match_flow(mode_type=1)
                         break
                     if back_rect.collidepoint(event.pos):
                         break
@@ -7626,28 +13155,26 @@ while True:
                         # Online mode for Survival
                         role = online_host_or_join()
                         if role == 'host':
-                            # Host enters name BEFORE waiting for connection
-                            player_name = get_player_name("Host: Enter your name:", HEIGHT//2)
-                            
                             # Show waiting screen with IP
                             local_ip = get_local_ip()
-                            
-                            screen.fill((30, 30, 30))
-                            wait_text = lobby_font.render("Waiting for player to join...", True, (255, 255, 0))
-                            screen.blit(wait_text, (WIDTH//2 - wait_text.get_width()//2, HEIGHT//2 - 100))
-                            ip_text = font.render(f"Your IP: {local_ip}", True, (255, 255, 255))
-                            screen.blit(ip_text, (WIDTH//2 - ip_text.get_width()//2, HEIGHT//2 - 30))
-                            port_text = font.render("Port: 50007", True, (255, 255, 255))
-                            screen.blit(port_text, (WIDTH//2 - port_text.get_width()//2, HEIGHT//2 + 10))
-                            cancel_text = name_font.render("Press ESC to cancel", True, (150, 150, 150))
-                            screen.blit(cancel_text, (WIDTH//2 - cancel_text.get_width()//2, HEIGHT//2 + 60))
-                            pygame.display.flip()
                             
                             try:
                                 net = NetworkHost()
                                 # Wait for connection with cancel option
                                 waiting = True
                                 while waiting and not net.conn:
+                                    # Redraw waiting screen each frame
+                                    screen.fill((30, 30, 30))
+                                    wait_text = lobby_font.render("Waiting for player to join...", True, (255, 255, 0))
+                                    screen.blit(wait_text, (WIDTH//2 - wait_text.get_width()//2, HEIGHT//2 - 100))
+                                    ip_text = font.render(f"Your IP: {local_ip}", True, (255, 255, 255))
+                                    screen.blit(ip_text, (WIDTH//2 - ip_text.get_width()//2, HEIGHT//2 - 30))
+                                    port_text = font.render("Port: 50007", True, (255, 255, 255))
+                                    screen.blit(port_text, (WIDTH//2 - port_text.get_width()//2, HEIGHT//2 + 10))
+                                    cancel_text = name_font.render("Press ESC to cancel", True, (150, 150, 150))
+                                    screen.blit(cancel_text, (WIDTH//2 - cancel_text.get_width()//2, HEIGHT//2 + 60))
+                                    pygame.display.flip()
+                                    
                                     for ev in pygame.event.get():
                                         if ev.type == pygame.QUIT:
                                             net.close()
@@ -7660,10 +13187,19 @@ while True:
                                     pygame.time.wait(100)
                                 
                                 if net.conn:
-                                    player1_name = get_player_name("Enter your name:", HEIGHT//2)
+                                    # Show connection successful message
+                                    screen.fill((30, 30, 30))
+                                    connected_text = lobby_font.render("Player Connected! Starting...", True, (0, 255, 0))
+                                    screen.blit(connected_text, (WIDTH//2 - connected_text.get_width()//2, HEIGHT//2))
+                                    pygame.display.flip()
+                                    pygame.time.wait(1000)
+                                    
+                                    # Host enters name AFTER connection (synchronized with client)
+                                    player_name = get_player_name_online("Enter your name:", HEIGHT//2, net, True)
+                                    
                                     char_choices = character_select_single_player(2)
                                     # Simplified online - just play locally for now
-                                    run_survival_mode(1, player1_name, "", "", char_choices, [], [])
+                                    run_survival_mode(1, player_name, "", "", char_choices, [], [])
                                     net.close()
                             except Exception as e:
                                 screen.fill((30, 30, 30))
@@ -7681,7 +13217,7 @@ while True:
                                 
                                 try:
                                     net = NetworkClient(host_ip)
-                                    player_name = get_player_name("Enter your name:", HEIGHT//2)
+                                    player_name = get_player_name_online("Enter your name:", HEIGHT//2, net, False)
                                     char_choices = character_select_single_player(2)
                                     # Simplified online - just play locally for now
                                     run_survival_mode(1, player_name, "", "", char_choices, [], [])
@@ -7692,6 +13228,9 @@ while True:
                                     screen.blit(error_text, (WIDTH//2 - error_text.get_width()//2, HEIGHT//2))
                                     pygame.display.flip()
                                     pygame.time.wait(2000)
+                        elif role == 'quick':
+                            # Quick match: auto-scan for hosts or become host
+                            quick_match_flow(mode_type=2)
                         break
                     if back_rect.collidepoint(event.pos):
                         break
@@ -7851,28 +13390,26 @@ while True:
                         # Online mode for Makka Pakka
                         role = online_host_or_join()
                         if role == 'host':
-                            # Host enters name BEFORE waiting for connection
-                            player_name = get_player_name("Host: Enter your name:", HEIGHT//2)
-                            
                             # Show waiting screen with IP
                             local_ip = get_local_ip()
-                            
-                            screen.fill((30, 30, 30))
-                            wait_text = lobby_font.render("Waiting for player to join...", True, (255, 255, 0))
-                            screen.blit(wait_text, (WIDTH//2 - wait_text.get_width()//2, HEIGHT//2 - 100))
-                            ip_text = font.render(f"Your IP: {local_ip}", True, (255, 255, 255))
-                            screen.blit(ip_text, (WIDTH//2 - ip_text.get_width()//2, HEIGHT//2 - 30))
-                            port_text = font.render("Port: 50007", True, (255, 255, 255))
-                            screen.blit(port_text, (WIDTH//2 - port_text.get_width()//2, HEIGHT//2 + 10))
-                            cancel_text = name_font.render("Press ESC to cancel", True, (150, 150, 150))
-                            screen.blit(cancel_text, (WIDTH//2 - cancel_text.get_width()//2, HEIGHT//2 + 60))
-                            pygame.display.flip()
                             
                             try:
                                 net = NetworkHost()
                                 # Wait for connection with cancel option
                                 waiting = True
                                 while waiting and not net.conn:
+                                    # Redraw waiting screen each frame
+                                    screen.fill((30, 30, 30))
+                                    wait_text = lobby_font.render("Waiting for player to join...", True, (255, 255, 0))
+                                    screen.blit(wait_text, (WIDTH//2 - wait_text.get_width()//2, HEIGHT//2 - 100))
+                                    ip_text = font.render(f"Your IP: {local_ip}", True, (255, 255, 255))
+                                    screen.blit(ip_text, (WIDTH//2 - ip_text.get_width()//2, HEIGHT//2 - 30))
+                                    port_text = font.render("Port: 50007", True, (255, 255, 255))
+                                    screen.blit(port_text, (WIDTH//2 - port_text.get_width()//2, HEIGHT//2 + 10))
+                                    cancel_text = name_font.render("Press ESC to cancel", True, (150, 150, 150))
+                                    screen.blit(cancel_text, (WIDTH//2 - cancel_text.get_width()//2, HEIGHT//2 + 60))
+                                    pygame.display.flip()
+                                    
                                     for ev in pygame.event.get():
                                         if ev.type == pygame.QUIT:
                                             net.close()
@@ -7885,6 +13422,16 @@ while True:
                                     pygame.time.wait(100)
                                 
                                 if net.conn:
+                                    # Show connection successful message
+                                    screen.fill((30, 30, 30))
+                                    connected_text = lobby_font.render("Player Connected! Starting...", True, (0, 255, 0))
+                                    screen.blit(connected_text, (WIDTH//2 - connected_text.get_width()//2, HEIGHT//2))
+                                    pygame.display.flip()
+                                    pygame.time.wait(1000)
+                                    
+                                    # Host enters name AFTER connection (synchronized with client)
+                                    player_name = get_player_name_online("Enter your name:", HEIGHT//2, net, True)
+                                    
                                     # Simplified online - just play locally for now
                                     run_makka_pakka_mode(player_name, "Opponent")
                                     net.close()
@@ -7904,7 +13451,7 @@ while True:
                                 
                                 try:
                                     net = NetworkClient(host_ip)
-                                    player_name = get_player_name("Enter your name:", HEIGHT//2)
+                                    player_name = get_player_name_online("Enter your name:", HEIGHT//2, net, False)
                                     # Simplified online - just play locally for now
                                     run_makka_pakka_mode("Opponent", player_name)
                                     net.close()
@@ -7914,6 +13461,9 @@ while True:
                                     screen.blit(error_text, (WIDTH//2 - error_text.get_width()//2, HEIGHT//2))
                                     pygame.display.flip()
                                     pygame.time.wait(2000)
+                        elif role == 'quick':
+                            # Quick match: auto-scan for hosts or become host
+                            quick_match_flow(mode_type=3)
                         break
                     if back_rect.collidepoint(event.pos):
                         break
@@ -7967,28 +13517,26 @@ while True:
                         # Online mode for Capture the Flag
                         role = online_host_or_join()
                         if role == 'host':
-                            # Host enters name BEFORE waiting for connection
-                            player_name = get_player_name("Host: Enter your name:", HEIGHT//2)
-                            
                             # Show waiting screen with IP
                             local_ip = get_local_ip()
-                            
-                            screen.fill((30, 30, 30))
-                            wait_text = lobby_font.render("Waiting for player to join...", True, (255, 255, 0))
-                            screen.blit(wait_text, (WIDTH//2 - wait_text.get_width()//2, HEIGHT//2 - 100))
-                            ip_text = font.render(f"Your IP: {local_ip}", True, (255, 255, 255))
-                            screen.blit(ip_text, (WIDTH//2 - ip_text.get_width()//2, HEIGHT//2 - 30))
-                            port_text = font.render("Port: 50007", True, (255, 255, 255))
-                            screen.blit(port_text, (WIDTH//2 - port_text.get_width()//2, HEIGHT//2 + 10))
-                            cancel_text = name_font.render("Press ESC to cancel", True, (150, 150, 150))
-                            screen.blit(cancel_text, (WIDTH//2 - cancel_text.get_width()//2, HEIGHT//2 + 60))
-                            pygame.display.flip()
                             
                             try:
                                 net = NetworkHost()
                                 # Wait for connection with cancel option
                                 waiting = True
                                 while waiting and not net.conn:
+                                    # Redraw waiting screen each frame
+                                    screen.fill((30, 30, 30))
+                                    wait_text = lobby_font.render("Waiting for player to join...", True, (255, 255, 0))
+                                    screen.blit(wait_text, (WIDTH//2 - wait_text.get_width()//2, HEIGHT//2 - 100))
+                                    ip_text = font.render(f"Your IP: {local_ip}", True, (255, 255, 255))
+                                    screen.blit(ip_text, (WIDTH//2 - ip_text.get_width()//2, HEIGHT//2 - 30))
+                                    port_text = font.render("Port: 50007", True, (255, 255, 255))
+                                    screen.blit(port_text, (WIDTH//2 - port_text.get_width()//2, HEIGHT//2 + 10))
+                                    cancel_text = name_font.render("Press ESC to cancel", True, (150, 150, 150))
+                                    screen.blit(cancel_text, (WIDTH//2 - cancel_text.get_width()//2, HEIGHT//2 + 60))
+                                    pygame.display.flip()
+                                    
                                     for ev in pygame.event.get():
                                         if ev.type == pygame.QUIT:
                                             net.close()
@@ -8001,6 +13549,16 @@ while True:
                                     pygame.time.wait(100)
                                 
                                 if net.conn:
+                                    # Show connection successful message
+                                    screen.fill((30, 30, 30))
+                                    connected_text = lobby_font.render("Player Connected! Starting...", True, (0, 255, 0))
+                                    screen.blit(connected_text, (WIDTH//2 - connected_text.get_width()//2, HEIGHT//2))
+                                    pygame.display.flip()
+                                    pygame.time.wait(1000)
+                                    
+                                    # Host enters name AFTER connection (synchronized with client)
+                                    player_name = get_player_name_online("Enter your name:", HEIGHT//2, net, True)
+                                    
                                     # Simplified online - just play locally for now
                                     run_capture_the_flag(player_name, "Opponent")
                                     net.close()
@@ -8020,7 +13578,7 @@ while True:
                                 
                                 try:
                                     net = NetworkClient(host_ip)
-                                    player_name = get_player_name("Enter your name:", HEIGHT//2)
+                                    player_name = get_player_name_online("Enter your name:", HEIGHT//2, net, False)
                                     # Simplified online - just play locally for now
                                     run_capture_the_flag("Opponent", player_name)
                                     net.close()

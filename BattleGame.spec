@@ -5,7 +5,7 @@ a = Analysis(
     ['battlegame.py'],
     pathex=[],
     binaries=[],
-    datas=[('321go.mp3', '.'), ('scary-scream.mp3', '.'), ('lala.mp3', '.'), ('coin.mp3', '.'), ('coolwav.mp3', '.'), ('fart.mp3', '.'), ('funk.mp3', '.'), ('playmusic.mp3', '.'), ('ball.jpg', '.'), ('cutevideo.mp4', '.'), ('grandma.mp4', '.'), ('icon.png', '.'), ('network.py', '.'), ('survival_highscores.json', '.'), ('mom_mode_highscores.json', '.')],
+    datas=[('*.mp3', '.'), ('*.mp4', '.'), ('*.jpg', '.'), ('*.png', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -25,7 +25,7 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=False,
+    upx=True,
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
@@ -34,16 +34,15 @@ exe = EXE(
     entitlements_file=None,
     icon=['icon.png'],
 )
-
 coll = COLLECT(
     exe,
     a.binaries,
     a.datas,
     strip=False,
-    upx=False,
+    upx=True,
+    upx_exclude=[],
     name='BattleGame',
 )
-
 app = BUNDLE(
     coll,
     name='BattleGame.app',
