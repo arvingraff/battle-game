@@ -5676,64 +5676,56 @@ def draw_menu_pointer(screen, x, y, transformation, direction, walk_frame, movin
         pygame.draw.circle(screen, (200, 200, 200), (tag_x, collar_y + int(5 * scale)), 1)
         
     else:
-        # ULTRA REALISTIC HUMAN POINTER - or TRALALA BRAINROT MODE!
+        # ULTRA REALISTIC HUMAN POINTER - or ITALIAN BRAINROT MODE!
         is_italian = secret_hack.get('became_italian', False)
         
         if is_italian:
-            # � TRALALA/TRALALERO CHARACTER - The iconic brainrot legend!
-            # Scale up for that iconic look
-            scale = scale * 1.3
+            # 🇮🇹 ULTRA REALISTIC ITALIAN BRAINROT CHARACTER 🇮🇹
+            # Scale up for dramatic effect
+            scale = scale * 1.2
             
-            # Tralala's distinctive tan skin
-            skin_tone = (230, 190, 150)
-            hair_color = (25, 15, 10)  # Very dark hair
+            # Tanned Italian skin tone
+            skin_tone = (225, 195, 160)
+            hair_color = (40, 30, 20)
             
-            # Head - ROUND and distinctive Tralala shape
+            # Head - larger, more expressive
             head_x = int(x + 32 * scale)
-            head_y = int(y + 12 * scale)
-            head_radius = int(26 * scale)
+            head_y = int(y + 8 * scale)
+            head_radius = int(22 * scale)
             
-            # Head shadow for depth
-            pygame.draw.circle(screen, (195, 160, 130), 
-                             (head_x + 3, head_y + 3), head_radius)
-            # Face - rounder, fuller
+            # Head shadow for 3D effect
+            pygame.draw.circle(screen, (190, 165, 135), 
+                             (head_x + 2, head_y + 2), head_radius)
+            # Face
             pygame.draw.circle(screen, skin_tone, (head_x, head_y), head_radius)
-            # Face highlight
-            pygame.draw.circle(screen, (245, 210, 175), 
-                             (head_x - 8, head_y - 8), int(14 * scale))
+            # Face highlights (realistic lighting)
+            pygame.draw.circle(screen, (240, 210, 180), 
+                             (head_x - 6, head_y - 6), int(12 * scale))
             
-            # ICONIC TRALALA HAIR - Short, dark, simple style
-            # Top of head hair (short and neat)
-            for hair_row in range(3):
-                for hair_col in range(8):
-                    hair_x = head_x - int(18 * scale) + hair_col * int(5 * scale)
-                    hair_y = head_y - int(24 * scale) + hair_row * int(3 * scale)
-                    pygame.draw.circle(screen, hair_color, (hair_x, hair_y), int(4 * scale))
+            # ICONIC ITALIAN HAIR - slicked back with gel
+            for hair_strand in range(10):
+                hair_x = head_x - int(15 * scale) + hair_strand * int(3 * scale)
+                hair_y_start = head_y - int(18 * scale)
+                hair_y_end = head_y - int(25 * scale) - int(math.sin(hair_strand * 0.5) * 5 * scale)
+                pygame.draw.line(screen, hair_color, 
+                               (hair_x, hair_y_start), 
+                               (hair_x - 2, hair_y_end), int(3 * scale))
+            # Hair gel shine
+            pygame.draw.line(screen, (80, 70, 60), 
+                           (head_x - int(10 * scale), head_y - int(22 * scale)),
+                           (head_x + int(10 * scale), head_y - int(22 * scale)), 2)
             
-            # Side hair (sideburns)
-            pygame.draw.rect(screen, hair_color,
-                           (head_x - int(25 * scale), head_y - int(15 * scale),
-                            int(7 * scale), int(20 * scale)))
-            pygame.draw.rect(screen, hair_color,
-                           (head_x + int(18 * scale), head_y - int(15 * scale),
-                            int(7 * scale), int(20 * scale)))
+            # Thick Italian eyebrows
+            pygame.draw.arc(screen, (30, 25, 20), 
+                          (head_x - int(12 * scale), head_y - int(10 * scale), 
+                           int(10 * scale), int(6 * scale)), 0, 3.14, 3)
+            pygame.draw.arc(screen, (30, 25, 20), 
+                          (head_x + int(2 * scale), head_y - int(10 * scale), 
+                           int(10 * scale), int(6 * scale)), 0, 3.14, 3)
             
-            # Hairline
-            pygame.draw.arc(screen, hair_color,
-                          (head_x - int(20 * scale), head_y - int(28 * scale),
-                           int(40 * scale), int(20 * scale)), 0, 3.14, 5)
-            
-            # DISTINCTIVE TRALALA EYEBROWS - thick and expressive
-            pygame.draw.arc(screen, (20, 15, 10), 
-                          (head_x - int(14 * scale), head_y - int(12 * scale), 
-                           int(12 * scale), int(8 * scale)), 0, 3.14, 4)
-            pygame.draw.arc(screen, (20, 15, 10), 
-                          (head_x + int(2 * scale), head_y - int(12 * scale), 
-                           int(12 * scale), int(8 * scale)), 0, 3.14, 4)
-            
-            # ICONIC TRALALA EYES - Big, round, expressive!
+            # EXPRESSIVE EYES - wide with emotion!
             eye_white = (255, 255, 255)
-            eye_iris = (60, 40, 20)  # Dark brown/almost black
+            eye_iris = (85, 60, 30)  # Deep brown
             eye_pupil = (0, 0, 0)
             
             # Left eye
@@ -5760,43 +5752,44 @@ def draw_menu_pointer(screen, x, y, transformation, direction, walk_frame, movin
             pygame.draw.circle(screen, (255, 255, 255), 
                              (head_x + int(10 * scale), head_y - 1), int(2 * scale))
             
-            # ICONIC TRALALA SMILE - BIG, wide, characteristic grin!
-            # Big curved smile
-            pygame.draw.arc(screen, (160, 60, 60), 
-                          (head_x - int(16 * scale), head_y + int(4 * scale), 
-                           int(32 * scale), int(20 * scale)), 3.4, 6.0, 4)
-            # Inner mouth
-            pygame.draw.arc(screen, (140, 40, 40), 
-                          (head_x - int(14 * scale), head_y + int(6 * scale), 
-                           int(28 * scale), int(16 * scale)), 3.5, 5.9, 3)
-            # Teeth showing - big white smile
-            for tooth in range(7):
-                tooth_x = head_x - 10 + tooth * 3
+            # BIG ITALIAN SMILE - passionate and expressive!
+            pygame.draw.arc(screen, (180, 60, 60), 
+                          (head_x - int(12 * scale), head_y + int(5 * scale), 
+                           int(24 * scale), int(15 * scale)), 3.5, 5.9, 3)
+            # White teeth visible
+            for tooth in range(5):
+                tooth_x = head_x - 8 + tooth * 4
                 pygame.draw.rect(screen, (255, 255, 255), 
-                               (tooth_x, head_y + 12, 2, 5))
+                               (tooth_x, head_y + 10, 3, 4))
             
-            # Nose - simple but distinctive
-            nose_y = head_y + int(4 * scale)
-            pygame.draw.circle(screen, (210, 170, 135), 
-                             (head_x, nose_y), int(5 * scale))
-            # Nostrils
-            pygame.draw.circle(screen, (180, 140, 110), 
-                             (head_x - 3, nose_y + 2), int(2 * scale))
-            pygame.draw.circle(screen, (180, 140, 110), 
-                             (head_x + 3, nose_y + 2), int(2 * scale))
+            # Signature Italian mustache!
+            mustache_y = head_y + int(8 * scale)
+            pygame.draw.arc(screen, (30, 25, 20), 
+                          (head_x - int(18 * scale), mustache_y - int(5 * scale), 
+                           int(16 * scale), int(10 * scale)), 0, 3.14, 4)
+            pygame.draw.arc(screen, (30, 25, 20), 
+                          (head_x + int(2 * scale), mustache_y - int(5 * scale), 
+                           int(16 * scale), int(10 * scale)), 0, 3.14, 4)
+            # Mustache curls at ends (classic Italian style!)
+            pygame.draw.circle(screen, (30, 25, 20), 
+                             (head_x - int(16 * scale), mustache_y), int(3 * scale))
+            pygame.draw.circle(screen, (30, 25, 20), 
+                             (head_x + int(16 * scale), mustache_y), int(3 * scale))
             
-            # CASUAL OUTFIT - Simple shirt (not fancy suit)
-            shirt_color = (220, 220, 220)  # Light gray/white shirt
+            # LUXURIOUS DESIGNER SUIT - Armani style!
+            suit_color = (20, 20, 40)  # Deep navy
             
-            # Body - simple casual shirt
-            pygame.draw.rect(screen, (180, 180, 180),  # Shadow
-                           (int(x + 17 * scale), int(y + 38 * scale), 
-                            int(32 * scale), int(42 * scale)))
-            pygame.draw.rect(screen, shirt_color, 
-                           (int(x + 15 * scale), int(y + 36 * scale), 
-                            int(32 * scale), int(42 * scale)))
-            # Shirt collar
-            pygame.draw.polygon(screen, (200, 200, 200), [
+            # Body - tailored suit jacket
+            pygame.draw.rect(screen, suit_color, 
+                           (int(x + 15 * scale), int(y + 25 * scale), 
+                            int(34 * scale), int(50 * scale)))
+            # Suit highlights (expensive fabric sheen)
+            pygame.draw.line(screen, (40, 40, 60), 
+                           (int(x + 17 * scale), int(y + 30 * scale)),
+                           (int(x + 17 * scale), int(y + 70 * scale)), 2)
+            
+            # White dress shirt collar (pristine)
+            pygame.draw.polygon(screen, (255, 255, 255), [
                 (head_x - 8, head_y + 20),
                 (head_x - 10, head_y + 28),
                 (head_x - 6, head_y + 28)
@@ -5836,11 +5829,11 @@ def draw_menu_pointer(screen, x, y, transformation, direction, walk_frame, movin
             left_elbow_y = int(y + 50 * scale + walk_offset)
             left_hand_y = int(y + 45 * scale + walk_offset * 1.5)
             
-            # Left arm (shirt sleeve)
-            pygame.draw.line(screen, shirt_color, 
+            # Left arm (suit sleeve)
+            pygame.draw.line(screen, suit_color, 
                            (int(x + 18 * scale), left_shoulder_y),
                            (left_arm_x, left_elbow_y), int(10 * scale))
-            pygame.draw.line(screen, shirt_color, 
+            pygame.draw.line(screen, suit_color, 
                            (left_arm_x, left_elbow_y),
                            (left_arm_x - int(8 * scale), left_hand_y), int(8 * scale))
             # Left hand - pinched fingers gesture 🤌
@@ -5861,11 +5854,11 @@ def draw_menu_pointer(screen, x, y, transformation, direction, walk_frame, movin
             right_hand_x = int(x + 65 * scale - walk_offset)
             right_hand_y = int(y + 42 * scale - walk_offset * 1.2)
             
-            # Right arm (shirt sleeve)
-            pygame.draw.line(screen, shirt_color, 
+            # Right arm (suit sleeve)
+            pygame.draw.line(screen, suit_color, 
                            (int(x + 46 * scale), left_shoulder_y),
                            (right_arm_x, right_elbow_y), int(10 * scale))
-            pygame.draw.line(screen, shirt_color, 
+            pygame.draw.line(screen, suit_color, 
                            (right_arm_x, right_elbow_y),
                            (right_hand_x - int(5 * scale), right_hand_y), int(8 * scale))
             # Right hand pointing
@@ -6066,51 +6059,51 @@ def draw_menu_pointer(screen, x, y, transformation, direction, walk_frame, movin
             # Left arm (relaxed)
             pygame.draw.line(screen, arm_shadow, 
                            (int(x + 20 * scale), int(y + 38 * scale)),
-                           (int(x + 12 * scale), int(y + 50 * scale + walk_offset)), int(8 * scale))
+                           (int(x + 12 * scale), int(y + 50 * scale + arm_offset)), int(8 * scale))
             pygame.draw.line(screen, skin_tone, 
                            (int(x + 19 * scale), int(y + 38 * scale)),
-                           (int(x + 11 * scale), int(y + 50 * scale + walk_offset)), int(7 * scale))
+                           (int(x + 11 * scale), int(y + 50 * scale + arm_offset)), int(7 * scale))
             pygame.draw.line(screen, arm_shadow, 
-                           (int(x + 12 * scale), int(y + 50 * scale + walk_offset)),
-                           (int(x + 10 * scale), int(y + 62 * scale + walk_offset)), int(7 * scale))
+                           (int(x + 12 * scale), int(y + 50 * scale + arm_offset)),
+                           (int(x + 10 * scale), int(y + 62 * scale + arm_offset)), int(7 * scale))
             pygame.draw.line(screen, skin_tone, 
-                           (int(x + 11 * scale), int(y + 50 * scale + walk_offset)),
-                           (int(x + 9 * scale), int(y + 62 * scale + walk_offset)), int(6 * scale))
+                           (int(x + 11 * scale), int(y + 50 * scale + arm_offset)),
+                           (int(x + 9 * scale), int(y + 62 * scale + arm_offset)), int(6 * scale))
             # Left hand
             pygame.draw.circle(screen, skin_tone, 
-                             (int(x + 9 * scale), int(y + 65 * scale + walk_offset)), int(5 * scale))
+                             (int(x + 9 * scale), int(y + 65 * scale + arm_offset)), int(5 * scale))
             # Fingers
             for finger in range(4):
                 pygame.draw.line(screen, skin_tone, 
-                               (int(x + 9 * scale), int(y + 65 * scale + walk_offset)),
-                               (int(x + 7 * scale) + finger, int(y + 70 * scale + walk_offset)), 2)
+                               (int(x + 9 * scale), int(y + 65 * scale + arm_offset)),
+                               (int(x + 7 * scale) + finger, int(y + 70 * scale + arm_offset)), 2)
             
             # Right arm (pointing enthusiastically!)
             pygame.draw.line(screen, arm_shadow, 
                            (int(x + 42 * scale), int(y + 38 * scale)),
-                           (int(x + 48 * scale), int(y + 45 * scale - walk_offset)), int(8 * scale))
+                           (int(x + 48 * scale), int(y + 45 * scale - arm_offset)), int(8 * scale))
             pygame.draw.line(screen, skin_tone, 
                            (int(x + 41 * scale), int(y + 38 * scale)),
-                           (int(x + 47 * scale), int(y + 45 * scale - walk_offset)), int(7 * scale))
+                           (int(x + 47 * scale), int(y + 45 * scale - arm_offset)), int(7 * scale))
             pygame.draw.line(screen, arm_shadow, 
-                           (int(x + 48 * scale), int(y + 45 * scale - walk_offset)),
-                           (int(x + 58 * scale), int(y + 48 * scale - walk_offset)), int(7 * scale))
+                           (int(x + 48 * scale), int(y + 45 * scale - arm_offset)),
+                           (int(x + 58 * scale), int(y + 48 * scale - arm_offset)), int(7 * scale))
             pygame.draw.line(screen, skin_tone, 
-                           (int(x + 47 * scale), int(y + 45 * scale - walk_offset)),
-                           (int(x + 57 * scale), int(y + 48 * scale - walk_offset)), int(6 * scale))
+                           (int(x + 47 * scale), int(y + 45 * scale - arm_offset)),
+                           (int(x + 57 * scale), int(y + 48 * scale - arm_offset)), int(6 * scale))
             # Right hand (fist with pointing finger!)
             pygame.draw.circle(screen, skin_tone, 
-                             (int(x + 58 * scale), int(y + 48 * scale - walk_offset)), int(6 * scale))
+                             (int(x + 58 * scale), int(y + 48 * scale - arm_offset)), int(6 * scale))
             # Extended pointing finger
             pygame.draw.line(screen, skin_tone, 
-                           (int(x + 58 * scale), int(y + 48 * scale - walk_offset)),
-                           (int(x + 68 * scale), int(y + 46 * scale - walk_offset)), 4)
+                           (int(x + 58 * scale), int(y + 48 * scale - arm_offset)),
+                           (int(x + 68 * scale), int(y + 46 * scale - arm_offset)), 4)
             # Fingertip
             pygame.draw.circle(screen, skin_tone, 
-                             (int(x + 68 * scale), int(y + 46 * scale - walk_offset)), 2)
+                             (int(x + 68 * scale), int(y + 46 * scale - arm_offset)), 2)
             # Fingernail
             pygame.draw.circle(screen, (255, 240, 220), 
-                             (int(x + 68 * scale), int(y + 46 * scale - walk_offset)), 1)
+                             (int(x + 68 * scale), int(y + 46 * scale - arm_offset)), 1)
             
             # Legs - jeans
             jeans_color = (60, 80, 120)
@@ -6342,9 +6335,32 @@ def mode_lobby():
                     if len(menu_key_buffer) > 6:
                         menu_key_buffer = menu_key_buffer[-6:]
                     
-                    # Check for 67 - TRALALA MODE! (only works if human)
+                    # Check for 67 - ITALIAN BRAINROT MODE! (only works if human)
                     if menu_key_buffer[-2:] == "67" and secret_hack.get('became_human') and not secret_hack.get('became_italian'):
                         secret_hack['became_italian'] = True
+                        # Show transformation animation
+                        screen.fill((0, 100, 0))  # Italian flag green
+                        
+                        # Tricolor flag background
+                        pygame.draw.rect(screen, (0, 146, 70), (0, 0, WIDTH//3, HEIGHT))  # Green
+                        pygame.draw.rect(screen, (255, 255, 255), (WIDTH//3, 0, WIDTH//3, HEIGHT))  # White
+                        pygame.draw.rect(screen, (206, 43, 55), (WIDTH*2//3, 0, WIDTH//3, HEIGHT))  # Red
+                        
+                        transform_font = pygame.font.Font(None, 100)
+                        transform_text = transform_font.render("MAMMA MIA! 🇮🇹", True, (255, 215, 0))
+                        screen.blit(transform_text, (WIDTH//2 - transform_text.get_width()//2, HEIGHT//2 - 80))
+                        
+                        msg1 = font.render("You've become an ITALIAN BRAINROT!", True, (255, 255, 255))
+                        screen.blit(msg1, (WIDTH//2 - msg1.get_width()//2, HEIGHT//2))
+                        
+                        msg2 = font.render("Now with 100% more hand gestures! 🤌", True, (255, 255, 255))
+                        screen.blit(msg2, (WIDTH//2 - msg2.get_width()//2, HEIGHT//2 + 50))
+                        
+                        msg3 = name_font.render("(Pasta, pizza, and designer suits included)", True, (200, 200, 200))
+                        screen.blit(msg3, (WIDTH//2 - msg3.get_width()//2, HEIGHT//2 + 100))
+                        
+                        pygame.display.flip()
+                        pygame.time.wait(3000)
                         menu_key_buffer = ""
                         continue
                     
