@@ -54,6 +54,8 @@ secret_hack = {
     'became_human': False,  # Don't persist - resets each session!
     'became_italian': False,  # Secret transformation - press 67 when human!
     'god_mode_unlocked': saved_secrets.get('god_mode_unlocked', False),  # PERMANENT REWARD for completing Combine Mode!
+    'final_mode_unlocked': False,  # THE ULTIMATE MODE - press 6776 after becoming Tralala!
+    'explosion_triggered': False,  # Explosion animation state
 }
 
 # Key buffer for main menu hack detection
@@ -148,6 +150,11 @@ def quick_match_flow(mode_type=0):
     
     # Check for cancel during scan
     for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if ok_button.collidepoint(event.pos):
+                running = False
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
@@ -344,6 +351,159 @@ def save_highscore(name, score, mode='survival', extra_data=None):
         pass  # If can't write (in bundled app), that's okay
     
     return scores
+
+
+def explosion_sequence(screen):
+    """EPIC EXPLOSION ANIMATION - Everything explodes in ultra-realistic detail!"""
+    import random
+    
+    # Explosion particles
+    particles = []
+    shockwaves = []
+    
+    # Create initial explosion center
+    explosion_centers = [
+        (WIDTH // 2, HEIGHT // 2),
+        (WIDTH // 4, HEIGHT // 4),
+        (3 * WIDTH // 4, HEIGHT // 4),
+        (WIDTH // 4, 3 * HEIGHT // 4),
+        (3 * WIDTH // 4, 3 * HEIGHT // 4),
+    ]
+    
+    # Pre-explosion flash
+    for flash_intensity in range(0, 255, 15):
+        screen.fill((flash_intensity, flash_intensity, flash_intensity))
+        flash_font = pygame.font.Font(None, 120)
+        flash_text = flash_font.render("!", True, (255, 0, 0))
+        screen.blit(flash_text, (WIDTH // 2 - flash_text.get_width() // 2, HEIGHT // 2 - 60))
+        pygame.display.flip()
+        pygame.time.wait(20)
+    
+    # Main explosion animation - 180 frames (3 seconds at 60fps)
+    for frame in range(180):
+        screen.fill((10, 5, 0))  # Dark background
+        
+        # Add new particles every few frames
+        if frame % 2 == 0:
+            for center_x, center_y in explosion_centers:
+                for _ in range(15):
+                    angle = random.uniform(0, 2 * math.pi)
+                    speed = random.uniform(2, 15)
+                    particles.append({
+                        'x': center_x,
+                        'y': center_y,
+                        'vx': math.cos(angle) * speed,
+                        'vy': math.sin(angle) * speed,
+                        'life': random.uniform(0.8, 1.5),
+                        'max_life': random.uniform(0.8, 1.5),
+                        'size': random.randint(3, 12),
+                        'color': random.choice([
+                            (255, 150, 0),  # Orange
+                            (255, 80, 0),   # Red-orange
+                            (255, 200, 0),  # Yellow
+                            (200, 0, 0),    # Red
+                            (255, 255, 100), # Bright yellow
+                        ])
+                    })
+        
+        # Add shockwaves
+        if frame % 10 == 0 and frame < 60:
+            for center_x, center_y in explosion_centers:
+                shockwaves.append({
+                    'x': center_x,
+                    'y': center_y,
+                    'radius': 10,
+                    'max_radius': random.randint(200, 400),
+                    'speed': random.uniform(8, 15),
+                    'alpha': 255
+                })
+        
+        # Update and draw shockwaves
+        for wave in shockwaves[:]:
+            wave['radius'] += wave['speed']
+            wave['alpha'] = max(0, int(255 * (1 - wave['radius'] / wave['max_radius'])))
+            
+            if wave['radius'] >= wave['max_radius']:
+                shockwaves.remove(wave)
+            else:
+                # Draw expanding shockwave ring
+                if wave['alpha'] > 0:
+                    for thickness in range(5):
+                        color = (255, 150 - thickness * 20, 0)
+                        try:
+                            pygame.draw.circle(screen, color, 
+                                             (int(wave['x']), int(wave['y'])), 
+                                             int(wave['radius']) + thickness, 2)
+                        except:
+                            pass
+        
+        # Update and draw particles
+        for particle in particles[:]:
+            # Physics
+            particle['x'] += particle['vx']
+            particle['y'] += particle['vy']
+            particle['vy'] += 0.3  # Gravity
+            particle['vx'] *= 0.98  # Air resistance
+            particle['life'] -= 1/60
+            
+            if particle['life'] <= 0 or particle['y'] > HEIGHT + 50:
+                particles.remove(particle)
+            else:
+                # Calculate alpha based on remaining life
+                life_ratio = particle['life'] / particle['max_life']
+                
+                # Draw particle with glow effect
+                size = int(particle['size'] * life_ratio)
+                if size > 0 and 0 <= particle['x'] < WIDTH and 0 <= particle['y'] < HEIGHT:
+                    # Outer glow
+                    glow_color = (particle['color'][0], particle['color'][1] // 2, 0)
+                    try:
+                        pygame.draw.circle(screen, glow_color, 
+                                         (int(particle['x']), int(particle['y'])), 
+                                         size + 3)
+                        # Core
+                        pygame.draw.circle(screen, particle['color'], 
+                                         (int(particle['x']), int(particle['y'])), 
+                                         size)
+                        # Bright center
+                        if size > 2:
+                            pygame.draw.circle(screen, (255, 255, 200), 
+                                             (int(particle['x']), int(particle['y'])), 
+                                             size // 2)
+                    except:
+                        pass
+        
+        # Flash overlay for extra impact
+        if frame < 30:
+            flash_alpha = int(255 * (1 - frame / 30))
+            flash_surface = pygame.Surface((WIDTH, HEIGHT))
+            flash_surface.set_alpha(flash_alpha)
+            flash_surface.fill((255, 200, 0))
+            screen.blit(flash_surface, (0, 0))
+        
+        # Epic text reveals
+        if 60 < frame < 150:
+            reveal_alpha = min(255, (frame - 60) * 8)
+            reveal_font = pygame.font.Font(None, 150)
+            reveal_text = reveal_font.render("FINAL MODE", True, (255, 0, 0))
+            text_surface = pygame.Surface(reveal_text.get_size())
+            text_surface.fill((0, 0, 0))
+            text_surface.blit(reveal_text, (0, 0))
+            text_surface.set_alpha(reveal_alpha)
+            screen.blit(text_surface, (WIDTH // 2 - reveal_text.get_width() // 2, HEIGHT // 2 - 80))
+        
+        pygame.display.flip()
+        pygame.time.wait(16)  # ~60fps
+    
+    # Final fade to black
+    for fade in range(0, 255, 10):
+        fade_surface = pygame.Surface((WIDTH, HEIGHT))
+        fade_surface.set_alpha(fade)
+        fade_surface.fill((0, 0, 0))
+        screen.blit(fade_surface, (0, 0))
+        pygame.display.flip()
+        pygame.time.wait(20)
+
 
 def show_leaderboard(mode='survival'):
     """Display the leaderboard for survival or mom mode"""
@@ -3117,6 +3277,368 @@ except:
     has_battle_background = False
     print("ball.jpg not found, using solid color background for battle mode")
 
+def talking_intro():
+    """EPIC TALKING INTRO with voice narration and animated presenter before main menu"""
+    import os
+    
+    # Intro messages with voice (EPIC MOVIE TRAILER STYLE!)
+    intro_scenes = [
+        {
+            'text': 'IN A WORLD...',
+            'voice': 'In a world of chaos and epic battles',
+            'duration': 3.0,
+            'effect': 'fade_in',
+            'man_action': 'point_left',
+            'man_text': 'Epic Battles!'
+        },
+        {
+            'text': 'WHERE WARRIORS CLASH',
+            'voice': 'Where warriors clash in legendary combat',
+            'duration': 3.5,
+            'effect': 'zoom',
+            'man_action': 'point_right',
+            'man_text': 'Legendary!'
+        },
+        {
+            'text': 'ONE GAME STANDS ABOVE ALL',
+            'voice': 'ONE GAME stands above all others',
+            'duration': 3.5,
+            'effect': 'pulse',
+            'man_action': 'point_up',
+            'man_text': 'The Best!'
+        },
+        {
+            'text': 'BATTLEGAME',
+            'voice': 'BATTLEGAME! The ultimate showdown!',
+            'duration': 3.5,
+            'effect': 'shake',
+            'man_action': 'excited',
+            'man_text': 'WOW!'
+        },
+        {
+            'text': 'CHOOSE YOUR DESTINY',
+            'voice': 'Choose your destiny, select your fighter',
+            'duration': 3.0,
+            'effect': 'spiral',
+            'man_action': 'point_center',
+            'man_text': 'Pick Wisely!'
+        },
+        {
+            'text': 'ARE YOU READY?',
+            'voice': 'Are... you... READY?',
+            'duration': 3.5,
+            'effect': 'explode',
+            'man_action': 'dramatic',
+            'man_text': "LET'S GO!"
+        }
+    ]
+    
+    clock = pygame.time.Clock()
+    
+    # Draw the presenter/announcer man
+    def draw_presenter(x, y, action, text, progress):
+        """Draw animated presenter pointing at things"""
+        scale = 1.0
+        
+        # Body (suit)
+        body_color = (50, 50, 80)
+        pygame.draw.rect(screen, body_color, (int(x - 30), int(y), 60, 100))
+        
+        # Legs
+        pygame.draw.rect(screen, (30, 30, 60), (int(x - 25), int(y + 100), 20, 60))
+        pygame.draw.rect(screen, (30, 30, 60), (int(x + 5), int(y + 100), 20, 60))
+        
+        # Shoes
+        pygame.draw.ellipse(screen, (0, 0, 0), (int(x - 30), int(y + 150), 25, 15))
+        pygame.draw.ellipse(screen, (0, 0, 0), (int(x + 5), int(y + 150), 25, 15))
+        
+        # Tie
+        pygame.draw.polygon(screen, (200, 50, 50), [
+            (x, y + 10),
+            (x - 8, y + 30),
+            (x, y + 70),
+            (x + 8, y + 30)
+        ])
+        
+        # Head (skin tone)
+        head_color = (255, 220, 180)
+        pygame.draw.circle(screen, head_color, (int(x), int(y - 20)), 35)
+        
+        # Hair (professional cut)
+        hair_color = (80, 60, 40)
+        pygame.draw.arc(screen, hair_color, (int(x - 35), int(y - 55), 70, 40), 0, math.pi, 15)
+        
+        # Face
+        # Eyes
+        eye_y = y - 25
+        pygame.draw.circle(screen, (255, 255, 255), (int(x - 12), int(eye_y)), 8)
+        pygame.draw.circle(screen, (255, 255, 255), (int(x + 12), int(eye_y)), 8)
+        pygame.draw.circle(screen, (50, 100, 200), (int(x - 12), int(eye_y)), 5)
+        pygame.draw.circle(screen, (50, 100, 200), (int(x + 12), int(eye_y)), 5)
+        pygame.draw.circle(screen, (0, 0, 0), (int(x - 12), int(eye_y)), 3)
+        pygame.draw.circle(screen, (0, 0, 0), (int(x + 12), int(eye_y)), 3)
+        
+        # Eyebrows (dramatic)
+        pygame.draw.line(screen, (60, 40, 20), (int(x - 20), int(eye_y - 12)), (int(x - 5), int(eye_y - 10)), 3)
+        pygame.draw.line(screen, (60, 40, 20), (int(x + 20), int(eye_y - 12)), (int(x + 5), int(eye_y - 10)), 3)
+        
+        # Mouth (animated)
+        mouth_open = abs(math.sin(progress * 15)) * 15
+        mouth_rect = pygame.Rect(int(x - 12), int(y - 5), 24, int(10 + mouth_open))
+        pygame.draw.arc(screen, (100, 50, 50), mouth_rect, 0, math.pi, 3)
+        
+        # Microphone in hand
+        mic_x = x + 40
+        mic_y = y + 30
+        pygame.draw.line(screen, (80, 80, 80), (int(x + 30), int(y + 25)), (int(mic_x), int(mic_y)), 5)
+        pygame.draw.circle(screen, (200, 200, 200), (int(mic_x), int(mic_y)), 12)
+        pygame.draw.circle(screen, (150, 150, 150), (int(mic_x), int(mic_y)), 8)
+        
+        # Arms with different actions
+        arm_color = head_color
+        
+        if action == 'point_left':
+            # Right arm holding mic
+            pygame.draw.line(screen, arm_color, (int(x + 25), int(y + 15)), (int(x + 30), int(y + 25)), 12)
+            # Left arm pointing LEFT
+            angle = -150 + math.sin(progress * 5) * 10
+            arm_end_x = x - 50 + math.cos(math.radians(angle)) * 70
+            arm_end_y = y + 20 + math.sin(math.radians(angle)) * 70
+            pygame.draw.line(screen, arm_color, (int(x - 25), int(y + 15)), (int(arm_end_x), int(arm_end_y)), 12)
+            # Pointing finger
+            pygame.draw.circle(screen, arm_color, (int(arm_end_x), int(arm_end_y)), 6)
+            
+        elif action == 'point_right':
+            # Left arm holding mic (switched)
+            pygame.draw.line(screen, arm_color, (int(x - 25), int(y + 15)), (int(x - 30), int(y + 25)), 12)
+            # Right arm pointing RIGHT
+            angle = -30 + math.sin(progress * 5) * 10
+            arm_end_x = x + 50 + math.cos(math.radians(angle)) * 70
+            arm_end_y = y + 20 + math.sin(math.radians(angle)) * 70
+            pygame.draw.line(screen, arm_color, (int(x + 25), int(y + 15)), (int(arm_end_x), int(arm_end_y)), 12)
+            # Pointing finger
+            pygame.draw.circle(screen, arm_color, (int(arm_end_x), int(arm_end_y)), 6)
+            
+        elif action == 'point_up':
+            # Right arm holding mic
+            pygame.draw.line(screen, arm_color, (int(x + 25), int(y + 15)), (int(x + 30), int(y + 25)), 12)
+            # Left arm pointing UP
+            bounce = math.sin(progress * 10) * 15
+            pygame.draw.line(screen, arm_color, (int(x - 25), int(y + 15)), (int(x - 20), int(y - 60 + bounce)), 12)
+            # Pointing finger
+            pygame.draw.circle(screen, arm_color, (int(x - 20), int(y - 60 + bounce)), 6)
+            
+        elif action == 'point_center':
+            # Right arm holding mic
+            pygame.draw.line(screen, arm_color, (int(x + 25), int(y + 15)), (int(x + 30), int(y + 25)), 12)
+            # Left arm pointing at screen center
+            center_point_x = WIDTH // 2
+            center_point_y = HEIGHT // 2
+            pygame.draw.line(screen, arm_color, (int(x - 25), int(y + 15)), (int(center_point_x - 100), int(center_point_y)), 12)
+            # Pointing finger
+            pygame.draw.circle(screen, arm_color, (int(center_point_x - 100), int(center_point_y)), 6)
+            
+        elif action == 'excited':
+            # Both arms up in excitement
+            bounce = math.sin(progress * 12) * 20
+            pygame.draw.line(screen, arm_color, (int(x - 25), int(y + 15)), (int(x - 40), int(y - 40 + bounce)), 12)
+            pygame.draw.line(screen, arm_color, (int(x + 25), int(y + 15)), (int(x + 40), int(y - 40 - bounce)), 12)
+            # Hands
+            pygame.draw.circle(screen, arm_color, (int(x - 40), int(y - 40 + bounce)), 8)
+            pygame.draw.circle(screen, arm_color, (int(x + 40), int(y - 40 - bounce)), 8)
+            
+        elif action == 'dramatic':
+            # Dramatic pose - one arm across chest
+            pygame.draw.line(screen, arm_color, (int(x - 25), int(y + 15)), (int(x + 20), int(y + 30)), 12)
+            # Other arm extended dramatically
+            extend = progress * 100
+            pygame.draw.line(screen, arm_color, (int(x + 25), int(y + 15)), (int(x + 60 + extend), int(y - 20)), 12)
+            pygame.draw.circle(screen, arm_color, (int(x + 60 + extend), int(y - 20)), 8)
+        
+        # Speech bubble with text
+        if text:
+            bubble_x = x + 100
+            bubble_y = y - 80
+            bubble_width = len(text) * 15 + 40
+            bubble_height = 50
+            
+            # Bubble background
+            pygame.draw.ellipse(screen, (255, 255, 255), (int(bubble_x), int(bubble_y), bubble_width, bubble_height))
+            pygame.draw.ellipse(screen, (0, 0, 0), (int(bubble_x), int(bubble_y), bubble_width, bubble_height), 3)
+            
+            # Bubble pointer
+            pygame.draw.polygon(screen, (255, 255, 255), [
+                (bubble_x, bubble_y + 35),
+                (x + 30, y - 10),
+                (bubble_x + 20, bubble_y + 30)
+            ])
+            pygame.draw.line(screen, (0, 0, 0), (int(bubble_x), int(bubble_y + 35)), (int(x + 30), int(y - 10)), 3)
+            
+            # Text inside bubble
+            bubble_text = font.render(text, True, (0, 0, 0))
+            screen.blit(bubble_text, (int(bubble_x + 20), int(bubble_y + 15)))
+    
+    for scene in intro_scenes:
+        # Speak the text using macOS 'say' command with GRANDPA VOICE
+        # Using "Grandpa" - wise old man telling an epic tale!
+        selected_voice = "Grandpa (English (US))"
+        
+        # Good speed for dramatic effect (140 = slow and wise)
+        dramatic_voice = scene['voice']
+        speech_rate = 140
+        # Start voice in background again, but increase scene duration to match
+        os.system(f'say -v "{selected_voice}" -r {speech_rate} "{dramatic_voice}" &')
+        
+        # Calculate how long the voice will actually take
+        word_count = len(dramatic_voice.split())
+        voice_duration = (word_count / speech_rate) * 60  # words / words-per-min * 60 seconds
+        
+        # Use the longer of voice duration or original duration
+        actual_duration = max(scene['duration'], voice_duration + 0.5)  # +0.5 second buffer
+        
+        start_time = pygame.time.get_ticks() / 1000
+        
+        while (pygame.time.get_ticks() / 1000 - start_time) < actual_duration:
+            # Check for skip
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    os.system('killall say')  # Stop voice
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE or event.key == pygame.K_SPACE or event.key == pygame.K_RETURN:
+                        os.system('killall say')  # Stop voice
+                        return  # Skip intro
+            
+            # Calculate animation progress (0 to 1)
+            progress = (pygame.time.get_ticks() / 1000 - start_time) / actual_duration
+            
+            # Epic cinematic background
+            for y in range(HEIGHT):
+                # Animated gradient
+                time_offset = pygame.time.get_ticks() / 1000
+                shade = int(10 + 30 * math.sin(y * 0.01 + time_offset))
+                r = max(0, min(255, shade))
+                g = max(0, min(255, shade // 2))
+                b = max(0, min(255, shade + 20))
+                pygame.draw.line(screen, (r, g, b), (0, y), (WIDTH, y))
+            
+            # Draw moving stars/particles
+            for i in range(80):
+                star_time = (pygame.time.get_ticks() / 50 + i * 10) % WIDTH
+                star_x = star_time
+                star_y = (i * 137) % HEIGHT
+                brightness = int(128 + 127 * math.sin(pygame.time.get_ticks() / 300 + i))
+                star_size = 2 + int(math.sin(i) * 2)
+                pygame.draw.circle(screen, (brightness, brightness, brightness), (int(star_x), star_y), star_size)
+            
+            # Draw presenter man
+            man_x = 200
+            man_y = HEIGHT - 200
+            draw_presenter(man_x, man_y, scene['man_action'], scene['man_text'], progress)
+            
+            # Apply effect based on scene
+            if scene['effect'] == 'fade_in':
+                alpha = int(255 * progress)
+                title_font = pygame.font.Font(None, 120)
+                text = title_font.render(scene['text'], True, (255, 255, 255))
+                text.set_alpha(alpha)
+                screen.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - 60))
+            
+            elif scene['effect'] == 'zoom':
+                scale = 0.5 + (progress * 1.5)
+                title_font = pygame.font.Font(None, int(120 * scale))
+                text = title_font.render(scene['text'], True, (255, 215, 0))
+                screen.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - text.get_height() // 2))
+            
+            elif scene['effect'] == 'pulse':
+                pulse = 1 + 0.2 * math.sin(progress * 10)
+                title_font = pygame.font.Font(None, int(150 * pulse))
+                text = title_font.render(scene['text'], True, (255, 100, 100))
+                # Glow effect
+                for glow in range(3):
+                    glow_surf = text.copy()
+                    glow_surf.set_alpha(80 - glow * 20)
+                    screen.blit(glow_surf, (WIDTH // 2 - text.get_width() // 2 - glow * 2, HEIGHT // 2 - text.get_height() // 2 - glow * 2))
+                screen.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - text.get_height() // 2))
+            
+            elif scene['effect'] == 'shake':
+                shake_x = math.sin(progress * 30) * 20
+                shake_y = math.cos(progress * 25) * 15
+                title_font = pygame.font.Font(None, 140)
+                text = title_font.render(scene['text'], True, (255, 50, 50))
+                # Add glow for BATTLEGAME
+                for glow in range(4):
+                    glow_surf = text.copy()
+                    glow_surf.set_alpha(100 - glow * 20)
+                    screen.blit(glow_surf, (int(WIDTH // 2 - text.get_width() // 2 + shake_x - glow * 3), 
+                                           int(HEIGHT // 2 - 50 + shake_y - glow * 3)))
+                screen.blit(text, (int(WIDTH // 2 - text.get_width() // 2 + shake_x), int(HEIGHT // 2 - 50 + shake_y)))
+            
+            elif scene['effect'] == 'spiral':
+                angle = progress * 720  # Two full rotations
+                title_font = pygame.font.Font(None, 110)
+                for i, char in enumerate(scene['text']):
+                    char_angle = angle + i * 20
+                    radius = 200 * (1 - progress)
+                    x = WIDTH // 2 + math.cos(math.radians(char_angle)) * radius
+                    y = HEIGHT // 2 + math.sin(math.radians(char_angle)) * radius
+                    color_shift = int(128 + 127 * math.sin(i + progress * 10))
+                    char_surf = title_font.render(char, True, (color_shift, 255 - color_shift, 255))
+                    screen.blit(char_surf, (int(x) - 20, int(y) - 30))
+            
+            elif scene['effect'] == 'explode':
+                # Particles exploding outward
+                title_font = pygame.font.Font(None, 160)
+                text = title_font.render(scene['text'], True, (255, 255, 100))
+                
+                # Draw main text with shake
+                shake = int(10 * (1 - progress))
+                text_x = WIDTH // 2 - text.get_width() // 2 + random.randint(-shake, shake)
+                text_y = HEIGHT // 2 - 60 + random.randint(-shake, shake)
+                
+                # Explosion glow
+                for glow in range(5):
+                    glow_surf = text.copy()
+                    glow_surf.set_alpha(120 - glow * 20)
+                    screen.blit(glow_surf, (text_x - glow * 4, text_y - glow * 4))
+                
+                screen.blit(text, (text_x, text_y))
+                
+                # Particles
+                num_particles = int(progress * 150)
+                for i in range(num_particles):
+                    angle = (i / num_particles) * 2 * math.pi
+                    distance = progress * 400
+                    px = int(WIDTH // 2 + math.cos(angle) * distance)
+                    py = int(HEIGHT // 2 + math.sin(angle) * distance)
+                    particle_color = (255, int(255 * (1 - progress)), 0)
+                    particle_size = max(2, int(8 * (1 - progress)))
+                    pygame.draw.circle(screen, particle_color, (px, py), particle_size)
+            
+            # Skip hint
+            skip_text = font.render("Press SPACE or ENTER to skip intro", True, (200, 200, 200))
+            screen.blit(skip_text, (WIDTH // 2 - skip_text.get_width() // 2, HEIGHT - 50))
+            
+            pygame.display.flip()
+            clock.tick(60)
+        
+        # Small pause between scenes
+        pygame.time.wait(500)
+    
+    # Final fade to black
+    for fade in range(0, 255, 10):
+        screen.fill((0, 0, 0))
+        fade_surf = pygame.Surface((WIDTH, HEIGHT))
+        fade_surf.set_alpha(fade)
+        fade_surf.fill((0, 0, 0))
+        screen.blit(fade_surf, (0, 0))
+        pygame.display.flip()
+        clock.tick(60)
+    
+    # Make sure voice is stopped
+    os.system('killall say')
+
 # Set fullscreen mode
 screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
 WIDTH, HEIGHT = screen.get_size()
@@ -3867,6 +4389,1723 @@ def show_locked_message():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if ok_button.collidepoint(event.pos):
                     running = False
+
+def final_mode():
+    """FINAL MODE - The ULTIMATE 3D ultra-realistic MEGA experience!
+    MASSIVE scale, photorealistic 3D graphics with TRUE DEPTH, epic gameplay, boss battles!"""
+    import random
+    import math
+    
+    clock = pygame.time.Clock()
+    
+    # MASSIVE WORLD STATE - TRUE 3D PERSPECTIVE with depth sorting
+    camera_x = 0  # World camera position X
+    camera_z = -800  # Camera distance from player (3D depth)
+    world_size = 5000  # MASSIVE world width
+    horizon_y = HEIGHT // 4  # Horizon line for 3D perspective
+    fov = 600  # Field of view for 3D projection
+    
+    # ULTRA-REALISTIC WORLD STATE - Dynamic environment
+    time_of_day = 0.5  # 0=midnight, 0.5=noon, 1=midnight (cycles)
+    weather = 'clear'  # clear, rain, storm, fog, snow
+    wind_strength = 0.0
+    wind_direction = 0.0
+    
+    # PLAYER - MASSIVE & Ultra detailed with TRUE 3D position
+    player = {
+        'x': 0,  # World X position
+        'y': 0,  # World Y position (0 = ground level)
+        'z': 0,  # World Z position (depth, 0 = center)
+        'vx': 0,
+        'vy': 0,
+        'vz': 0,
+        'size': 80,  # Base size (scales with depth)
+        'health': 300,  # Much more health
+        'max_health': 300,
+        'stamina': 150,
+        'max_stamina': 150,
+        'energy': 150,
+        'max_energy': 150,
+        'shield': 0,  # Shield points
+        'max_shield': 100,
+        'attack_power': 25,
+        'attack_cooldown': 0,
+        'invincible': 0,
+        'special_attack_cooldown': 0,
+        'rage_mode': 0,  # Rage mode timer
+    }
+    
+    # CAMERA SYSTEM - Cinematic with 3D shake and dynamic effects
+    camera_shake = 0
+    camera_shake_x = 0
+    camera_shake_y = 0
+    camera_zoom = 1.0
+    camera_target_zoom = 1.0
+    camera_rotation = 0
+    motion_blur = 0
+    
+    # Helper function for 3D to 2D projection (TRUE PERSPECTIVE)
+    def project_3d(world_x, world_y, world_z):
+        """Project 3D world coordinates to 2D screen coordinates with perspective"""
+        # Relative to camera
+        rel_x = world_x - camera_x
+        rel_z = world_z - camera_z
+        
+        # Perspective division
+        if rel_z > 10:  # Avoid division by zero
+            scale = fov / rel_z
+            screen_x = WIDTH // 2 + rel_x * scale
+            screen_y = horizon_y + world_y * scale
+            return int(screen_x), int(screen_y), scale
+        return None, None, 0
+    
+    # MASSIVE WORLD ENVIRONMENT - Hyper detailed with TRUE 3D depth
+    grass_blades = []
+    for _ in range(2000):  # MASSIVE amount of grass!
+        grass_blades.append({
+            'x': random.randint(-world_size // 2, world_size // 2),
+            'y': 0,  # Ground level
+            'z': random.randint(-500, 2000),  # 3D depth
+            'height': random.randint(20, 60),
+            'sway': random.uniform(0, 2 * math.pi),
+            'sway_speed': random.uniform(0.5, 2.0),
+            'color_variation': random.randint(-20, 20),
+        })
+    
+    # REALISTIC TREES - 3D with proper depth
+    trees = []
+    for _ in range(30):  # More trees!
+        trees.append({
+            'x': random.randint(-world_size // 2, world_size // 2),
+            'y': 0,
+            'z': random.randint(100, 1500),  # 3D depth
+            'height': random.randint(150, 350),
+            'width': random.randint(50, 100),
+            'trunk_width': random.randint(20, 40),
+            'sway': random.uniform(0, 2 * math.pi),
+            'leaves_density': random.randint(8, 15),
+        })
+    
+    # MOUNTAINS - 3D background with multiple layers
+    mountains = []
+    for layer in range(3):  # Multiple mountain layers for depth
+        for _ in range(6):
+            mountains.append({
+                'x': random.randint(-world_size, world_size * 2),
+                'y': 0,
+                'z': 3000 + layer * 2000,  # Far in the background
+                'height': random.randint(300, 800) - layer * 100,
+                'width': random.randint(400, 1000),
+                'layer': layer,
+            })
+    
+    # ATMOSPHERIC ELEMENTS - Way more with 3D depth!
+    particles = []
+    clouds = []
+    for _ in range(25):  # More clouds with depth
+        clouds.append({
+            'x': random.randint(-world_size, world_size * 2),
+            'y': random.randint(-100, 100),
+            'z': random.randint(1000, 4000),  # 3D depth
+            'speed': random.uniform(0.3, 1.2),
+            'size': random.randint(150, 400),
+            'opacity': random.randint(180, 255),
+            'puffiness': random.randint(3, 7),
+        })
+    
+    # VOLUMETRIC LIGHT RAYS - God rays with 3D depth
+    light_rays = []
+    for _ in range(40):
+        light_rays.append({
+            'x': random.randint(-world_size, world_size * 2),
+            'z': random.randint(500, 3000),
+            'width': random.randint(80, 200),
+            'opacity': random.randint(30, 80),
+            'speed': random.uniform(0.05, 0.2),
+            'angle': random.uniform(-0.3, 0.3),
+        })
+    
+    # ROCKS and OBSTACLES - 3D positioned
+    rocks = []
+    for _ in range(40):
+        rocks.append({
+            'x': random.randint(-world_size // 2, world_size // 2),
+            'y': 0,
+            'z': random.randint(-200, 800),
+            'size': random.randint(30, 80),
+            'color_variation': random.randint(-30, 30),
+        })
+    
+    # OBJECTIVES & COLLECTIBLES - BIGGER & MORE with 3D!
+    collectibles = []
+    enemies = []
+    bosses = []  # BOSS ENEMIES!
+    explosions = []  # Visual effects
+    powerups = []
+    projectiles = []  # Enemy and player projectiles
+    
+    # Spawn initial collectibles (MASSIVE coins/gems in 3D space)
+    for _ in range(50):  # Way more collectibles
+        collectibles.append({
+            'x': random.randint(-world_size // 2, world_size // 2),
+            'y': random.randint(0, 150),  # Can be floating!
+            'z': random.randint(-200, 1000),  # 3D depth
+            'collected': False,
+            'type': random.choice(['coin', 'gem', 'star', 'diamond', 'crystal']),
+            'value': random.choice([100, 250, 500, 1000, 2500]),
+            'bounce': random.uniform(0, 2 * math.pi),
+            'rotation': random.uniform(0, 2 * math.pi),
+            'size': random.randint(25, 50),  # Much bigger
+            'glow': random.randint(5, 15),
+        })
+    
+    # Spawn initial enemies - BIGGER & MORE DETAILED with 3D AI!
+    enemy_types = [
+        {'type': 'goblin', 'health': 3, 'size': 60, 'speed': 2, 'color': (100, 180, 100)},
+        {'type': 'orc', 'health': 5, 'size': 90, 'speed': 1.5, 'color': (120, 80, 80)},
+        {'type': 'demon', 'health': 7, 'size': 110, 'speed': 2.5, 'color': (200, 50, 50)},
+        {'type': 'dragon', 'health': 10, 'size': 140, 'speed': 1.8, 'color': (180, 0, 180)},
+        {'type': 'wraith', 'health': 4, 'size': 70, 'speed': 3, 'color': (100, 100, 200)},
+    ]
+    
+    for _ in range(15):  # More enemies
+        enemy_type = random.choice(enemy_types)
+        enemies.append({
+            'x': random.randint(-world_size // 2, world_size // 2),
+            'y': 0,
+            'z': random.randint(-100, 600),  # 3D depth
+            'vx': random.uniform(-2, 2),
+            'vz': random.uniform(-0.5, 0.5),
+            'type': enemy_type['type'],
+            'health': enemy_type['health'],
+            'max_health': enemy_type['health'],
+            'size': enemy_type['size'],
+            'base_size': enemy_type['size'],
+            'speed': enemy_type['speed'],
+            'color': enemy_type['color'],
+            'attack_timer': random.uniform(0, 3),
+            'animation_frame': 0,
+            'ai_state': 'patrol',  # patrol, chase, attack, flee
+            'ai_timer': 0,
+        })
+    
+    objectives_completed = 0
+    total_objectives = 15  # More objectives
+    
+    # SCORE & TIME - Enhanced tracking
+    score = 0
+    coins_collected = 0
+    enemies_defeated = 0
+    bosses_defeated = 0
+    time_elapsed = 0
+    combo_multiplier = 1.0
+    combo_timer = 0
+    max_combo = 0
+    
+    # ULTRA-REALISTIC PHYSICS - 3D enhanced
+    gravity = 1.2
+    friction = 0.88
+    air_resistance = 0.94
+    ground_friction = 0.75
+    
+    # SPECIAL EFFECTS
+    screen_flash = 0
+    screen_flash_color = (255, 255, 255)
+    rumble_timer = 0
+    slow_motion = 1.0  # Slow motion effect
+    
+    running = True
+    frame_count = 0
+    boss_spawned = False
+    
+    # EPIC INTRO SEQUENCE - MUCH LONGER AND MORE CINEMATIC!
+    intro_duration = 150  # Longer intro
+    for fade_frame in range(intro_duration):
+        # Animated gradient background with depth
+        t = fade_frame / intro_duration
+        bg_color = (
+            int(10 + t * 30 + math.sin(fade_frame * 0.1) * 10),
+            int(5 + t * 25 + math.sin(fade_frame * 0.15) * 10),
+            int(20 + t * 60 + math.sin(fade_frame * 0.2) * 15)
+        )
+        screen.fill(bg_color)
+        
+        # Parallax star field
+        if fade_frame > 20:
+            for i in range(100):
+                star_t = (fade_frame - 20 + i * 7) * 0.02
+                star_x = (WIDTH // 2 + math.sin(star_t) * (300 + i * 3))
+                star_y = (HEIGHT // 2 + math.cos(star_t * 0.7) * (200 + i * 2))
+                star_alpha = int(abs(math.sin(star_t * 2)) * 255)
+                if 0 <= star_x < WIDTH and 0 <= star_y < HEIGHT and star_alpha > 50:
+                    star_surf = pygame.Surface((4, 4), pygame.SRCALPHA)
+                    pygame.draw.circle(star_surf, (255, 255, 255, star_alpha), (2, 2), 2)
+                    screen.blit(star_surf, (int(star_x), int(star_y)))
+        
+        # Pulsing glow effect
+        intro_alpha = int(255 * abs(math.sin(fade_frame * 0.08)) * 0.4 + 180)
+        
+        # MASSIVE title with ULTRA 3D effect and glow
+        title_font = pygame.font.Font(None, 240)
+        
+        # Multiple 3D shadow layers for depth
+        for offset in range(15, 0, -3):
+            shadow_intensity = offset * 8
+            shadow_color = (shadow_intensity, 0, shadow_intensity // 3)
+            shadow_title = title_font.render("FINAL MODE", True, shadow_color)
+            shadow_x = WIDTH // 2 - shadow_title.get_width() // 2 + offset * 2
+            shadow_y = HEIGHT // 2 - 120 + offset * 2
+            shadow_surf = pygame.Surface(shadow_title.get_size(), pygame.SRCALPHA)
+            shadow_surf.blit(shadow_title, (0, 0))
+            shadow_surf.set_alpha(50)
+            screen.blit(shadow_surf, (shadow_x, shadow_y))
+        
+        # Outer glow
+        if fade_frame > 30:
+            glow_size = int(20 + math.sin(fade_frame * 0.1) * 10)
+            for glow_offset in range(glow_size, 0, -5):
+                glow_alpha = int((glow_size - glow_offset) * 3)
+                glow_title = title_font.render("FINAL MODE", True, (255, 100, 100))
+                glow_surf = pygame.Surface(glow_title.get_size(), pygame.SRCALPHA)
+                glow_surf.blit(glow_title, (0, 0))
+                glow_surf.set_alpha(glow_alpha)
+                screen.blit(glow_surf, (WIDTH // 2 - glow_title.get_width() // 2 + glow_offset, 
+                                       HEIGHT // 2 - 120 + glow_offset))
+        
+        # Main title in red with dynamic brightness
+        title_brightness = int(200 + abs(math.sin(fade_frame * 0.1)) * 55)
+        title = title_font.render("FINAL MODE", True, (title_brightness, 50, 50))
+        title_surf = pygame.Surface(title.get_size(), pygame.SRCALPHA)
+        title_surf.blit(title, (0, 0))
+        title_surf.set_alpha(intro_alpha)
+        screen.blit(title_surf, (WIDTH // 2 - title.get_width() // 2, HEIGHT // 2 - 120))
+        
+        # Subtitle with animation
+        if fade_frame > 60:
+            subtitle_alpha = min(255, (fade_frame - 60) * 5)
+            subtitle_font = pygame.font.Font(None, 60)
+            subtitle = subtitle_font.render("THE ULTIMATE BATTLE AWAITS", True, (255, 200, 100))
+            subtitle_surf = pygame.Surface(subtitle.get_size(), pygame.SRCALPHA)
+            subtitle_surf.blit(subtitle, (0, 0))
+            subtitle_surf.set_alpha(subtitle_alpha)
+            screen.blit(subtitle_surf, (WIDTH // 2 - subtitle.get_width() // 2, HEIGHT // 2 + 80))
+        
+        # Swirling particles around title
+        if fade_frame > 30:
+            num_particles = min(40, (fade_frame - 30) // 2)
+            for i in range(num_particles):
+                particle_angle = (fade_frame * 0.03 + i * (360 / 40)) * math.pi / 180
+                particle_dist = 250 + math.sin(fade_frame * 0.08 + i * 0.5) * 80
+                px = WIDTH // 2 + math.cos(particle_angle) * particle_dist
+                py = HEIGHT // 2 + math.sin(particle_angle) * particle_dist * 0.6
+                particle_size = int(6 + math.sin(fade_frame * 0.12 + i) * 4)
+                particle_color = [
+                    int(255 * abs(math.sin(fade_frame * 0.05 + i * 0.3))),
+                    int(200 * abs(math.cos(fade_frame * 0.07 + i * 0.2))),
+                    int(100 + 155 * abs(math.sin(fade_frame * 0.06 + i * 0.4)))
+                ]
+                pygame.draw.circle(screen, particle_color, (int(px), int(py)), particle_size)
+                # Particle trail
+                if fade_frame > 50:
+                    trail_angle = particle_angle - 0.3
+                    trail_x = px - math.cos(trail_angle) * 30
+                    trail_y = py - math.sin(trail_angle) * 30
+                    pygame.draw.line(screen, particle_color, (int(px), int(py)), 
+                                   (int(trail_x), int(trail_y)), 2)
+        
+        # Energy buildup effect
+        if fade_frame > 100:
+            buildup_intensity = (fade_frame - 100) / 50
+            for ring in range(5):
+                ring_radius = int(150 + ring * 50 + buildup_intensity * 100)
+                ring_alpha = int(100 - ring * 15 - buildup_intensity * 50)
+                if ring_alpha > 0:
+                    ring_surf = pygame.Surface((ring_radius * 2, ring_radius * 2), pygame.SRCALPHA)
+                    pygame.draw.circle(ring_surf, (255, 255, 255, ring_alpha), 
+                                     (ring_radius, ring_radius), ring_radius, 5)
+                    screen.blit(ring_surf, (WIDTH // 2 - ring_radius, HEIGHT // 2 - ring_radius))
+        
+        pygame.display.flip()
+        clock.tick(60)
+    
+    while running:
+        dt = clock.tick(60) / 1000.0 * slow_motion
+        frame_count += 1
+        time_elapsed += dt
+        
+        # Update time of day (cycles every 3 minutes for longer day/night)
+        time_of_day = (time_of_day + dt / 180) % 1.0
+        
+        # Dynamic weather system
+        if random.random() < 0.001:  # Rare weather changes
+            weather = random.choice(['clear', 'rain', 'fog', 'storm'])
+        
+        # === INPUT HANDLING with ADVANCED CONTROLS ===
+        keys = pygame.key.get_pressed()
+        attack_pressed = False
+        special_attack_pressed = False
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
+                # JUMP with double jump
+                if event.key == pygame.K_SPACE and player['stamina'] > 20:
+                    if player['y'] <= 1:  # On ground
+                        player['vy'] = -25  # Higher jump
+                        player['stamina'] -= 20
+                        camera_shake = 8
+                    elif player['stamina'] > 40:  # Double jump in air!
+                        player['vy'] = -22
+                        player['stamina'] -= 40
+                        camera_shake = 12
+                        # Double jump particles
+                        for _ in range(10):
+                            particles.append({
+                                'x': player['x'],
+                                'y': player['y'],
+                                'z': player['z'],
+                                'vx': random.uniform(-3, 3),
+                                'vy': random.uniform(0, 5),
+                                'vz': random.uniform(-2, 2),
+                                'life': random.uniform(0.5, 1.0),
+                                'size': random.randint(2, 5),
+                                'color': (200, 200, 255),
+                            })
+                # REGULAR ATTACK with X or SHIFT
+                if (event.key == pygame.K_x or event.key == pygame.K_LSHIFT or event.key == pygame.K_RSHIFT):
+                    if player['energy'] > 10 and player['attack_cooldown'] <= 0:
+                        attack_pressed = True
+                        player['energy'] -= 10
+                        player['attack_cooldown'] = 0.25
+                        camera_shake = 12
+                        screen_flash = 0.15
+                        screen_flash_color = (255, 200, 100)
+                # SPECIAL MEGA ATTACK with Z or CTRL
+                if (event.key == pygame.K_z or event.key == pygame.K_LCTRL or event.key == pygame.K_RCTRL):
+                    if player['energy'] > 40 and player['special_attack_cooldown'] <= 0:
+                        special_attack_pressed = True
+                        player['energy'] -= 40
+                        player['special_attack_cooldown'] = 2.0
+                        camera_shake = 30
+                        screen_flash = 0.5
+                        screen_flash_color = (255, 100, 255)
+                        slow_motion = 0.3  # Slow mo on special attack!
+                        player['rage_mode'] = 3.0  # Rage mode!
+                        # Create massive explosion
+                        for angle in range(0, 360, 30):
+                            rad = math.radians(angle)
+                            projectiles.append({
+                                'x': player['x'],
+                                'y': player['y'] + 20,
+                                'z': player['z'],
+                                'vx': math.cos(rad) * 8,
+                                'vz': math.sin(rad) * 8,
+                                'vy': 0,
+                                'size': 20,
+                                'damage': 50,
+                                'life': 1.5,
+                                'color': (255, 0, 255),
+                                'source': 'player',
+                            })
+        
+        # === PLAYER MOVEMENT - IMPROVED and more responsive ===
+        move_speed = 3.5 if player['rage_mode'] > 0 else 2.5  # Faster, more responsive
+        
+        # Direct position control for WASD (like classic games)
+        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
+            player['x'] -= move_speed
+            player['stamina'] -= 0.08
+        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+            player['x'] += move_speed
+            player['stamina'] -= 0.08
+        if keys[pygame.K_UP] or keys[pygame.K_w]:
+            player['z'] += move_speed  # Move into screen (3D)
+            player['stamina'] -= 0.08
+        if keys[pygame.K_DOWN] or keys[pygame.K_s]:
+            player['z'] -= move_speed  # Move out of screen (3D)
+            player['stamina'] -= 0.08
+        
+        # Apply vertical physics only
+        player['vy'] += gravity
+        player['y'] += player['vy']
+        
+        # Ground collision
+        if player['y'] <= 0:
+            player['y'] = 0
+            player['vy'] = 0
+            player['stamina'] = min(player['max_stamina'], player['stamina'] + 1.0)
+        
+        # World boundaries
+        if player['x'] < -world_size // 2:
+            player['x'] = -world_size // 2
+            player['vx'] = 0
+        if player['x'] > world_size // 2:
+            player['x'] = world_size // 2
+            player['vx'] = 0
+        if player['z'] < -400:
+            player['z'] = -400
+            player['vz'] = 0
+        if player['z'] > 800:
+            player['z'] = 800
+            player['vz'] = 0
+        
+        # Update timers
+        player['attack_cooldown'] = max(0, player['attack_cooldown'] - dt)
+        player['special_attack_cooldown'] = max(0, player['special_attack_cooldown'] - dt)
+        player['invincible'] = max(0, player['invincible'] - dt)
+        player['rage_mode'] = max(0, player['rage_mode'] - dt)
+        
+        # Regenerate resources
+        player['stamina'] = min(player['max_stamina'], player['stamina'] + 0.25)
+        player['energy'] = min(player['max_energy'], player['energy'] + 0.15)
+        player['shield'] = min(player['max_shield'], player['shield'] + 0.05)
+        
+        # Camera follows player smoothly
+        camera_x += (player['x'] - camera_x) * 0.1
+        camera_z += (player['z'] + 800 - camera_z) * 0.05
+        
+        # Camera shake with rotation
+        if camera_shake > 0:
+            camera_shake_x = random.uniform(-camera_shake, camera_shake)
+            camera_shake_y = random.uniform(-camera_shake, camera_shake)
+            camera_shake *= 0.9
+        else:
+            camera_shake_x *= 0.8
+            camera_shake_y *= 0.8
+        
+        
+        # Restore slow motion gradually
+        slow_motion = min(1.0, slow_motion + dt * 0.5)
+        
+        # === ENVIRONMENTAL UPDATES - 3D World ===
+        # Update clouds with parallax
+        for cloud in clouds:
+            cloud['x'] += cloud['speed'] + wind_strength * 0.2
+            if cloud['x'] > world_size * 2:
+                cloud['x'] = -world_size
+                cloud['y'] = random.randint(-100, 100)
+                cloud['z'] = random.randint(1000, 4000)
+        
+        # Update wind
+        wind_strength = math.sin(time_elapsed * 0.5) * 3 + random.uniform(-0.8, 0.8)
+        wind_direction = math.sin(time_elapsed * 0.3) * 0.5
+        
+        # Update grass sway
+        for grass in grass_blades:
+            grass['sway'] += grass['sway_speed'] * dt
+        
+        # Update light rays
+        for ray in light_rays:
+            ray['x'] += ray['speed'] + wind_strength * 0.05
+            if ray['x'] > world_size * 2:
+                ray['x'] = -world_size
+        
+        # Update atmospheric particles (dust, pollen, rain, etc.)
+        if weather == 'rain' and random.random() < 0.8:
+            particles.append({
+                'x': camera_x + random.randint(-WIDTH, WIDTH * 2),
+                'y': 300,
+                'z': random.randint(-200, 1000),
+                'vx': wind_strength * 0.5,
+                'vy': -15,
+                'vz': 0,
+                'life': random.uniform(2, 4),
+                'size': random.randint(1, 2),
+                'color': (150, 150, 200),
+            })
+        elif random.random() < 0.2:
+            particles.append({
+                'x': camera_x + random.randint(-WIDTH, WIDTH * 2),
+                'y': 200,
+                'z': random.randint(-200, 1000),
+                'vx': wind_strength * 0.3 + random.uniform(-1, 1),
+                'vy': random.uniform(-1, 1),
+                'vz': random.uniform(-0.5, 0.5),
+                'life': random.uniform(3, 8),
+                'size': random.randint(1, 4),
+                'color': (200, 200, 150),
+            })
+        
+        # Update particles with 3D physics
+        for particle in particles[:]:
+            particle['x'] += particle['vx']
+            particle['y'] += particle['vy']
+            particle['z'] += particle['vz']
+            particle['vy'] += 0.3  # Gravity
+            particle['life'] -= dt
+            if particle['life'] <= 0 or particle['y'] < -50:
+                particles.remove(particle)
+        
+        # === COLLECTIBLES UPDATE - TRUE 3D Enhanced ===
+        combo_timer -= dt
+        if combo_timer <= 0:
+            combo_multiplier = 1.0
+            if combo_multiplier > max_combo:
+                max_combo = combo_multiplier
+        
+        for collectible in collectibles:
+            if not collectible['collected']:
+                collectible['bounce'] += dt * 6
+                collectible['rotation'] += dt * 4
+                # Floating animation
+                collectible['y'] = abs(math.sin(collectible['bounce'])) * 30 + 50
+                
+                # TRUE 3D collision check
+                dist_3d = math.sqrt((collectible['x'] - player['x'])**2 + 
+                                   (collectible['y'] - player['y'])**2 +
+                                   (collectible['z'] - player['z'])**2)
+                if dist_3d < 70:
+                    collectible['collected'] = True
+                    points = int(collectible['value'] * combo_multiplier)
+                    score += points
+                    coins_collected += 1
+                    combo_timer = 3.0
+                    combo_multiplier = min(10.0, combo_multiplier + 0.8)
+                    # Create epic pickup explosion
+                    for _ in range(15):
+                        particles.append({
+                            'x': collectible['x'],
+                            'y': collectible['y'],
+                            'z': collectible['z'],
+                            'vx': random.uniform(-5, 5),
+                            'vy': random.uniform(-3, 8),
+                            'vz': random.uniform(-5, 5),
+                            'life': random.uniform(0.5, 1.5),
+                            'size': random.randint(3, 8),
+                            'color': (255, 215, 0),
+                        })
+                    camera_shake = 5
+        
+        # Spawn collectibles near player
+        if len([c for c in collectibles if not c['collected']]) < 20 and random.random() < 0.03:
+            collectibles.append({
+                'x': player['x'] + random.randint(-500, 500),
+                'y': random.randint(20, 150),
+                'z': player['z'] + random.randint(-200, 600),
+                'collected': False,
+                'type': random.choice(['coin', 'gem', 'star', 'diamond', 'crystal']),
+                'value': random.choice([100, 250, 500, 1000, 2500]),
+                'bounce': random.uniform(0, 2 * math.pi),
+                'rotation': random.uniform(0, 2 * math.pi),
+                'size': random.randint(25, 50),
+                'glow': random.randint(5, 15),
+            })
+        
+        
+        # === ENEMIES UPDATE - ADVANCED 3D AI with States ===
+        for enemy in enemies[:]:
+            enemy['animation_frame'] += dt * 5
+            enemy['ai_timer'] += dt
+            
+            # Calculate distance to player (3D)
+            dx = player['x'] - enemy['x']
+            dy = player['y'] - enemy['y']
+            dz = player['z'] - enemy['z']
+            dist_3d = math.sqrt(dx**2 + dy**2 + dz**2)
+            
+            # AI State Machine
+            if dist_3d < 200:
+                enemy['ai_state'] = 'chase'
+            elif dist_3d > 500:
+                enemy['ai_state'] = 'patrol'
+            
+            if enemy['ai_state'] == 'chase':
+                # Chase player intelligently
+                if dist_3d > 10:
+                    enemy['vx'] = (dx / dist_3d) * enemy['speed'] * 2
+                    enemy['vz'] = (dz / dist_3d) * enemy['speed'] * 2
+                    
+                # Attack if close enough
+                if dist_3d < 120:
+                    enemy['ai_state'] = 'attack'
+                    enemy['attack_timer'] -= dt
+                    if enemy['attack_timer'] <= 0:
+                        enemy['attack_timer'] = 2.0
+                        # Shoot projectile at player!
+                        if dist_3d > 0:
+                            projectiles.append({
+                                'x': enemy['x'],
+                                'y': enemy['y'] + 20,
+                                'z': enemy['z'],
+                                'vx': (dx / dist_3d) * 6,
+                                'vy': (dy / dist_3d) * 6,
+                                'vz': (dz / dist_3d) * 6,
+                                'size': 12,
+                                'damage': 10,
+                                'life': 2.0,
+                                'color': enemy['color'],
+                                'source': 'enemy',
+                            })
+            elif enemy['ai_state'] == 'patrol':
+                # Random patrol
+                if enemy['ai_timer'] > 2.0:
+                    enemy['vx'] = random.uniform(-enemy['speed'], enemy['speed'])
+                    enemy['vz'] = random.uniform(-enemy['speed'], enemy['speed'])
+                    enemy['ai_timer'] = 0
+            
+            # Apply gravity to enemies
+            if enemy['y'] > 0:
+                enemy['y'] -= gravity
+            if enemy['y'] < 0:
+                enemy['y'] = 0
+            
+            # Update position
+            enemy['x'] += enemy['vx'] * dt * 60
+            enemy['z'] += enemy['vz'] * dt * 60
+            enemy['vx'] *= 0.95
+            enemy['vz'] *= 0.95
+            
+            # World boundaries
+            if enemy['x'] < -world_size // 2:
+                enemy['x'] = -world_size // 2
+                enemy['vx'] *= -1
+            if enemy['x'] > world_size // 2:
+                enemy['x'] = world_size // 2
+                enemy['vx'] *= -1
+            if enemy['z'] < -400:
+                enemy['z'] = -400
+                enemy['vz'] *= -1
+            if enemy['z'] > 800:
+                enemy['z'] = 800
+                enemy['vz'] *= -1
+            
+            # Check REGULAR attack collision - TRUE 3D
+            if attack_pressed and dist_3d < 150:
+                enemy['health'] -= player['attack_power']
+                camera_shake = 18
+                screen_flash = 0.15
+                # Hit particles
+                for _ in range(8):
+                    particles.append({
+                        'x': enemy['x'],
+                        'y': enemy['y'],
+                        'z': enemy['z'],
+                        'vx': random.uniform(-4, 4),
+                        'vy': random.uniform(2, 8),
+                        'vz': random.uniform(-4, 4),
+                        'life': random.uniform(0.3, 0.8),
+                        'size': random.randint(3, 7),
+                        'color': enemy['color'],
+                    })
+                
+                if enemy['health'] <= 0:
+                    # EPIC death explosion!
+                    for _ in range(20):
+                        particles.append({
+                            'x': enemy['x'],
+                            'y': enemy['y'] + random.uniform(-20, 40),
+                            'z': enemy['z'],
+                            'vx': random.uniform(-8, 8),
+                            'vy': random.uniform(-2, 12),
+                            'vz': random.uniform(-8, 8),
+                            'life': random.uniform(0.8, 2.0),
+                            'size': random.randint(5, 15),
+                            'color': enemy['color'],
+                        })
+                    enemies.remove(enemy)
+                    score += int(1500 * combo_multiplier)
+                    enemies_defeated += 1
+                    combo_timer = 3.0
+                    combo_multiplier = min(10.0, combo_multiplier + 0.5)
+                    camera_shake = 25
+                    continue
+            
+            # Check SPECIAL attack collision - MASSIVE range
+            if special_attack_pressed and dist_3d < 300:
+                enemy['health'] -= player['attack_power'] * 3
+                camera_shake = 30
+                # Massive hit effect!
+                for _ in range(15):
+                    particles.append({
+                        'x': enemy['x'],
+                        'y': enemy['y'],
+                        'z': enemy['z'],
+                        'vx': random.uniform(-6, 6),
+                        'vy': random.uniform(5, 15),
+                        'vz': random.uniform(-6, 6),
+                        'life': random.uniform(0.5, 1.2),
+                        'size': random.randint(5, 12),
+                        'color': (255, 0, 255),
+                    })
+                
+                if enemy['health'] <= 0:
+                    enemies.remove(enemy)
+                    score += int(2000 * combo_multiplier)
+                    enemies_defeated += 1
+                    combo_timer = 3.0
+                    combo_multiplier = min(10.0, combo_multiplier + 0.6)
+                    continue
+            
+            # Check player collision (damage player) - TRUE 3D
+            if dist_3d < 80 and player['invincible'] <= 0:
+                damage = 20
+                if player['shield'] > 0:
+                    player['shield'] -= damage
+                    if player['shield'] < 0:
+                        player['health'] += player['shield']  # Overflow damage
+                        player['shield'] = 0
+                else:
+                    player['health'] -= damage
+                player['invincible'] = 1.2
+                camera_shake = 25
+                screen_flash = 0.4
+                screen_flash_color = (255, 0, 0)
+                if player['health'] <= 0:
+                    running = False  # Game over
+        
+        # Spawn more enemies dynamically
+        max_enemies = 20 if player['rage_mode'] > 0 else 15
+        if len(enemies) < max_enemies and random.random() < 0.015:
+            enemy_type = random.choice(enemy_types)
+            spawn_distance = 600
+            angle = random.uniform(0, 2 * math.pi)
+            enemies.append({
+                'x': player['x'] + math.cos(angle) * spawn_distance,
+                'y': 0,
+                'z': player['z'] + math.sin(angle) * spawn_distance,
+                'vx': 0,
+                'vz': 0,
+                'type': enemy_type['type'],
+                'health': enemy_type['health'],
+                'max_health': enemy_type['health'],
+                'size': enemy_type['size'],
+                'base_size': enemy_type['size'],
+                'speed': enemy_type['speed'],
+                'color': enemy_type['color'],
+                'attack_timer': random.uniform(0, 3),
+                'animation_frame': 0,
+                'ai_state': 'patrol',
+                'ai_timer': 0,
+            })
+        
+        # === BOSS BATTLE SYSTEM ===
+        # Spawn boss at milestones
+        if enemies_defeated >= 20 and not boss_spawned and len(bosses) == 0:
+            boss_spawned = True
+            bosses.append({
+                'x': player['x'] + 400,
+                'y': 0,
+                'z': player['z'],
+                'vx': 0,
+                'vy': 0,
+                'vz': 0,
+                'size': 200,  # HUGE boss!
+                'health': 300,
+                'max_health': 300,
+                'phase': 1,
+                'attack_pattern': 0,
+                'attack_timer': 0,
+                'animation': 0,
+            })
+            camera_shake = 40
+            slow_motion = 0.2
+        
+        # Update bosses
+        for boss in bosses[:]:
+            boss['animation'] += dt * 3
+            boss['attack_timer'] -= dt
+            
+            # Boss AI - different phases
+            dx = player['x'] - boss['x']
+            dz = player['z'] - boss['z']
+            dist = math.sqrt(dx**2 + dz**2)
+            
+            # Movement
+            if dist > 250:
+                if dist > 0:
+                    boss['vx'] = (dx / dist) * 3
+                    boss['vz'] = (dz / dist) * 3
+            else:
+                boss['vx'] *= 0.9
+                boss['vz'] *= 0.9
+            
+            boss['x'] += boss['vx']
+            boss['z'] += boss['vz']
+            
+            # Attack patterns
+            if boss['attack_timer'] <= 0:
+                boss['attack_timer'] = 1.5
+                boss['attack_pattern'] = (boss['attack_pattern'] + 1) % 3
+                
+                if boss['attack_pattern'] == 0:
+                    # Spiral projectile attack!
+                    for angle in range(0, 360, 20):
+                        rad = math.radians(angle + boss['animation'] * 50)
+                        projectiles.append({
+                            'x': boss['x'],
+                            'y': boss['size'] // 2,
+                            'z': boss['z'],
+                            'vx': math.cos(rad) * 5,
+                            'vy': 0,
+                            'vz': math.sin(rad) * 5,
+                            'size': 18,
+                            'damage': 25,
+                            'life': 3.0,
+                            'color': (200, 0, 200),
+                            'source': 'boss',
+                        })
+                elif boss['attack_pattern'] == 1:
+                    # Homing missiles!
+                    for _ in range(5):
+                        if dist > 0:
+                            projectiles.append({
+                                'x': boss['x'],
+                                'y': boss['size'] // 2,
+                                'z': boss['z'],
+                                'vx': (dx / dist) * 4 + random.uniform(-1, 1),
+                                'vy': random.uniform(-2, 2),
+                                'vz': (dz / dist) * 4 + random.uniform(-1, 1),
+                                'size': 15,
+                                'damage': 30,
+                                'life': 4.0,
+                                'color': (255, 100, 0),
+                                'source': 'boss',
+                            })
+                elif boss['attack_pattern'] == 2:
+                    # Ground pound shockwave!
+                    camera_shake = 40
+                    for angle in range(0, 360, 15):
+                        rad = math.radians(angle)
+                        particles.append({
+                            'x': boss['x'],
+                            'y': 0,
+                            'z': boss['z'],
+                            'vx': math.cos(rad) * 10,
+                            'vy': random.uniform(0, 5),
+                            'vz': math.sin(rad) * 10,
+                            'life': 1.5,
+                            'size': 20,
+                            'color': (150, 50, 200),
+                        })
+            
+            # Boss takes damage from attacks
+            if attack_pressed and dist < 180:
+                boss['health'] -= player['attack_power']
+                camera_shake = 20
+                # Hit effect
+                for _ in range(10):
+                    particles.append({
+                        'x': boss['x'],
+                        'y': boss['size'] // 2,
+                        'z': boss['z'],
+                        'vx': random.uniform(-6, 6),
+                        'vy': random.uniform(5, 15),
+                        'vz': random.uniform(-6, 6),
+                        'life': random.uniform(0.5, 1.0),
+                        'size': random.randint(8, 15),
+                        'color': (200, 0, 200),
+                    })
+            
+            if special_attack_pressed:
+                boss['health'] -= player['attack_power'] * 3
+                camera_shake = 35
+            
+            # Boss death
+            if boss['health'] <= 0:
+                # MEGA EXPLOSION!
+                for _ in range(100):
+                    particles.append({
+                        'x': boss['x'],
+                        'y': boss['size'] // 2,
+                        'z': boss['z'],
+                        'vx': random.uniform(-15, 15),
+                        'vy': random.uniform(0, 20),
+                        'vz': random.uniform(-15, 15),
+                        'life': random.uniform(1.0, 3.0),
+                        'size': random.randint(10, 30),
+                        'color': (random.randint(200, 255), random.randint(0, 100), random.randint(200, 255)),
+                    })
+                bosses.remove(boss)
+                score += int(10000 * combo_multiplier)
+                bosses_defeated += 1
+                objectives_completed = min(total_objectives, objectives_completed + 5)
+                camera_shake = 80
+                slow_motion = 0.1
+                continue
+            
+            # Boss collision damage
+            if dist < 100 and player['invincible'] <= 0:
+                player['health'] -= 40
+                player['invincible'] = 1.5
+                camera_shake = 35
+                screen_flash = 0.6
+                screen_flash_color = (255, 0, 255)
+        
+        # === UPDATE PROJECTILES ===
+        for proj in projectiles[:]:
+            proj['x'] += proj['vx']
+            proj['y'] += proj['vy']
+            proj['z'] += proj['vz']
+            proj['vy'] -= 0.2  # Gravity
+            proj['life'] -= dt
+            
+            if proj['life'] <= 0:
+                projectiles.remove(proj)
+                continue
+            
+            # Check collisions
+            if proj['source'] == 'player':
+                # Hit enemies
+                for enemy in enemies[:]:
+                    dist = math.sqrt((proj['x'] - enemy['x'])**2 + 
+                                   (proj['y'] - enemy['y'])**2 +
+                                   (proj['z'] - enemy['z'])**2)
+                    if dist < enemy['size']:
+                        enemy['health'] -= proj['damage']
+                        projectiles.remove(proj)
+                        # Hit effect
+                        for _ in range(5):
+                            particles.append({
+                                'x': proj['x'],
+                                'y': proj['y'],
+                                'z': proj['z'],
+                                'vx': random.uniform(-3, 3),
+                                'vy': random.uniform(2, 6),
+                                'vz': random.uniform(-3, 3),
+                                'life': 0.5,
+                                'size': 5,
+                                'color': proj['color'],
+                            })
+                        break
+            else:
+                # Hit player
+                dist = math.sqrt((proj['x'] - player['x'])**2 + 
+                               (proj['y'] - player['y'])**2 +
+                               (proj['z'] - player['z'])**2)
+                if dist < 60 and player['invincible'] <= 0:
+                    if player['shield'] > 0:
+                        player['shield'] -= proj['damage']
+                        if player['shield'] < 0:
+                            player['health'] += player['shield']
+                            player['shield'] = 0
+                    else:
+                        player['health'] -= proj['damage']
+                    player['invincible'] = 0.5
+                    projectiles.remove(proj)
+                    camera_shake = 15
+                    continue
+        
+        # Update special effects
+        camera_shake = max(0, camera_shake - dt * 60)
+        screen_flash = max(0, screen_flash - dt * 2.5)
+        
+        # Check win condition - progressive objectives
+        if coins_collected >= 25:
+            objectives_completed = min(total_objectives, objectives_completed + 1)
+            coins_collected = 0
+        if enemies_defeated >= 15:
+            objectives_completed = min(total_objectives, objectives_completed + 1)
+            enemies_defeated = 0
+        if bosses_defeated >= 1:
+            objectives_completed = min(total_objectives, objectives_completed + 3)
+            bosses_defeated = 0
+        
+        # === RENDERING - TRUE 3D with DEPTH SORTING! ===
+        
+        # Sky gradient based on time of day - ULTRA REALISTIC
+        if time_of_day < 0.25:  # Night to dawn
+            t = time_of_day / 0.25
+            sky_top = (int(15 + t * 120), int(15 + t * 150), int(35 + t * 185))
+            sky_bottom = (int(25 + t * 190), int(25 + t * 205), int(45 + t * 210))
+            ambient_light = 0.3 + t * 0.7
+        elif time_of_day < 0.5:  # Dawn to noon
+            t = (time_of_day - 0.25) / 0.25
+            sky_top = (int(135 + t * 10), int(165 + t * 45), int(220 + t * 20))
+            sky_bottom = (int(215 + t * 25), int(230 + t * 20), int(255))
+            ambient_light = 1.0
+        elif time_of_day < 0.75:  # Noon to dusk
+            t = (time_of_day - 0.5) / 0.25
+            sky_top = (int(145 - t * 70), int(210 - t * 110), int(240 - t * 100))
+            sky_bottom = (int(240 - t * 110), int(250 - t * 125), int(255 - t * 160))
+            ambient_light = 1.0 - t * 0.4
+        else:  # Dusk to night
+            t = (time_of_day - 0.75) / 0.25
+            sky_top = (int(75 - t * 60), int(100 - t * 85), int(140 - t * 105))
+            sky_bottom = (int(130 - t * 105), int(130 - t * 105), int(95 - t * 50))
+            ambient_light = 0.6 - t * 0.3
+        
+        # Draw sky gradient with dithering for smoothness
+        for y in range(HEIGHT):
+            if y < horizon_y:
+                # Sky portion
+                progress = y / horizon_y
+                color = (
+                    int(sky_top[0] + (sky_bottom[0] - sky_top[0]) * progress),
+                    int(sky_top[1] + (sky_bottom[1] - sky_top[1]) * progress),
+                    int(sky_top[2] + (sky_bottom[2] - sky_top[2]) * progress),
+                )
+            else:
+                # Ground gradient (below horizon)
+                progress = (y - horizon_y) / (HEIGHT - horizon_y)
+                # Grass color gradient - darker near horizon, lighter up close
+                grass_r = int(40 + progress * 50)
+                grass_g = int(90 + progress * 50)
+                grass_b = int(25 + progress * 35)
+                color = (grass_r, grass_g, grass_b)
+            pygame.draw.line(screen, color, (0, y), (WIDTH, y))
+        
+        # Draw sun/moon
+        sun_moon_y = int(horizon_y - abs(time_of_day - 0.5) * HEIGHT * 0.4)
+        sun_moon_x = WIDTH // 2 + int((time_of_day - 0.5) * WIDTH * 0.8)
+        if 0.2 < time_of_day < 0.8:  # Day - draw sun
+            for glow_size in range(80, 20, -10):
+                glow_alpha = int(30 - (80 - glow_size) * 0.3)
+                if glow_alpha > 0:
+                    glow_surf = pygame.Surface((glow_size * 2, glow_size * 2), pygame.SRCALPHA)
+                    pygame.draw.circle(glow_surf, (255, 255, 100, glow_alpha), (glow_size, glow_size), glow_size)
+                    screen.blit(glow_surf, (sun_moon_x - glow_size, sun_moon_y - glow_size))
+            pygame.draw.circle(screen, (255, 255, 150), (sun_moon_x, sun_moon_y), 25)
+            pygame.draw.circle(screen, (255, 255, 200), (sun_moon_x - 5, sun_moon_y - 5), 20)
+        else:  # Night - draw moon
+            pygame.draw.circle(screen, (220, 220, 240), (sun_moon_x, sun_moon_y), 22)
+            pygame.draw.circle(screen, (180, 180, 200), (sun_moon_x + 10, sun_moon_y - 5), 18)
+        
+        # Draw volumetric light rays (god rays) - TRUE 3D projection
+        for ray in light_rays:
+            sx, sy, scale = project_3d(ray['x'], 200, ray['z'])
+            if sx and scale > 0:
+                ray_width = int(ray['width'] * scale)
+                if ray_width > 5:
+                    ray_surf = pygame.Surface((ray_width, int(HEIGHT * 0.7)), pygame.SRCALPHA)
+                    for i in range(ray_width):
+                        alpha = int(ray['opacity'] * abs(math.sin(i / ray_width * math.pi)) * scale)
+                        if alpha > 0:
+                            pygame.draw.line(ray_surf, (255, 255, 200, min(alpha, 255)), (i, 0), (i, int(HEIGHT * 0.7)))
+                    screen.blit(ray_surf, (int(sx - ray_width // 2), 0))
+        
+        # Draw clouds with TRUE 3D perspective and realistic shading
+        for cloud in clouds:
+            sx, sy, scale = project_3d(cloud['x'], cloud['y'], cloud['z'])
+            if sx and scale > 0.1:
+                cloud_size = int(cloud['size'] * scale)
+                if cloud_size > 10:
+                    cloud_surf = pygame.Surface((cloud_size, cloud_size // 2), pygame.SRCALPHA)
+                    # Multiple cloud puffs for realism
+                    for puff in range(cloud['puffiness']):
+                        puff_x = (puff / cloud['puffiness']) * cloud_size
+                        puff_size = cloud_size // cloud['puffiness'] + random.randint(-10, 10)
+                        # Cloud shadow (darker bottom)
+                        shadow_alpha = max(0, min(255, int(cloud['opacity'] * scale * 0.4)))
+                        pygame.draw.ellipse(cloud_surf, (120, 120, 140, shadow_alpha),
+                                          (int(puff_x), cloud_size // 3, puff_size, puff_size // 2))
+                        # Cloud body
+                        body_alpha = max(0, min(255, int(cloud['opacity'] * scale)))
+                        pygame.draw.ellipse(cloud_surf, (255, 255, 255, body_alpha),
+                                          (int(puff_x), 0, puff_size, puff_size // 2))
+                        # Cloud highlights (brighter top)
+                        highlight_alpha = max(0, min(255, int(cloud['opacity'] * scale * 1.3)))
+                        pygame.draw.ellipse(cloud_surf, (255, 255, 255, highlight_alpha),
+                                          (int(puff_x + puff_size // 4), 0, puff_size // 2, puff_size // 4))
+                    screen.blit(cloud_surf, (int(sx - cloud_size // 2), int(sy)))
+        
+        # Draw mountains with TRUE 3D layering
+        for mountain in mountains:
+            sx, sy, scale = project_3d(mountain['x'], mountain['y'], mountain['z'])
+            if sx and scale > 0.05:
+                m_height = int(mountain['height'] * scale)
+                m_width = int(mountain['width'] * scale)
+                if m_height > 20 and m_width > 20:
+                    # Mountain is triangle/polygon
+                    # Color gets cooler/bluer with distance
+                    distance_factor = 1.0 - (scale * 0.3)
+                    base_r = int(100 * distance_factor + 150 * (1 - distance_factor))
+                    base_g = int(120 * distance_factor + 160 * (1 - distance_factor))
+                    base_b = int(100 * distance_factor + 180 * (1 - distance_factor))
+                    
+                    # Draw mountain polygon
+                    peak_y = int(sy - m_height)
+                    base_y = int(sy)
+                    left_x = int(sx - m_width // 2)
+                    right_x = int(sx + m_width // 2)
+                    
+                    # Main mountain shape
+                    pygame.draw.polygon(screen, (base_r, base_g, base_b), [
+                        (sx, peak_y),
+                        (left_x, base_y),
+                        (right_x, base_y)
+                    ])
+                    
+                    # Snow cap for tall mountains
+                    if mountain['height'] > 400:
+                        snow_height = int(m_height * 0.3)
+                        pygame.draw.polygon(screen, (240, 240, 250), [
+                            (sx, peak_y),
+                            (sx - m_width // 6, peak_y + snow_height),
+                            (sx + m_width // 6, peak_y + snow_height)
+                        ])
+        
+        # === 3D OBJECT RENDERING with DEPTH SORTING ===
+        # Collect all 3D objects with their depth for sorting
+        render_objects = []
+        
+        # Add grass blades
+        for grass in grass_blades:
+            render_objects.append(('grass', grass, grass['z']))
+        
+        # Add trees
+        for tree in trees:
+            render_objects.append(('tree', tree, tree['z']))
+        
+        # Add rocks
+        for rock in rocks:
+            render_objects.append(('rock', rock, rock['z']))
+        
+        # Add collectibles
+        for collectible in collectibles:
+            if not collectible['collected']:
+                render_objects.append(('collectible', collectible, collectible['z']))
+        
+        # Add enemies
+        for enemy in enemies:
+            render_objects.append(('enemy', enemy, enemy['z']))
+        
+        # Add bosses
+        for boss in bosses:
+            render_objects.append(('boss', boss, boss['z']))
+        
+        # Add projectiles
+        for proj in projectiles:
+            render_objects.append(('projectile', proj, proj['z']))
+        
+        # Add player
+        render_objects.append(('player', player, player['z']))
+        
+        # Add particles
+        for particle in particles:
+            render_objects.append(('particle', particle, particle['z']))
+        
+        # SORT by depth (far to near) - TRUE 3D DEPTH SORTING!
+        render_objects.sort(key=lambda obj: obj[2], reverse=True)
+        
+        # RENDER all objects in depth order
+        for obj_type, obj, depth in render_objects:
+            sx, sy, scale = project_3d(obj['x'], obj['y'], obj['z'])
+            if not sx or scale <= 0:
+                continue
+            
+            if obj_type == 'grass':
+                # Realistic grass blade
+                sway_offset = math.sin(obj['sway'] + wind_strength * 0.5) * scale * 8
+                blade_height = int(obj['height'] * scale)
+                base_x, base_y = sx, sy
+                tip_x, tip_y = int(sx + sway_offset), int(sy - blade_height)
+                
+                if blade_height > 2:
+                    blade_r = max(0, min(255, 40 + obj['color_variation']))
+                    blade_g = max(0, min(255, 120 + obj['color_variation']))
+                    blade_b = max(0, min(255, 30 + obj['color_variation'] // 2))
+                    blade_color = (blade_r, blade_g, blade_b)
+                    
+                    pygame.draw.line(screen, blade_color, (base_x, base_y), (tip_x, tip_y), max(1, int(2 * scale)))
+                    # Highlight
+                    if blade_height > 5:
+                        pygame.draw.line(screen, (blade_r + 40, blade_g + 40, blade_b + 20), 
+                                       (base_x + 1, base_y), (tip_x + 1, tip_y), 1)
+            
+            elif obj_type == 'tree':
+                # Realistic tree with trunk and foliage
+                tree_height = int(obj['height'] * scale)
+                trunk_width = int(obj['trunk_width'] * scale)
+                canopy_width = int(obj['width'] * scale)
+                
+                if tree_height > 10:
+                    # Trunk
+                    trunk_top_y = int(sy - tree_height)
+                    pygame.draw.rect(screen, (101, 67, 33), 
+                                   (int(sx - trunk_width // 2), trunk_top_y, trunk_width, tree_height))
+                    # Trunk texture lines
+                    for line_y in range(trunk_top_y, int(sy), max(5, int(15 * scale))):
+                        pygame.draw.line(screen, (80, 50, 20), 
+                                       (int(sx - trunk_width // 2), line_y), 
+                                       (int(sx + trunk_width // 2), line_y), 1)
+                    
+                    # Foliage - multiple leaf clusters
+                    sway = math.sin(obj['sway'] + time_elapsed) * 5 * scale
+                    for i in range(obj['leaves_density']):
+                        leaf_offset_x = random.randint(-canopy_width // 3, canopy_width // 3)
+                        leaf_offset_y = random.randint(-canopy_width // 2, 0)
+                        leaf_size = int(canopy_width * random.uniform(0.4, 0.7))
+                        leaf_x = int(sx + leaf_offset_x + sway)
+                        leaf_y = trunk_top_y + leaf_offset_y
+                        # Leaf cluster (circle)
+                        leaf_color = (random.randint(50, 90), random.randint(140, 180), random.randint(50, 80))
+                        pygame.draw.circle(screen, leaf_color, (leaf_x, leaf_y), leaf_size)
+                        # Highlight on leaves
+                        pygame.draw.circle(screen, (leaf_color[0] + 30, leaf_color[1] + 30, leaf_color[2] + 20),
+                                         (leaf_x - leaf_size // 4, leaf_y - leaf_size // 4), leaf_size // 3)
+            
+            elif obj_type == 'rock':
+                # Realistic rock obstacle
+                rock_size = int(obj['size'] * scale)
+                if rock_size > 5:
+                    rock_r = max(0, min(255, 100 + obj['color_variation']))
+                    rock_g = max(0, min(255, 100 + obj['color_variation']))
+                    rock_b = max(0, min(255, 100 + obj['color_variation']))
+                    # Irregular rock shape (polygon)
+                    rock_points = [
+                        (sx, int(sy - rock_size)),
+                        (int(sx - rock_size * 0.7), int(sy - rock_size * 0.3)),
+                        (int(sx - rock_size * 0.4), sy),
+                        (int(sx + rock_size * 0.5), sy),
+                        (int(sx + rock_size * 0.6), int(sy - rock_size * 0.4))
+                    ]
+                    pygame.draw.polygon(screen, (rock_r, rock_g, rock_b), rock_points)
+                    # Rock highlights
+                    pygame.draw.line(screen, (rock_r + 40, rock_g + 40, rock_b + 40),
+                                   (sx, int(sy - rock_size)), (int(sx - rock_size * 0.7), int(sy - rock_size * 0.3)), 2)
+            
+            elif obj_type == 'collectible':
+                # MASSIVE collectibles with glow and 3D rotation
+                coll_size = int(obj['size'] * scale)
+                if coll_size > 5:
+                    # Glow effect
+                    glow_size = int(obj['glow'] * scale)
+                    for glow in range(glow_size, 0, -2):
+                        glow_alpha = int(30 - glow * 2)
+                        if glow_alpha > 0:
+                            glow_surf = pygame.Surface((coll_size + glow * 2, coll_size + glow * 2), pygame.SRCALPHA)
+                            if obj['type'] == 'coin':
+                                pygame.draw.circle(glow_surf, (255, 215, 0, glow_alpha), 
+                                                 (coll_size // 2 + glow, coll_size // 2 + glow), coll_size // 2 + glow)
+                            elif obj['type'] in ['gem', 'diamond', 'crystal']:
+                                pygame.draw.circle(glow_surf, (100, 200, 255, glow_alpha), 
+                                                 (coll_size // 2 + glow, coll_size // 2 + glow), coll_size // 2 + glow)
+                            else:
+                                pygame.draw.circle(glow_surf, (255, 255, 0, glow_alpha), 
+                                                 (coll_size // 2 + glow, coll_size // 2 + glow), coll_size // 2 + glow)
+                            screen.blit(glow_surf, (int(sx - coll_size // 2 - glow), int(sy - coll_size // 2 - glow)))
+                    
+                    # Main collectible
+                    if obj['type'] == 'coin':
+                        # 3D coin with rotation
+                        pygame.draw.ellipse(screen, (255, 215, 0), 
+                                          (int(sx - coll_size // 2), int(sy - coll_size // 2), coll_size, coll_size))
+                        pygame.draw.ellipse(screen, (255, 255, 150), 
+                                          (int(sx - coll_size // 3), int(sy - coll_size // 3), coll_size // 2, coll_size // 2))
+                        pygame.draw.ellipse(screen, (200, 170, 0), 
+                                          (int(sx - coll_size // 2), int(sy - coll_size // 2), coll_size, coll_size), 2)
+                    elif obj['type'] in ['gem', 'diamond', 'crystal']:
+                        # 3D diamond/gem
+                        rotation = obj['rotation']
+                        points = []
+                        for i in range(6):
+                            angle = rotation + i * math.pi / 3
+                            px = sx + math.cos(angle) * coll_size // 2
+                            py = sy + math.sin(angle) * coll_size // 2
+                            points.append((int(px), int(py)))
+                        pygame.draw.polygon(screen, (100, 200, 255), points)
+                        # Inner highlight
+                        inner_points = [(sx, int(sy - coll_size // 3)), (int(sx - coll_size // 4), sy), (int(sx + coll_size // 4), sy)]
+                        pygame.draw.polygon(screen, (200, 255, 255), inner_points)
+                    else:  # star
+                        # 3D star
+                        for angle in range(0, 360, 72):
+                            angle_rad = math.radians(angle + obj['rotation'] * 50)
+                            outer_x = sx + math.cos(angle_rad) * coll_size // 2
+                            outer_y = sy + math.sin(angle_rad) * coll_size // 2
+                            pygame.draw.line(screen, (255, 255, 0), (sx, sy), (int(outer_x), int(outer_y)), 4)
+                        pygame.draw.circle(screen, (255, 255, 150), (sx, sy), coll_size // 4)
+            
+            elif obj_type == 'enemy':
+                # ULTRA REALISTIC enemies with 3D detail
+                enemy_size = int(obj['size'] * scale)
+                if enemy_size > 10:
+                    # Shadow
+                    shadow_surf = pygame.Surface((enemy_size, enemy_size // 4), pygame.SRCALPHA)
+                    pygame.draw.ellipse(shadow_surf, (0, 0, 0, 80), (0, 0, enemy_size, enemy_size // 4))
+                    screen.blit(shadow_surf, (int(sx - enemy_size // 2), int(sy + enemy_size // 2)))
+                    
+                    # Animated bobbing
+                    bob = math.sin(obj['animation_frame']) * 3 * scale
+                    enemy_y = int(sy + bob)
+                    
+                    # SHOW IF ENEMY IS IN RANGE - Target indicator!
+                    dist_to_player = math.sqrt((obj['x'] - player['x'])**2 + 
+                                               (obj['y'] - player['y'])**2 +
+                                               (obj['z'] - player['z'])**2)
+                    
+                    # Regular attack range indicator
+                    if dist_to_player < 150:
+                        # Draw targeting reticle - enemy is in attack range!
+                        target_surf = pygame.Surface((enemy_size * 2, enemy_size * 2), pygame.SRCALPHA)
+                        pygame.draw.circle(target_surf, (255, 200, 100, 120), (enemy_size, enemy_size), enemy_size, 4)
+                        pygame.draw.line(target_surf, (255, 200, 100, 180), 
+                                       (enemy_size - enemy_size, enemy_size), 
+                                       (enemy_size + enemy_size, enemy_size), 3)
+                        pygame.draw.line(target_surf, (255, 200, 100, 180), 
+                                       (enemy_size, enemy_size - enemy_size), 
+                                       (enemy_size, enemy_size + enemy_size), 3)
+                        screen.blit(target_surf, (sx - enemy_size, enemy_y - enemy_size))
+                    
+                    # Special attack range indicator (much bigger range)
+                    if 150 < dist_to_player < 300:
+                        # Purple indicator for special attack range only
+                        target_surf = pygame.Surface((enemy_size * 2, enemy_size * 2), pygame.SRCALPHA)
+                        pygame.draw.circle(target_surf, (255, 100, 255, 100), (enemy_size, enemy_size), enemy_size, 3)
+                        screen.blit(target_surf, (sx - enemy_size, enemy_y - enemy_size))
+                    
+                    # Draw different enemy types
+                    if obj['type'] == 'goblin':
+                        # Goblin - green with big eyes
+                        pygame.draw.circle(screen, obj['color'], (sx, enemy_y), enemy_size // 2)
+                        # Eyes
+                        eye_size = max(3, int(enemy_size * 0.15))
+                        pygame.draw.circle(screen, (255, 255, 0), (int(sx - enemy_size // 4), int(enemy_y - enemy_size // 6)), eye_size)
+                        pygame.draw.circle(screen, (255, 255, 0), (int(sx + enemy_size // 4), int(enemy_y - enemy_size // 6)), eye_size)
+                        pygame.draw.circle(screen, (0, 0, 0), (int(sx - enemy_size // 4), int(enemy_y - enemy_size // 6)), eye_size // 2)
+                        pygame.draw.circle(screen, (0, 0, 0), (int(sx + enemy_size // 4), int(enemy_y - enemy_size // 6)), eye_size // 2)
+                        # Mouth
+                        pygame.draw.arc(screen, (50, 50, 50), (int(sx - enemy_size // 4), int(enemy_y), enemy_size // 2, enemy_size // 4), 0, math.pi, 2)
+                    elif obj['type'] == 'orc':
+                        # Orc - brown with tusks
+                        pygame.draw.circle(screen, obj['color'], (sx, enemy_y), enemy_size // 2)
+                        # Tusks
+                        tusk_size = int(enemy_size * 0.2)
+                        pygame.draw.polygon(screen, (240, 240, 220), [
+                            (int(sx - enemy_size // 3), enemy_y),
+                            (int(sx - enemy_size // 2), int(enemy_y + tusk_size)),
+                            (int(sx - enemy_size // 4), enemy_y)
+                        ])
+                        pygame.draw.polygon(screen, (240, 240, 220), [
+                            (int(sx + enemy_size // 3), enemy_y),
+                            (int(sx + enemy_size // 2), int(enemy_y + tusk_size)),
+                            (int(sx + enemy_size // 4), enemy_y)
+                        ])
+                        # Eyes
+                        pygame.draw.circle(screen, (200, 0, 0), (int(sx - enemy_size // 5), int(enemy_y - enemy_size // 6)), max(2, int(enemy_size * 0.1)))
+                        pygame.draw.circle(screen, (200, 0, 0), (int(sx + enemy_size // 5), int(enemy_y - enemy_size // 6)), max(2, int(enemy_size * 0.1)))
+                    elif obj['type'] == 'demon':
+                        # Demon - red with horns
+                        pygame.draw.circle(screen, obj['color'], (sx, enemy_y), enemy_size // 2)
+                        # Horns
+                        horn_size = int(enemy_size * 0.3)
+                        pygame.draw.polygon(screen, (150, 0, 0), [
+                            (int(sx - enemy_size // 3), int(enemy_y - enemy_size // 2)),
+                            (int(sx - enemy_size // 2), int(enemy_y - enemy_size // 2 - horn_size)),
+                            (int(sx - enemy_size // 4), int(enemy_y - enemy_size // 2))
+                        ])
+                        pygame.draw.polygon(screen, (150, 0, 0), [
+                            (int(sx + enemy_size // 3), int(enemy_y - enemy_size // 2)),
+                            (int(sx + enemy_size // 2), int(enemy_y - enemy_size // 2 - horn_size)),
+                            (int(sx + enemy_size // 4), int(enemy_y - enemy_size // 2))
+                        ])
+                        # Glowing eyes
+                        pygame.draw.circle(screen, (255, 200, 0), (int(sx - enemy_size // 6), int(enemy_y - enemy_size // 8)), max(3, int(enemy_size * 0.12)))
+                        pygame.draw.circle(screen, (255, 200, 0), (int(sx + enemy_size // 6), int(enemy_y - enemy_size // 8)), max(3, int(enemy_size * 0.12)))
+                    elif obj['type'] == 'dragon':
+                        # Dragon - purple with wings
+                        pygame.draw.circle(screen, obj['color'], (sx, enemy_y), enemy_size // 2)
+                        # Wings (flapping animation)
+                        wing_angle = math.sin(obj['animation_frame'] * 2) * 0.3
+                        wing_size = int(enemy_size * 0.6)
+                        # Wing color (darker but valid)
+                        wing_color = (max(0, obj['color'][0] - 30), max(0, obj['color'][1] - 30), max(0, obj['color'][2] - 30))
+                        # Left wing
+                        pygame.draw.polygon(screen, wing_color, [
+                            (sx, enemy_y),
+                            (int(sx - wing_size * math.cos(wing_angle)), int(enemy_y - wing_size * 0.5)),
+                            (int(sx - wing_size * 0.5), enemy_y)
+                        ])
+                        # Right wing
+                        pygame.draw.polygon(screen, wing_color, [
+                            (sx, enemy_y),
+                            (int(sx + wing_size * math.cos(wing_angle)), int(enemy_y - wing_size * 0.5)),
+                            (int(sx + wing_size * 0.5), enemy_y)
+                        ])
+                        # Eyes
+                        pygame.draw.circle(screen, (255, 0, 255), (int(sx - enemy_size // 6), int(enemy_y - enemy_size // 8)), max(3, int(enemy_size * 0.1)))
+                        pygame.draw.circle(screen, (255, 0, 255), (int(sx + enemy_size // 6), int(enemy_y - enemy_size // 8)), max(3, int(enemy_size * 0.1)))
+                    else:  # wraith
+                        # Wraith - ghostly semi-transparent
+                        wraith_surf = pygame.Surface((enemy_size, enemy_size), pygame.SRCALPHA)
+                        pygame.draw.circle(wraith_surf, (*obj['color'], 180), (enemy_size // 2, enemy_size // 2), enemy_size // 2)
+                        screen.blit(wraith_surf, (int(sx - enemy_size // 2), int(enemy_y - enemy_size // 2)))
+                        # Glowing eyes
+                        pygame.draw.circle(screen, (150, 255, 255), (int(sx - enemy_size // 5), int(enemy_y - enemy_size // 6)), max(2, int(enemy_size * 0.08)))
+                        pygame.draw.circle(screen, (150, 255, 255), (int(sx + enemy_size // 5), int(enemy_y - enemy_size // 6)), max(2, int(enemy_size * 0.08)))
+                    
+                    # Health bar above enemy
+                    if enemy_size > 20:
+                        bar_width = enemy_size
+                        bar_height = max(3, int(enemy_size * 0.1))
+                        bar_y = int(enemy_y - enemy_size * 0.7)
+                        # Background
+                        pygame.draw.rect(screen, (60, 60, 60), (int(sx - bar_width // 2), bar_y, bar_width, bar_height))
+                        # Health
+                        health_ratio = obj['health'] / obj['max_health']
+                        health_color = (int(255 * (1 - health_ratio)), int(255 * health_ratio), 0)
+                        pygame.draw.rect(screen, health_color, (int(sx - bar_width // 2), bar_y, int(bar_width * health_ratio), bar_height))
+            
+            elif obj_type == 'boss':
+                # EPIC BOSS - MASSIVE and detailed!
+                boss_size = int(obj['size'] * scale)
+                if boss_size > 20:
+                    # Boss body
+                    pygame.draw.circle(screen, (80, 0, 100), (sx, sy), boss_size // 2)
+                    # Multiple eyes
+                    for i in range(6):
+                        angle = (i / 6) * 2 * math.pi + obj['animation']
+                        eye_x = sx + math.cos(angle) * boss_size * 0.3
+                        eye_y = sy + math.sin(angle) * boss_size * 0.3
+                        pygame.draw.circle(screen, (255, 50, 50), (int(eye_x), int(eye_y)), max(5, boss_size // 15))
+                    # Health bar
+                    bar_width = boss_size * 2
+                    bar_height = max(8, boss_size // 12)
+                    bar_y = int(sy - boss_size * 0.8)
+                    pygame.draw.rect(screen, (60, 0, 0), (int(sx - bar_width // 2), bar_y, bar_width, bar_height))
+                    health_ratio = obj['health'] / obj['max_health']
+                    pygame.draw.rect(screen, (255, 0, 0), (int(sx - bar_width // 2), bar_y, int(bar_width * health_ratio), bar_height))
+                    pygame.draw.rect(screen, (255, 255, 255), (int(sx - bar_width // 2), bar_y, bar_width, bar_height), 2)
+            
+            elif obj_type == 'projectile':
+                # Projectiles with glow
+                proj_size = int(obj['size'] * scale)
+                if proj_size > 2:
+                    # Glow
+                    for glow in range(2):
+                        glow_surf = pygame.Surface((proj_size * 2 + glow * 4, proj_size * 2 + glow * 4), pygame.SRCALPHA)
+                        pygame.draw.circle(glow_surf, (*obj['color'], 40), (proj_size + glow * 2, proj_size + glow * 2), proj_size + glow * 2)
+                        screen.blit(glow_surf, (int(sx - proj_size - glow * 2), int(sy - proj_size - glow * 2)))
+                    # Main projectile
+                    pygame.draw.circle(screen, obj['color'], (sx, sy), proj_size)
+            
+            elif obj_type == 'player':
+                # Player character
+                player_size = int(obj['size'] * scale)
+                if player_size > 15:
+                    # Body
+                    pygame.draw.rect(screen, (200, 50, 50), (int(sx - player_size * 0.25), int(sy - player_size * 0.15), int(player_size * 0.5), int(player_size * 0.45)))
+                    # Head
+                    pygame.draw.circle(screen, (230, 190, 160), (sx, int(sy - player_size * 0.3)), int(player_size * 0.25))
+                    # Eyes
+                    pygame.draw.circle(screen, (255, 255, 255), (int(sx - player_size * 0.1), int(sy - player_size * 0.35)), max(2, int(player_size * 0.08)))
+                    pygame.draw.circle(screen, (255, 255, 255), (int(sx + player_size * 0.1), int(sy - player_size * 0.35)), max(2, int(player_size * 0.08)))
+                    pygame.draw.circle(screen, (50, 30, 20), (int(sx - player_size * 0.1), int(sy - player_size * 0.33)), max(1, int(player_size * 0.04)))
+                    pygame.draw.circle(screen, (50, 30, 20), (int(sx + player_size * 0.1), int(sy - player_size * 0.33)), max(1, int(player_size * 0.04)))
+            
+            elif obj_type == 'particle':
+                # Particles
+                part_size = int(obj['size'] * scale)
+                if part_size > 0:
+                    life_alpha = int((obj['life'] / 2.0) * 255)
+                    if life_alpha > 0:
+                        part_surf = pygame.Surface((part_size * 2, part_size * 2), pygame.SRCALPHA)
+                        pygame.draw.circle(part_surf, (*obj['color'], min(255, life_alpha)), (part_size, part_size), part_size)
+                        screen.blit(part_surf, (int(sx - part_size), int(sy - part_size)))
+        
+        
+        # === EPIC HUD SYSTEM - Professional and Beautiful! ===
+        # Apply camera shake to screen
+        shake_offset_x = int(camera_shake_x)
+        shake_offset_y = int(camera_shake_y)
+        
+        # Screen flash effect
+        if screen_flash > 0:
+            flash_surf = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+            flash_alpha = int(screen_flash * 255)
+            flash_surf.fill((*screen_flash_color, flash_alpha))
+            screen.blit(flash_surf, (0, 0))
+        
+        # Semi-transparent HUD background
+        hud_surf = pygame.Surface((WIDTH, 180), pygame.SRCALPHA)
+        pygame.draw.rect(hud_surf, (0, 0, 0, 180), (0, 0, WIDTH, 180))
+        screen.blit(hud_surf, (0, 0))
+        
+        # Vital stats with beautiful bars
+        hud_font = pygame.font.Font(None, 32)
+        bar_width = 250
+        bar_height = 24
+        bar_x = 30
+        
+        # Health bar
+        health_label = hud_font.render("HEALTH", True, (255, 255, 255))
+        screen.blit(health_label, (bar_x, 25))
+        # Background
+        pygame.draw.rect(screen, (80, 0, 0), (bar_x + 120, 30, bar_width, bar_height))
+        # Health fill
+        health_ratio = max(0, player['health'] / player['max_health'])
+        health_color = (int(255 * (1 - health_ratio * 0.5)), int(255 * health_ratio), 0)
+        pygame.draw.rect(screen, health_color, (bar_x + 120, 30, int(bar_width * health_ratio), bar_height))
+        # Border
+        pygame.draw.rect(screen, (255, 255, 255), (bar_x + 120, 30, bar_width, bar_height), 3)
+        # Value text
+        health_val = hud_font.render(f"{int(player['health'])}/{player['max_health']}", True, (255, 255, 255))
+        screen.blit(health_val, (bar_x + 125, 32))
+        
+        # Shield bar (if player has shield)
+        if player['max_shield'] > 0:
+            shield_label = hud_font.render("SHIELD", True, (100, 200, 255))
+            screen.blit(shield_label, (bar_x, 60))
+            pygame.draw.rect(screen, (0, 50, 80), (bar_x + 120, 65, bar_width, bar_height))
+            shield_ratio = max(0, player['shield'] / player['max_shield'])
+            pygame.draw.rect(screen, (100, 200, 255), (bar_x + 120, 65, int(bar_width * shield_ratio), bar_height))
+            pygame.draw.rect(screen, (255, 255, 255), (bar_x + 120, 65, bar_width, bar_height), 3)
+            shield_val = hud_font.render(f"{int(player['shield'])}/{player['max_shield']}", True, (255, 255, 255))
+            screen.blit(shield_val, (bar_x + 125, 67))
+            stamina_y = 95
+        else:
+            stamina_y = 60
+        
+        # Stamina bar
+        stamina_label = hud_font.render("STAMINA", True, (100, 255, 100))
+        screen.blit(stamina_label, (bar_x, stamina_y))
+        pygame.draw.rect(screen, (0, 80, 0), (bar_x + 120, stamina_y + 5, bar_width, bar_height))
+        stamina_ratio = max(0, player['stamina'] / player['max_stamina'])
+        pygame.draw.rect(screen, (100, 255, 100), (bar_x + 120, stamina_y + 5, int(bar_width * stamina_ratio), bar_height))
+        pygame.draw.rect(screen, (255, 255, 255), (bar_x + 120, stamina_y + 5, bar_width, bar_height), 3)
+        
+        # Energy bar
+        energy_label = hud_font.render("ENERGY", True, (255, 255, 100))
+        screen.blit(energy_label, (bar_x, stamina_y + 35))
+        pygame.draw.rect(screen, (80, 80, 0), (bar_x + 120, stamina_y + 40, bar_width, bar_height))
+        energy_ratio = max(0, player['energy'] / player['max_energy'])
+        pygame.draw.rect(screen, (255, 255, 100), (bar_x + 120, stamina_y + 40, int(bar_width * energy_ratio), bar_height))
+        pygame.draw.rect(screen, (255, 255, 255), (bar_x + 120, stamina_y + 40, bar_width, bar_height), 3)
+        
+        # ATTACK COOLDOWNS & INDICATORS - Very visible!
+        attack_indicator_y = stamina_y + 75
+        indicator_font = pygame.font.Font(None, 28)
+        
+        # Regular Attack indicator
+        if player['attack_cooldown'] > 0:
+            attack_color = (150, 150, 150)  # Gray when cooling down
+            cooldown_text = f"[X] Attack: {player['attack_cooldown']:.1f}s"
+        elif player['energy'] >= 10:
+            attack_color = (100, 255, 100)  # Green when ready
+            cooldown_text = "[X] Attack: READY!"
+        else:
+            attack_color = (255, 100, 100)  # Red when not enough energy
+            cooldown_text = f"[X] Attack: Need {10 - int(player['energy'])} energy"
+        
+        attack_indicator = indicator_font.render(cooldown_text, True, attack_color)
+        screen.blit(attack_indicator, (bar_x, attack_indicator_y))
+        
+        # Special Attack indicator
+        if player['special_attack_cooldown'] > 0:
+            special_color = (150, 150, 150)  # Gray when cooling down
+            special_text = f"[Z] SPECIAL: {player['special_attack_cooldown']:.1f}s"
+        elif player['energy'] >= 40:
+            special_color = (255, 100, 255)  # Purple when ready
+            special_text = "[Z] SPECIAL: READY! (MASSIVE DAMAGE)"
+        else:
+            special_color = (255, 100, 100)  # Red when not enough energy
+            special_text = f"[Z] SPECIAL: Need {40 - int(player['energy'])} energy"
+        
+        special_indicator = indicator_font.render(special_text, True, special_color)
+        screen.blit(special_indicator, (bar_x, attack_indicator_y + 30))
+        
+        # Attack range visualization - Show circles around player
+        if keys[pygame.K_x] or keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]:
+            # Show regular attack range
+            px_screen, py_screen, p_scale = project_3d(player['x'], player['y'], player['z'])
+            if px_screen and p_scale > 0:
+                range_radius = int(150 * p_scale)
+                range_surf = pygame.Surface((range_radius * 2, range_radius * 2), pygame.SRCALPHA)
+                pygame.draw.circle(range_surf, (255, 200, 100, 80), (range_radius, range_radius), range_radius, 5)
+                screen.blit(range_surf, (px_screen - range_radius, py_screen - range_radius))
+        
+        if keys[pygame.K_z] or keys[pygame.K_LCTRL] or keys[pygame.K_RCTRL]:
+            # Show special attack range (much bigger!)
+            px_screen, py_screen, p_scale = project_3d(player['x'], player['y'], player['z'])
+            if px_screen and p_scale > 0:
+                range_radius = int(300 * p_scale)
+                range_surf = pygame.Surface((range_radius * 2, range_radius * 2), pygame.SRCALPHA)
+                pygame.draw.circle(range_surf, (255, 100, 255, 60), (range_radius, range_radius), range_radius, 8)
+                screen.blit(range_surf, (px_screen - range_radius, py_screen - range_radius))
+                # Pulsing effect
+                pulse = int(abs(math.sin(time_elapsed * 10)) * 30)
+                pygame.draw.circle(range_surf, (255, 0, 255, 100 - pulse), (range_radius, range_radius), range_radius - pulse, 3)
+                screen.blit(range_surf, (px_screen - range_radius, py_screen - range_radius))
+        
+        # Score and combo in top right
+        score_font = pygame.font.Font(None, 48)
+        score_text = score_font.render(f"SCORE: {score}", True, (255, 215, 0))
+        screen.blit(score_text, (WIDTH - score_text.get_width() - 30, 25))
+        
+        # Combo multiplier
+        if combo_multiplier > 1.0:
+            combo_font = pygame.font.Font(None, 40)
+            combo_text = combo_font.render(f"COMBO x{combo_multiplier:.1f}!", True, (255, 100, 255))
+            # Pulsing effect
+            combo_scale = 1.0 + math.sin(time_elapsed * 10) * 0.1
+            combo_surf = pygame.transform.scale(combo_text, 
+                (int(combo_text.get_width() * combo_scale), int(combo_text.get_height() * combo_scale)))
+            screen.blit(combo_surf, (WIDTH - combo_surf.get_width() - 30, 80))
+        
+        # Time elapsed
+        time_font = pygame.font.Font(None, 32)
+        time_text = time_font.render(f"TIME: {int(time_elapsed)}s", True, (200, 200, 200))
+        screen.blit(time_text, (WIDTH - time_text.get_width() - 30, 130))
+        
+        # Current objectives - bottom center
+        obj_bg = pygame.Surface((WIDTH - 100, 100), pygame.SRCALPHA)
+        pygame.draw.rect(obj_bg, (0, 0, 0, 200), (0, 0, WIDTH - 100, 100))
+        screen.blit(obj_bg, (50, HEIGHT - 120))
+        
+        obj_font = pygame.font.Font(None, 36)
+        mission_text = obj_font.render(f"MISSION: Collect Treasures & Defeat All Enemies!", True, (100, 200, 255))
+        screen.blit(mission_text, (WIDTH // 2 - mission_text.get_width() // 2, HEIGHT - 110))
+        
+        # Progress stats
+        stats_font = pygame.font.Font(None, 30)
+        stats_text = stats_font.render(
+            f"Treasures: {coins_collected}/25  |  Enemies: {enemies_defeated}/15  |  Bosses: {len(bosses)}  |  Progress: {objectives_completed}/{total_objectives}", 
+            True, (255, 255, 150))
+        screen.blit(stats_text, (WIDTH // 2 - stats_text.get_width() // 2, HEIGHT - 70))
+        
+        # Rage mode indicator
+        if player['rage_mode'] > 0:
+            rage_font = pygame.font.Font(None, 60)
+            rage_text = rage_font.render("⚡ RAGE MODE ACTIVE! ⚡", True, (255, 0, 255))
+            # Pulsing rage text
+            rage_scale = 1.0 + math.sin(time_elapsed * 15) * 0.2
+            rage_surf = pygame.transform.scale(rage_text, 
+                (int(rage_text.get_width() * rage_scale), int(rage_text.get_height() * rage_scale)))
+            screen.blit(rage_surf, (WIDTH // 2 - rage_surf.get_width() // 2, HEIGHT // 2 - 100))
+        
+        # Win condition display
+        if objectives_completed >= total_objectives:
+            win_bg = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+            pygame.draw.rect(win_bg, (0, 0, 0, 150), (0, 0, WIDTH, HEIGHT))
+            screen.blit(win_bg, (0, 0))
+            
+            win_font = pygame.font.Font(None, 100)
+            win_text = win_font.render("🎉 VICTORY! 🎉", True, (0, 255, 0))
+            screen.blit(win_text, (WIDTH // 2 - win_text.get_width() // 2, HEIGHT // 2 - 50))
+            
+            score_display = win_font.render(f"Final Score: {score}", True, (255, 215, 0))
+            screen.blit(score_display, (WIDTH // 2 - score_display.get_width() // 2, HEIGHT // 2 + 50))
+        
+        # Controls - top center - CLEARER!
+        controls_font = pygame.font.Font(None, 26)
+        controls_bg = pygame.Surface((WIDTH, 40), pygame.SRCALPHA)
+        pygame.draw.rect(controls_bg, (0, 0, 0, 180), (0, 0, WIDTH, 40))
+        screen.blit(controls_bg, (0, 0))
+        
+        controls_text = controls_font.render(
+            "WASD: Move | SPACE: Jump | [X]: Attack (close range) | [Z]: SPECIAL (huge range, 40 energy) | ESC: Exit", 
+            True, (255, 255, 100))
+        screen.blit(controls_text, (WIDTH // 2 - controls_text.get_width() // 2, 12))
+        
+        # Weather indicator
+        if weather != 'clear':
+            weather_text = controls_font.render(f"Weather: {weather.upper()}", True, (150, 200, 255))
+            screen.blit(weather_text, (WIDTH // 2 - weather_text.get_width() // 2, HEIGHT - 35))
+        
+        pygame.display.flip()
+    
+    # Exit fade out animation
+    for fade in range(0, 255, 15):
+        fade_surf = pygame.Surface((WIDTH, HEIGHT))
+        fade_surf.set_alpha(fade)
+        fade_surf.fill((0, 0, 0))
+        screen.blit(fade_surf, (0, 0))
+        pygame.display.flip()
+        clock.tick(60)
+
 
 def grass_mode():
     """Grass Mode - a peaceful grassy field"""
@@ -6205,6 +8444,10 @@ def mode_lobby():
             # Add back ONLY Combine Mode if unlocked
             if secret_hack.get('combine_mode_unlocked'):
                 options.insert(0, "Combine Mode")
+            
+            # Add FINAL MODE if unlocked (most powerful!)
+            if secret_hack.get('final_mode_unlocked'):
+                options.insert(0, "🔥 FINAL MODE 🔥")
         else:
             # Normal menu (or restored) - add Grass and Combine if unlocked
             # Add Grass Mode if unlocked
@@ -6218,6 +8461,10 @@ def mode_lobby():
                 # Insert Combine Mode before the Shop
                 shop_index = options.index("🛒 Shop")
                 options.insert(shop_index, "Combine Mode")
+            
+            # Add FINAL MODE if unlocked (insert at top!)
+            if secret_hack.get('final_mode_unlocked'):
+                options.insert(0, "🔥 FINAL MODE 🔥")
         
         # Check which modes are purchased THIS SESSION
         relax_unlocked = session_purchases.get('relax_mode', False)
@@ -6331,7 +8578,7 @@ def mode_lobby():
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.KEYDOWN:
-                # HACK SEQUENCE: Detect jjj, qqq, 67, and 123654 in main menu
+                # HACK SEQUENCE: Detect jjj, qqq, 67, 6776, and 123654 in main menu
                 global menu_key_buffer
                 key_name = pygame.key.name(event.key)
                 
@@ -6341,6 +8588,15 @@ def mode_lobby():
                     # Keep only last 6 characters (for 123654)
                     if len(menu_key_buffer) > 6:
                         menu_key_buffer = menu_key_buffer[-6:]
+                    
+                    # Check for 6776 - FINAL MODE EXPLOSION! (only after becoming Tralala)
+                    if menu_key_buffer[-4:] == "6776" and secret_hack.get('became_italian') and not secret_hack.get('final_mode_unlocked'):
+                        secret_hack['explosion_triggered'] = True
+                        secret_hack['final_mode_unlocked'] = True
+                        menu_key_buffer = ""
+                        # EPIC EXPLOSION SEQUENCE!
+                        explosion_sequence(screen)
+                        continue
                     
                     # Check for 67 - TRALALA MODE! (only works if human)
                     if menu_key_buffer[-2:] == "67" and secret_hack.get('became_human') and not secret_hack.get('became_italian'):
@@ -6393,6 +8649,8 @@ def mode_lobby():
                     if options[selected] == "Exit":
                         pygame.quit()
                         sys.exit()
+                    elif options[selected] == "🔥 FINAL MODE 🔥":
+                        final_mode()
                     elif options[selected] == "Grass Mode":
                         grass_mode()
                     elif options[selected] == "Combine Mode":
@@ -13179,6 +15437,15 @@ def run_escape_mom_mode():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if back_button.collidepoint(event.pos):
                     return 'lobby'
+
+# Play talking intro sequence ONCE when game starts
+try:
+    # Check if intro has been shown this session
+    if not hasattr(talking_intro, 'shown'):
+        talking_intro()
+        talking_intro.shown = True
+except:
+    pass  # If intro fails, continue to main menu
 
 # Main program loop
 while True:
