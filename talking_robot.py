@@ -6,11 +6,12 @@ You control when it talks!
 
 import os
 import sys
+import subprocess
 
 def speak(text):
     """Make the computer say something out loud!"""
     # This works on Mac!
-    os.system(f'say "{text}"')
+    subprocess.run(['say', text])
 
 def main():
     print("=" * 50)
@@ -63,11 +64,11 @@ def main():
             print(f"🤖: {user_input}")
             
             if mode == "loud":
-                # Louder voice
-                os.system(f'say -v "Alex" -r 150 "{user_input}"')
+                # Louder voice (using a different voice that sounds more commanding)
+                subprocess.run(['say', '-v', 'Fred', user_input])
             elif mode == "fast":
                 # Faster voice
-                os.system(f'say -v "Alex" -r 300 "{user_input}"')
+                subprocess.run(['say', '-r', '300', user_input])
             else:
                 # Normal voice
                 speak(user_input)
