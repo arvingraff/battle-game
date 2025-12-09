@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BattleGame - Play Online!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 4rem;
+            margin-bottom: 10px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .subtitle {
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+        
+        #game-container {
+            background: rgba(0,0,0,0.3);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            margin: 20px auto;
+        }
+        
+        canvas {
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .controls {
+            margin-top: 30px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .controls h2 {
+            margin-bottom: 15px;
+            font-size: 2rem;
+        }
+        
+        .control-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .control-item {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 10px;
+            transition: transform 0.2s;
+        }
+        
+        .control-item:hover {
+            transform: translateY(-5px);
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .key {
+            display: inline-block;
+            background: #fff;
+            color: #667eea;
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            margin: 5px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+        }
+        
+        .secret {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255,215,0,0.2);
+            border: 2px solid gold;
+            border-radius: 10px;
+            animation: glow 2s ease-in-out infinite;
+        }
+        
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 10px rgba(255,215,0,0.5); }
+            50% { box-shadow: 0 0 20px rgba(255,215,0,0.8); }
+        }
+        
+        .loading {
+            font-size: 1.5rem;
+            margin: 20px;
+        }
+        
+        .spinner {
+            border: 5px solid rgba(255,255,255,0.3);
+            border-top: 5px solid white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .footer {
+            margin-top: 30px;
+            opacity: 0.7;
+        }
+        
+        .share-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            transition: transform 0.2s;
+        }
+        
+        .share-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .share-btn:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 BATTLEGAME 🎮</h1>
+        <p class="subtitle">Epic Online Multiplayer Battle Game!</p>
+        
+        <div id="game-container">
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                Loading Epic Game...
+            </div>
+            <canvas id="canvas" style="display:none;"></canvas>
+        </div>
+        
+        <div class="controls">
+            <h2>🎯 Controls</h2>
+            <div class="control-list">
+                <div class="control-item">
+                    <strong>Movement</strong><br>
+                    <span class="key">W A S D</span><br>
+                    or Arrow Keys
+                </div>
+                <div class="control-item">
+                    <strong>Attack</strong><br>
+                    <span class="key">SPACE</span>
+                </div>
+                <div class="control-item">
+                    <strong>Special Attack</strong><br>
+                    <span class="key">SHIFT</span>
+                </div>
+                <div class="control-item">
+                    <strong>Jump (Final Mode)</strong><br>
+                    <span class="key">J</span>
+                </div>
+            </div>
+            
+            <div class="secret">
+                <strong>🔥 SECRET CODE 🔥</strong><br>
+                Enter <span class="key">6776</span> to unlock FINAL MODE!<br>
+                <small>(After the Tralala transformation)</small>
+            </div>
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <button class="share-btn" onclick="shareGame()">📤 Share This Game!</button>
+            <button class="share-btn" onclick="copyLink()">🔗 Copy Link</button>
+        </div>
+        
+        <div class="footer">
+            <p>Made with ❤️ using Python & Pygame</p>
+            <p>Play with friends online!</p>
+        </div>
+    </div>
+    
+    <script src="game.js"></script>
+    <script>
+        function shareGame() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'BattleGame - Play Now!',
+                    text: 'Check out this epic online battle game!',
+                    url: window.location.href
+                }).catch(err => console.log('Error sharing:', err));
+            } else {
+                copyLink();
+            }
+        }
+        
+        function copyLink() {
+            navigator.clipboard.writeText(window.location.href);
+            alert('Link copied! Share it with your friends! 🎮');
+        }
+        
+        // Hide loading when game loads
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('canvas').style.display = 'block';
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
