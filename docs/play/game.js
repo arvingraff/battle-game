@@ -6,12 +6,24 @@ const PLAYER_SPEED = 5;
 const BULLET_SPEED = 10;
 const BULLET_SIZE = 10;
 
+// Game States
+const STATE_MENU = 0;
+const STATE_PLAYING = 1;
+const STATE_GAMEOVER = 2;
+
 // Game State
 let canvas, ctx;
 let lastTime = 0;
 let gameRunning = false;
+let gameState = STATE_MENU;
 let audioContext;
 let sounds = {};
+let bgMusicNode = null;
+let gameMode = 'battle'; // 'battle', 'survival'
+let wave = 1;
+let enemies = [];
+let secretBuffer = "";
+let godMode = false;
 
 const keys = {
     w: false, a: false, s: false, d: false,
@@ -71,16 +83,82 @@ window.onload = function() {
         if (audioContext && audioContext.state === 'suspended') {
             audioContext.resume();
         }
+
+        // Secret Code Detection
+        if (e.key.length === 1) {
+            secretBuffer += e.key;
+            if (secretBuffer.length > 10) secretBuffer = secretBuffer.slice(-10);
+            checkSecrets();
+        }
+
+        // Menu Navigation
+        if (gameState === STATE_MENU) {
+            if (e.key === '1') startGame('battle');
+            if (e.key === '2') startGame('survival');
+        } else if (gameState === STATE_GAMEOVER) {
+            if (e.key === 'r' || e.key === 'R') {
+                gameState = STATE_MENU;
+                playSound('select');
+            }
+        }
     });
     
     window.addEventListener('keyup', (e) => {
         if(keys.hasOwnProperty(e.key)) keys[e.key] = false;
     });
 
+    // Mouse/Touch for Menu
+    canvas.addEventListener('mousedown', handleMenuClick);
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault(); // Prevent scrolling
+        handleMenuClick(e.touches[0]);
+    }, {passive: false});
+
     // Start Game Loop
     gameRunning = true;
     requestAnimationFrame(gameLoop);
 };
+
+function handleMenuClick(e) {
+    if (gameState !== STATE_MENU && gameState !== STATE_GAMEOVER) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+    if (gameState === STATE_MENU) {
+        // Battle Mode Button
+        if (x > 200 && x < 600 && y > 250 && y < 320) {
+            startGame('battle');
+        }
+        // Survival Mode Button
+        else if (x > 200 && x < 600 && y > 350 && y < 420) {
+            startGame('survival');
+        }
+    } else if (gameState === STATE_GAMEOVER) {
+        // Restart Button
+        if (x > 250 && x < 550 && y > 400 && y < 470) {
+            gameState = STATE_MENU;
+            playSound('select');
+        }
+    }
+}
+
+function checkSecrets() {
+    if (secretBuffer.includes("6776")) {
+        godMode = !godMode;
+        alert("GOD MODE " + (godMode ? "ACTIVATED" : "DEACTIVATED"));
+        secretBuffer = "";
+        playSound('win');
+    }
+}
+
+function startGame(mode) {
+    gameMode = mode;
+    gameState = STATE_PLAYING;
+    resetGameLogic();
+    playMusic();
+}
 
 // Main Game Loop
 function gameLoop(timestamp) {
@@ -97,6 +175,22 @@ function gameLoop(timestamp) {
 
 // Update Game Logic
 function update(deltaTime) {
+    if (gameState === STATE_MENU || gameState === STATE_GAMEOVER) return;
+
+    if (gameMode === 'battle') {
+        updateBattle(deltaTime);
+    } else if (gameMode === 'survival') {
+        updateSurvival(deltaTime);
+    }
+    
+    // Update Bullets (Common)
+    updateBullets();
+    
+    // Update Particles (Common)
+    updateParticles();
+}
+
+function updateBattle(deltaTime) {
     // Player 1 Movement (WASD)
     if (keys.w && players[0].y > 0) players[0].y -= PLAYER_SPEED;
     if (keys.s && players[0].y < CANVAS_HEIGHT - PLAYER_SIZE) players[0].y += PLAYER_SPEED;
@@ -143,8 +237,76 @@ function update(deltaTime) {
         cpu.cooldown = 30;
     }
     if (cpu.cooldown > 0) cpu.cooldown--;
+}
 
-    // Update Bullets
+function updateSurvival(deltaTime) {
+    // Player 1 Movement (Same as Battle)
+    if (keys.w && players[0].y > 0) players[0].y -= PLAYER_SPEED;
+    if (keys.s && players[0].y < CANVAS_HEIGHT - PLAYER_SIZE) players[0].y += PLAYER_SPEED;
+    if (keys.a && players[0].x > 0) {
+        players[0].x -= PLAYER_SPEED;
+        players[0].direction = -1;
+    }
+    if (keys.d && players[0].x < CANVAS_WIDTH - PLAYER_SIZE) {
+        players[0].x += PLAYER_SPEED;
+        players[0].direction = 1;
+    }
+    
+    // Player 1 Shooting
+    if (keys[" "] && players[0].cooldown <= 0) {
+        shoot(players[0]);
+        players[0].cooldown = 20;
+    }
+    if (players[0].cooldown > 0) players[0].cooldown--;
+    
+    // Spawn Enemies
+    if (enemies.length === 0) {
+        startWave();
+    }
+    
+    // Update Enemies
+    for (let i = enemies.length - 1; i >= 0; i--) {
+        let e = enemies[i];
+        
+        // Move towards player
+        let dx = players[0].x - e.x;
+        let dy = players[0].y - e.y;
+        let dist = Math.sqrt(dx*dx + dy*dy);
+        
+        if (dist > 0) {
+            e.x += (dx / dist) * e.speed;
+            e.y += (dy / dist) * e.speed;
+        }
+        
+        // Collision with player
+        if (rectIntersect(e.x, e.y, e.width, e.height, players[0].x, players[0].y, players[0].width, players[0].height)) {
+            if (!godMode) {
+                players[0].health -= 1;
+                if (players[0].health <= 0) {
+                    gameOver("Game Over! You reached Wave " + wave);
+                }
+            }
+        }
+    }
+}
+
+function startWave() {
+    wave++;
+    let count = wave * 2 + 3;
+    for (let i = 0; i < count; i++) {
+        enemies.push({
+            x: Math.random() < 0.5 ? -50 : CANVAS_WIDTH + 50,
+            y: Math.random() * CANVAS_HEIGHT,
+            width: 40,
+            height: 40,
+            color: '#e67e22', // Orange
+            health: 20 + wave * 5,
+            speed: 2 + Math.random() * 2
+        });
+    }
+}
+
+function updateBullets() {
     for (let i = bullets.length - 1; i >= 0; i--) {
         let b = bullets[i];
         b.x += b.vx;
@@ -157,25 +319,47 @@ function update(deltaTime) {
         }
         
         // Check collisions
-        for (let p of players) {
-            if (p === b.owner) continue; // Don't hit self
-            
-            if (rectIntersect(b.x, b.y, BULLET_SIZE, BULLET_SIZE, p.x, p.y, p.width, p.height)) {
-                p.health -= 10;
-                playSound('hit');
-                createParticles(b.x, b.y, p.color);
-                bullets.splice(i, 1);
+        if (gameMode === 'battle') {
+            for (let p of players) {
+                if (p === b.owner) continue; // Don't hit self
                 
-                if (p.health <= 0) {
-                    playSound('win');
-                    resetGame(b.owner.name + " Wins!");
+                if (rectIntersect(b.x, b.y, BULLET_SIZE, BULLET_SIZE, p.x, p.y, p.width, p.height)) {
+                    if (p === players[0] && godMode) continue; // God mode protection
+
+                    p.health -= 10;
+                    playSound('hit');
+                    createParticles(b.x, b.y, p.color);
+                    bullets.splice(i, 1);
+                    
+                    if (p.health <= 0) {
+                        playSound('win');
+                        gameOver(b.owner.name + " Wins!");
+                    }
+                    break;
                 }
-                break;
+            }
+        } else if (gameMode === 'survival') {
+            // Check enemy collisions
+            for (let j = enemies.length - 1; j >= 0; j--) {
+                let e = enemies[j];
+                if (rectIntersect(b.x, b.y, BULLET_SIZE, BULLET_SIZE, e.x, e.y, e.width, e.height)) {
+                    e.health -= 10;
+                    playSound('hit');
+                    createParticles(b.x, b.y, e.color);
+                    bullets.splice(i, 1);
+                    
+                    if (e.health <= 0) {
+                        enemies.splice(j, 1);
+                        players[0].score += 10;
+                    }
+                    break;
+                }
             }
         }
     }
-    
-    // Update Particles
+}
+
+function updateParticles() {
     for (let i = particles.length - 1; i >= 0; i--) {
         let p = particles[i];
         p.x += p.vx;
@@ -201,25 +385,40 @@ function draw() {
         ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(CANVAS_WIDTH,i); ctx.stroke();
     }
 
-    // Draw Players
-    for (let p of players) {
-        ctx.fillStyle = p.color;
-        // Shadow
-        ctx.shadowColor = 'rgba(0,0,0,0.5)';
-        ctx.shadowBlur = 10;
-        ctx.fillRect(p.x, p.y, p.width, p.height);
-        ctx.shadowBlur = 0;
+    if (gameState === STATE_MENU) {
+        drawMenu();
+        return;
+    } else if (gameState === STATE_GAMEOVER) {
+        drawGameOver();
+        return;
+    }
+
+    if (gameMode === 'battle') {
+        // Draw Players
+        for (let p of players) {
+            drawPlayer(p);
+        }
+    } else if (gameMode === 'survival') {
+        // Draw Player 1
+        drawPlayer(players[0]);
         
-        // Eyes (to show direction)
+        // Draw Enemies
+        for (let e of enemies) {
+            ctx.fillStyle = e.color;
+            ctx.fillRect(e.x, e.y, e.width, e.height);
+            
+            // Enemy Health Bar
+            ctx.fillStyle = 'red';
+            ctx.fillRect(e.x, e.y - 10, e.width, 3);
+            ctx.fillStyle = 'green';
+            ctx.fillRect(e.x, e.y - 10, e.width * (e.health / (20 + wave * 5)), 3);
+        }
+        
+        // Draw Wave Info
         ctx.fillStyle = 'white';
-        let eyeX = (p.direction === 1) ? p.x + 30 : p.x + 10;
-        ctx.fillRect(eyeX, p.y + 10, 10, 10);
-        
-        // Health Bar
-        ctx.fillStyle = '#c0392b';
-        ctx.fillRect(p.x, p.y - 15, p.width, 5);
-        ctx.fillStyle = '#2ecc71';
-        ctx.fillRect(p.x, p.y - 15, p.width * (p.health / p.maxHealth), 5);
+        ctx.font = '20px Arial';
+        ctx.fillText("Wave: " + wave, 20, 30);
+        ctx.fillText("Score: " + players[0].score, 20, 60);
     }
 
     // Draw Bullets
@@ -239,6 +438,94 @@ function draw() {
         ctx.fill();
         ctx.globalAlpha = 1.0;
     }
+
+    // Draw God Mode Indicator
+    if (godMode) {
+        ctx.fillStyle = 'gold';
+        ctx.font = 'bold 20px Arial';
+        ctx.fillText("GOD MODE", 10, CANVAS_HEIGHT - 10);
+    }
+}
+
+function drawMenu() {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 60px Arial';
+    ctx.textAlign = 'center';
+    ctx.shadowColor = '#3498db';
+    ctx.shadowBlur = 20;
+    ctx.fillText("BATTLEGAME", CANVAS_WIDTH/2, 150);
+    ctx.shadowBlur = 0;
+
+    // Battle Mode Button
+    ctx.fillStyle = '#3498db';
+    ctx.fillRect(200, 250, 400, 70);
+    ctx.fillStyle = '#fff';
+    ctx.font = '30px Arial';
+    ctx.fillText("1. BATTLE MODE", CANVAS_WIDTH/2, 295);
+
+    // Survival Mode Button
+    ctx.fillStyle = '#e74c3c';
+    ctx.fillRect(200, 350, 400, 70);
+    ctx.fillStyle = '#fff';
+    ctx.fillText("2. SURVIVAL MODE", CANVAS_WIDTH/2, 395);
+
+    ctx.font = '20px Arial';
+    ctx.fillStyle = '#bdc3c7';
+    ctx.fillText("Press 1 or 2 to Start", CANVAS_WIDTH/2, 500);
+    ctx.fillText("Secret Code: ????", CANVAS_WIDTH/2, 540);
+}
+
+let gameOverMessage = "";
+
+function drawGameOver() {
+    // Draw the game state behind the overlay
+    if (gameMode === 'battle') {
+        for (let p of players) drawPlayer(p);
+    } else {
+        drawPlayer(players[0]);
+        for (let e of enemies) {
+            ctx.fillStyle = e.color;
+            ctx.fillRect(e.x, e.y, e.width, e.height);
+        }
+    }
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 50px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(gameOverMessage, CANVAS_WIDTH/2, CANVAS_HEIGHT/2 - 50);
+
+    // Restart Button
+    ctx.fillStyle = '#2ecc71';
+    ctx.fillRect(250, 400, 300, 70);
+    ctx.fillStyle = '#fff';
+    ctx.font = '30px Arial';
+    ctx.fillText("PLAY AGAIN (R)", CANVAS_WIDTH/2, 445);
+}
+
+function drawPlayer(p) {
+    ctx.fillStyle = p.color;
+    // Shadow
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 10;
+    ctx.fillRect(p.x, p.y, p.width, p.height);
+    ctx.shadowBlur = 0;
+    
+    // Eyes (to show direction)
+    ctx.fillStyle = 'white';
+    let eyeX = (p.direction === 1) ? p.x + 30 : p.x + 10;
+    ctx.fillRect(eyeX, p.y + 10, 10, 10);
+    
+    // Health Bar
+    ctx.fillStyle = '#c0392b';
+    ctx.fillRect(p.x, p.y - 15, p.width, 5);
+    ctx.fillStyle = '#2ecc71';
+    ctx.fillRect(p.x, p.y - 15, p.width * (p.health / p.maxHealth), 5);
 }
 
 // Helper Functions
@@ -251,9 +538,29 @@ function initAudio() {
         loadSound('shoot', 'assets/coin.mp3'); // Using coin sound for shooting for now
         loadSound('hit', 'assets/fart.mp3');   // Using fart sound for hit
         loadSound('win', 'assets/321go.mp3');  // Using 321go for win
+        loadSound('music', 'assets/playmusic.mp3'); // Background music
+        loadSound('select', 'assets/coin.mp3'); // Menu select sound
         
     } catch(e) {
         console.log('Web Audio API is not supported in this browser');
+    }
+}
+
+function playMusic() {
+    if (bgMusicNode) return; // Already playing
+    
+    if (sounds['music'] && audioContext) {
+        bgMusicNode = audioContext.createBufferSource();
+        bgMusicNode.buffer = sounds['music'];
+        bgMusicNode.loop = true;
+        
+        // Create gain node for volume control
+        const gainNode = audioContext.createGain();
+        gainNode.gain.value = 0.3; // 30% volume
+        
+        bgMusicNode.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        bgMusicNode.start(0);
     }
 }
 
@@ -306,7 +613,16 @@ function createParticles(x, y, color) {
 }
 
 function resetGame(message) {
-    alert(message);
+    // Deprecated, use gameOver instead
+    gameOver(message);
+}
+
+function gameOver(message) {
+    gameOverMessage = message;
+    gameState = STATE_GAMEOVER;
+}
+
+function resetGameLogic() {
     players[0].health = 100;
     players[0].x = 100;
     players[0].y = CANVAS_HEIGHT / 2 - PLAYER_SIZE / 2;
@@ -317,4 +633,7 @@ function resetGame(message) {
     
     bullets = [];
     particles = [];
+    enemies = [];
+    wave = 1;
+    players[0].score = 0;
 }
