@@ -2,7 +2,7 @@
 
 **Epic Multiplayer Combat Game with Insane Game Modes!**
 
-[🎮 Play Now](https://YOUR_USERNAME.github.io/battlegame/) | [⬇️ Download](https://github.com/YOUR_USERNAME/battlegame/archive/refs/heads/main.zip) | [📖 Docs](https://YOUR_USERNAME.github.io/battlegame/)
+[🎮 Play Now](https://arvingraff.github.io/battle-game/) | [⬇️ Download](https://github.com/arvingraff/battle-game/releases/latest/download/BattleGame-v1.0.zip) | [📖 Docs](https://arvingraff.github.io/battle-game/)
 
 ---
 
@@ -31,10 +31,10 @@
 pip3 install pygame
 
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/battlegame.git
+git clone https://github.com/arvingraff/battle-game.git
 
 # Run the game
-cd battlegame
+cd battle-game
 python3 battlegame.py
 ```
 
@@ -146,7 +146,7 @@ This project is open source and available for personal use.
 
 If you enjoy BattleGame, give it a ⭐ on GitHub!
 
-[⭐ Star on GitHub](https://github.com/YOUR_USERNAME/battlegame)
+[⭐ Star on GitHub](https://github.com/arvingraff/battle-game)
 
 ---
 
