@@ -151,11 +151,6 @@ def quick_match_flow(mode_type=0):
     # Check for cancel during scan
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            running = False
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if ok_button.collidepoint(event.pos):
-                running = False
-        if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
@@ -8410,10 +8405,1101 @@ def draw_menu_pointer(screen, x, y, transformation, direction, walk_frame, movin
                            int(9 * scale), int(5 * scale)), 0, 3.14, 2)
 
 
+def rainbow_explosion():
+    """EPIC RAINBOW EXPLOSION when you type gagabubu!"""
+    import subprocess
+    
+    # Announce it!
+    try:
+        subprocess.run(['say', '-v', 'Superstar', '-r', '250', 'Gaga bubu! Rainbow explosion!'], check=False)
+    except:
+        pass
+    
+    explosion_duration = 5  # 5 seconds of rainbow madness
+    start_time = time.time()
+    
+    # Create rainbow particles
+    particles = []
+    for _ in range(200):
+        particles.append({
+            'x': WIDTH // 2,
+            'y': HEIGHT // 2,
+            'vx': random.uniform(-15, 15),
+            'vy': random.uniform(-15, 15),
+            'color': [random.randint(0, 255) for _ in range(3)],
+            'size': random.randint(5, 20),
+            'life': random.uniform(1, 3)
+        })
+    
+    # Rainbow rings expanding
+    rings = []
+    
+    while time.time() - start_time < explosion_duration:
+        elapsed = time.time() - start_time
+        
+        # Cycle through rainbow background
+        bg_hue = (elapsed * 100) % 360
+        bg_color = pygame.Color(0)
+        bg_color.hsva = (bg_hue, 100, 50, 100)
+        screen.fill(bg_color)
+        
+        # Add new expanding rings
+        if random.random() < 0.3:
+            rings.append({
+                'x': WIDTH // 2,
+                'y': HEIGHT // 2,
+                'radius': 10,
+                'color': [random.randint(100, 255) for _ in range(3)],
+                'speed': random.uniform(5, 15),
+                'width': random.randint(3, 8)
+            })
+        
+        # Draw and update rings
+        for ring in rings[:]:
+            ring['radius'] += ring['speed']
+            if ring['radius'] > max(WIDTH, HEIGHT):
+                rings.remove(ring)
+            else:
+                pygame.draw.circle(screen, ring['color'], 
+                                 (ring['x'], ring['y']), 
+                                 int(ring['radius']), ring['width'])
+        
+        # Update and draw particles
+        for particle in particles[:]:
+            particle['x'] += particle['vx']
+            particle['y'] += particle['vy']
+            particle['vy'] += 0.3  # Gravity
+            particle['life'] -= 0.016
+            
+            if particle['life'] <= 0 or particle['y'] > HEIGHT:
+                particles.remove(particle)
+            else:
+                # Particle changes color over time
+                hue = (elapsed * 200 + particle['x']) % 360
+                p_color = pygame.Color(0)
+                p_color.hsva = (hue, 100, 100, 100)
+                
+                pygame.draw.circle(screen, p_color, 
+                                 (int(particle['x']), int(particle['y'])), 
+                                 particle['size'])
+        
+        # Add new particles continuously
+        if len(particles) < 300:
+            for _ in range(5):
+                particles.append({
+                    'x': WIDTH // 2,
+                    'y': HEIGHT // 2,
+                    'vx': random.uniform(-15, 15),
+                    'vy': random.uniform(-15, 15),
+                    'color': [random.randint(0, 255) for _ in range(3)],
+                    'size': random.randint(5, 20),
+                    'life': random.uniform(1, 3)
+                })
+        
+        # Rainbow text effects
+        text_font = pygame.font.Font(None, 120)
+        messages = ["GAGABUBU!", "🌈", "RAINBOW!", "✨", "EXPLOSION!", "💥"]
+        msg = messages[int(elapsed * 2) % len(messages)]
+        
+        # Each letter in different color
+        x_offset = 0
+        for i, char in enumerate(msg):
+            char_hue = (elapsed * 100 + i * 30) % 360
+            char_color = pygame.Color(0)
+            char_color.hsva = (char_hue, 100, 100, 100)
+            
+            char_text = text_font.render(char, True, char_color)
+            char_y = HEIGHT // 2 - 200 + int(math.sin(elapsed * 5 + i) * 20)
+            screen.blit(char_text, (WIDTH // 2 - 300 + x_offset, char_y))
+            x_offset += char_text.get_width()
+        
+        # Rainbow spiral effect
+        num_spirals = 8
+        for i in range(num_spirals):
+            angle = (elapsed * 3 + i * (360 / num_spirals)) % 360
+            radius = 150 + math.sin(elapsed * 2) * 50
+            
+            spiral_x = WIDTH // 2 + int(math.cos(math.radians(angle)) * radius)
+            spiral_y = HEIGHT // 2 + int(math.sin(math.radians(angle)) * radius)
+            
+            spiral_hue = (angle + elapsed * 100) % 360
+            spiral_color = pygame.Color(0)
+            spiral_color.hsva = (spiral_hue, 100, 100, 100)
+            
+            pygame.draw.circle(screen, spiral_color, (spiral_x, spiral_y), 15)
+        
+        # Screen flash effect
+        if int(elapsed * 4) % 2 == 0:
+            flash_surf = pygame.Surface((WIDTH, HEIGHT))
+            flash_surf.set_alpha(30)
+            flash_hue = (elapsed * 200) % 360
+            flash_color = pygame.Color(0)
+            flash_color.hsva = (flash_hue, 100, 100, 100)
+            flash_surf.fill(flash_color)
+            screen.blit(flash_surf, (0, 0))
+        
+        pygame.display.flip()
+        clock.tick(60)
+        
+        # Check for exit
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                return
+    
+    # Final fade out
+    for fade_alpha in range(255, 0, -10):
+        screen.fill((0, 0, 0))
+        fade_surf = pygame.Surface((WIDTH, HEIGHT))
+        fade_surf.set_alpha(fade_alpha)
+        fade_surf.fill((255, 0, 255))
+        screen.blit(fade_surf, (0, 0))
+        pygame.display.flip()
+        clock.tick(60)
+
+
+def quiz_mode():
+    """General Knowledge Quiz Mode - Test your brain!"""
+    import subprocess
+    
+    # Quiz questions - each has question, options (4 choices), and correct answer index
+    questions = [
+        {
+            "q": "What is the capital of France?",
+            "options": ["London", "Paris", "Berlin", "Madrid"],
+            "correct": 1,
+            "fun_fact": "Paris is called the City of Light!"
+        },
+        {
+            "q": "How many planets are in our solar system?",
+            "options": ["7", "8", "9", "10"],
+            "correct": 1,
+            "fun_fact": "Pluto was reclassified as a dwarf planet in 2006!"
+        },
+        {
+            "q": "What is the largest ocean on Earth?",
+            "options": ["Atlantic", "Indian", "Arctic", "Pacific"],
+            "correct": 3,
+            "fun_fact": "The Pacific Ocean covers more area than all land combined!"
+        },
+        {
+            "q": "How many colors are in a rainbow?",
+            "options": ["5", "6", "7", "8"],
+            "correct": 2,
+            "fun_fact": "ROY G BIV: Red, Orange, Yellow, Green, Blue, Indigo, Violet!"
+        },
+        {
+            "q": "What is the fastest land animal?",
+            "options": ["Lion", "Cheetah", "Horse", "Gazelle"],
+            "correct": 1,
+            "fun_fact": "Cheetahs can run up to 70 mph!"
+        },
+        {
+            "q": "How many sides does a hexagon have?",
+            "options": ["5", "6", "7", "8"],
+            "correct": 1,
+            "fun_fact": "Honeycombs are made of hexagons!"
+        },
+        {
+            "q": "What is the largest mammal?",
+            "options": ["Elephant", "Blue Whale", "Giraffe", "Polar Bear"],
+            "correct": 1,
+            "fun_fact": "Blue whales can weigh up to 200 tons!"
+        },
+        {
+            "q": "How many continents are there?",
+            "options": ["5", "6", "7", "8"],
+            "correct": 2,
+            "fun_fact": "Asia is the largest continent!"
+        },
+        {
+            "q": "What is 12 x 12?",
+            "options": ["124", "144", "132", "156"],
+            "correct": 1,
+            "fun_fact": "This is called a gross - a dozen dozens!"
+        },
+        {
+            "q": "What gas do plants breathe in?",
+            "options": ["Oxygen", "Nitrogen", "Carbon Dioxide", "Helium"],
+            "correct": 2,
+            "fun_fact": "Plants use CO2 for photosynthesis!"
+        },
+        {
+            "q": "How many days are in a leap year?",
+            "options": ["364", "365", "366", "367"],
+            "correct": 2,
+            "fun_fact": "Leap years happen every 4 years!"
+        },
+        {
+            "q": "What is the smallest country in the world?",
+            "options": ["Monaco", "Vatican City", "San Marino", "Luxembourg"],
+            "correct": 1,
+            "fun_fact": "Vatican City is only 0.17 square miles!"
+        },
+        {
+            "q": "How many keys are on a standard piano?",
+            "options": ["76", "82", "88", "92"],
+            "correct": 2,
+            "fun_fact": "52 white keys and 36 black keys!"
+        },
+        {
+            "q": "What is the tallest mountain in the world?",
+            "options": ["K2", "Everest", "Kilimanjaro", "Denali"],
+            "correct": 1,
+            "fun_fact": "Mount Everest is 29,032 feet tall!"
+        },
+        {
+            "q": "How many bones are in the human body?",
+            "options": ["186", "206", "226", "246"],
+            "correct": 1,
+            "fun_fact": "Babies are born with about 300 bones!"
+        }    ]
+    
+    # Shuffle questions
+    random.shuffle(questions)
+    
+    # Take first 10 questions
+    quiz_questions = questions[:10]
+    
+    score = 0
+    current_question = 0
+    
+    # Intro
+    try:
+        subprocess.run(['say', '-v', 'Alex', '-r', '180', 'Welcome to the quiz! Test your knowledge!'], check=False)
+    except:
+        pass
+    
+    while current_question < len(quiz_questions):
+        q_data = quiz_questions[current_question]
+        selected = 0
+        answered = False
+        
+        while not answered:
+            # Rainbow gradient background
+            for y in range(0, HEIGHT, 5):
+                hue = (y / HEIGHT * 360) % 360
+                color = pygame.Color(0)
+                color.hsva = (hue, 30, 90, 100)
+                pygame.draw.rect(screen, color, (0, y, WIDTH, 5))
+            
+            # Progress bar
+            progress_width = int((current_question / len(quiz_questions)) * WIDTH)
+            pygame.draw.rect(screen, (100, 255, 100), (0, 0, progress_width, 20))
+            pygame.draw.rect(screen, (50, 50, 50), (progress_width, 0, WIDTH - progress_width, 20))
+            
+            # Score display
+            score_font = pygame.font.Font(None, 48)
+            score_text = score_font.render(f"Score: {score}/{current_question}", True, (255, 255, 255))
+            screen.blit(score_text, (20, 40))
+            
+            # Question number
+            q_num_text = score_font.render(f"Question {current_question + 1}/{len(quiz_questions)}", True, (255, 255, 255))
+            screen.blit(q_num_text, (WIDTH - q_num_text.get_width() - 20, 40))
+            
+            # Question text
+            question_font = pygame.font.Font(None, 56)
+            question_text = question_font.render(q_data["q"], True, (255, 255, 255))
+            
+            # Word wrap if too long
+            if question_text.get_width() > WIDTH - 100:
+                words = q_data["q"].split()
+                lines = []
+                current_line = ""
+                for word in words:
+                    test_line = current_line + word + " "
+                    if question_font.render(test_line, True, (255, 255, 255)).get_width() < WIDTH - 100:
+                        current_line = test_line
+                    else:
+                        lines.append(current_line)
+                        current_line = word + " "
+                lines.append(current_line)
+                
+                y_offset = 150
+                for line in lines:
+                    line_surf = question_font.render(line, True, (255, 255, 255))
+                    screen.blit(line_surf, (WIDTH//2 - line_surf.get_width()//2, y_offset))
+                    y_offset += 60
+            else:
+                screen.blit(question_text, (WIDTH//2 - question_text.get_width()//2, 150))
+            
+            # Answer options
+            option_font = pygame.font.Font(None, 48)
+            option_y = 350
+            option_spacing = 80
+            
+            for i, option in enumerate(q_data["options"]):
+                # Highlight selected option
+                if i == selected:
+                    bg_color = (255, 200, 0)
+                    text_color = (0, 0, 0)
+                else:
+                    bg_color = (70, 70, 100)
+                    text_color = (255, 255, 255)
+                
+                # Draw option box
+                option_rect = pygame.Rect(WIDTH//2 - 300, option_y + i * option_spacing, 600, 60)
+                pygame.draw.rect(screen, bg_color, option_rect, border_radius=10)
+                pygame.draw.rect(screen, (255, 255, 255), option_rect, 3, border_radius=10)
+                
+                # Letter label (A, B, C, D)
+                letter = chr(65 + i)  # A=65 in ASCII
+                letter_text = option_font.render(f"{letter})", True, text_color)
+                screen.blit(letter_text, (option_rect.x + 20, option_rect.y + 10))
+                
+                # Option text
+                option_text = option_font.render(option, True, text_color)
+                screen.blit(option_text, (option_rect.x + 80, option_rect.y + 10))
+            
+            # Controls hint
+            hint_font = pygame.font.Font(None, 36)
+            hint = hint_font.render("↑↓ to select  •  Enter to answer  •  ESC to quit", True, (200, 200, 200))
+            screen.blit(hint, (WIDTH//2 - hint.get_width()//2, HEIGHT - 60))
+            
+            pygame.display.flip()
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    return
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        return
+                    if event.key == pygame.K_UP:
+                        selected = (selected - 1) % 4
+                        try:
+                            subprocess.run(['say', '-v', 'Zarvox', '-r', '400', 'beep'], check=False)
+                        except:
+                            pass
+                    if event.key == pygame.K_DOWN:
+                        selected = (selected + 1) % 4
+                        try:
+                            subprocess.run(['say', '-v', 'Zarvox', '-r', '400', 'boop'], check=False)
+                        except:
+                            pass
+                    if event.key == pygame.K_RETURN:
+                        answered = True
+                        
+                        # Check if correct
+                        if selected == q_data["correct"]:
+                            score += 1
+                            show_answer_feedback(True, q_data["fun_fact"])
+                        else:
+                            correct_answer = q_data["options"][q_data["correct"]]
+                            show_answer_feedback(False, q_data["fun_fact"], correct_answer)
+        
+        current_question += 1
+    
+    # Final results
+    show_quiz_results(score, len(quiz_questions))
+
+
+def show_answer_feedback(correct, fun_fact, correct_answer=None):
+    """Show if answer was correct or wrong with animation"""
+    import subprocess
+    
+    duration = 3  # seconds
+    start_time = time.time()
+    
+    if correct:
+        bg_color = (0, 150, 0)
+        message = "CORRECT! ✓"
+        voice_msg = "Correct! Well done!"
+    else:
+        bg_color = (150, 0, 0)
+        message = "WRONG! ✗"
+        voice_msg = f"Wrong! The correct answer was {correct_answer}."
+    
+    # Say it
+    try:
+        subprocess.run(['say', '-v', 'Alex', '-r', '180', voice_msg], check=False)
+    except:
+        pass
+    
+    while time.time() - start_time < duration:
+        elapsed = time.time() - start_time
+        
+        # Pulsing background
+        pulse = int(50 * math.sin(elapsed * 5))
+        current_bg = tuple(min(255, max(0, c + pulse)) for c in bg_color)
+        screen.fill(current_bg)
+        
+        # Big message
+        msg_font = pygame.font.Font(None, 120)
+        msg_surf = msg_font.render(message, True, (255, 255, 255))
+        screen.blit(msg_surf, (WIDTH//2 - msg_surf.get_width()//2, HEIGHT//2 - 150))
+        
+        # Correct answer if wrong
+        if not correct and correct_answer:
+            ans_font = pygame.font.Font(None, 48)
+            ans_text = ans_font.render(f"Correct answer: {correct_answer}", True, (255, 255, 200))
+            screen.blit(ans_text, (WIDTH//2 - ans_text.get_width()//2, HEIGHT//2 - 20))
+        
+        # Fun fact
+        fact_font = pygame.font.Font(None, 42)
+        fact_label = fact_font.render("Fun Fact:", True, (255, 255, 100))
+        screen.blit(fact_label, (WIDTH//2 - fact_label.get_width()//2, HEIGHT//2 + 50))
+        
+        fact_text = fact_font.render(fun_fact, True, (255, 255, 255))
+        screen.blit(fact_text, (WIDTH//2 - fact_text.get_width()//2, HEIGHT//2 + 110))
+        
+        pygame.display.flip()
+        clock.tick(60)
+        
+        # Allow skip
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                return
+
+
+def show_quiz_results(score, total):
+    """Show final quiz results with grade"""
+    import subprocess
+    
+    percentage = (score / total) * 100
+    
+    # Determine grade and message
+    if percentage >= 90:
+        grade = "A+"
+        message = "AMAZING!"
+        color = (255, 215, 0)
+        voice = "Superstar"
+        voice_msg = "Amazing! You got an A plus! You are a genius!"
+    elif percentage >= 80:
+        grade = "A"
+        message = "EXCELLENT!"
+        color = (100, 255, 100)
+        voice = "Good News"
+        voice_msg = "Excellent! You got an A! Great job!"
+    elif percentage >= 70:
+        grade = "B"
+        message = "GOOD JOB!"
+        color = (100, 200, 255)
+        voice = "Alex"
+        voice_msg = "Good job! You got a B! Nice work!"
+    elif percentage >= 60:
+        grade = "C"
+        message = "NOT BAD!"
+        color = (255, 200, 100)
+        voice = "Alex"
+        voice_msg = "Not bad! You got a C! Keep practicing!"
+    else:
+        grade = "D"
+        message = "KEEP TRYING!"
+        color = (255, 100, 100)
+        voice = "Bad News"
+        voice_msg = "Keep trying! Practice makes perfect!"
+    
+    # Say results
+    try:
+        subprocess.run(['say', '-v', voice, '-r', '180', voice_msg], check=False)
+    except:
+        pass
+    
+    # Animate results
+    for frame in range(180):  # 3 seconds at 60fps
+        screen.fill((20, 20, 40))
+        
+        # Confetti if good score
+        if percentage >= 70:
+            for _ in range(5):
+                x = random.randint(0, WIDTH)
+                y = random.randint(0, HEIGHT)
+                confetti_color = [random.randint(100, 255) for _ in range(3)]
+                pygame.draw.circle(screen, confetti_color, (x, y), random.randint(3, 8))
+            
+            # Title
+            title_font = pygame.font.Font(None, 80)
+            title = title_font.render("QUIZ COMPLETE!", True, (255, 255, 255))
+            screen.blit(title, (WIDTH//2 - title.get_width()//2, 100))
+            
+            # Score
+            score_font = pygame.font.Font(None, 120)
+            score_text = score_font.render(f"{score}/{total}", True, color)
+            screen.blit(score_text, (WIDTH//2 - score_text.get_width()//2, 220))
+            
+            # Percentage
+            perc_font = pygame.font.Font(None, 72)
+            perc_text = perc_font.render(f"{percentage:.0f}%", True, (255, 255, 255))
+            screen.blit(perc_text, (WIDTH//2 - perc_text.get_width()//2, 360))
+            
+            # Grade (pulsing)
+            pulse = 1.0 + 0.2 * math.sin(frame * 0.1)
+            grade_size = int(150 * pulse)
+            grade_font = pygame.font.Font(None, grade_size)
+            grade_text = grade_font.render(grade, True, color)
+            screen.blit(grade_text, (WIDTH//2 - grade_text.get_width()//2, 480))
+            
+            # Message
+            msg_font = pygame.font.Font(None, 64)
+            msg_text = msg_font.render(message, True, color)
+            screen.blit(msg_text, (WIDTH//2 - msg_text.get_width()//2, 650))
+                 # Continue hint
+        hint_font = pygame.font.Font(None, 36)
+        hint = hint_font.render("Press any key to continue", True, (150, 150, 150))
+        screen.blit(hint, (WIDTH//2 - hint.get_width()//2, HEIGHT - 80))
+        
+        pygame.display.flip()
+        clock.tick(60)
+        
+        # Check for exit
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                return
+
+
+def ai_helper():
+    """Interactive AI Helper that can talk and assist you!"""
+    import subprocess
+    
+    # AI Helper personality and voice settings
+    ai_voice = "Zarvox"  # Robot voice
+    ai_speed = 180  # Words per minute
+    
+    def ai_speak(text, voice=None, speed=None):
+        """Make the AI speak!"""
+        v = voice or ai_voice
+        s = speed or ai_speed
+        try:
+            subprocess.run(['say', '-v', v, '-r', str(s), text], check=False)
+        except:
+            pass
+    
+    # Welcome message
+    ai_speak("Hello! I am your A I Helper! How can I assist you today?")
+    
+    # Helper menu options
+    helper_options = [
+        "📚 Learn Game Controls",
+        "🎮 Game Mode Explanations", 
+        "🔐 Secret Code Hints",
+        "🌐 GitHub Pages Help",
+        "💡 General Tips",
+        "🗣️ Change My Voice",
+        "🎵 Tell Me a Joke",
+        "❌ Exit Helper"
+    ]
+    
+    selected = 0
+    
+    while True:
+        screen.fill((20, 20, 40))  # Dark blue background
+        
+        # Draw AI robot character
+        robot_x = WIDTH // 2
+        robot_y = 200
+        
+        # Animated robot head
+        pulse = math.sin(time.time() * 3) * 5
+        head_size = 100 + int(pulse)
+        
+        # Robot head (main body)
+        pygame.draw.rect(screen, (150, 150, 200), 
+                        (robot_x - head_size//2, robot_y - head_size//2, head_size, head_size), 
+                        border_radius=10)
+        
+        # Antenna
+        antenna_height = 40
+        pygame.draw.line(screen, (200, 200, 255), 
+                        (robot_x, robot_y - head_size//2), 
+                        (robot_x, robot_y - head_size//2 - antenna_height), 3)
+        pygame.draw.circle(screen, (255, 100, 100), 
+                          (robot_x, robot_y - head_size//2 - antenna_height), 8)
+        
+        # Blinking eyes
+        blink = int(time.time() * 2) % 10 < 1
+        eye_height = 5 if blink else 15
+        
+        # Left eye
+        pygame.draw.rect(screen, (100, 255, 100), 
+                        (robot_x - 30, robot_y - 10, 20, eye_height))
+        # Right eye
+        pygame.draw.rect(screen, (100, 255, 100), 
+                        (robot_x + 10, robot_y - 10, 20, eye_height))
+        
+        # Smile
+        smile_width = 40
+        pygame.draw.arc(screen, (100, 255, 100), 
+                       (robot_x - smile_width//2, robot_y + 10, smile_width, 20), 
+                       math.pi, 0, 3)
+        
+        # Title
+        title_font = pygame.font.Font(None, 72)
+        title = title_font.render("🤖 AI HELPER 🤖", True, (100, 255, 255))
+        screen.blit(title, (WIDTH//2 - title.get_width()//2, 50))
+        
+        # Menu options
+        menu_start_y = 350
+        for i, option in enumerate(helper_options):
+            color = (255, 255, 100) if i == selected else (200, 200, 200)
+            option_font = pygame.font.Font(None, 42)
+            option_text = option_font.render(option, True, color)
+            screen.blit(option_text, (WIDTH//2 - option_text.get_width()//2, menu_start_y + i * 50))
+        
+        # Pointer
+        pointer_y = menu_start_y + selected * 50 + 10
+        pointer_font = pygame.font.Font(None, 60)
+        pointer = pointer_font.render("➤", True, (255, 255, 100))
+        screen.blit(pointer, (WIDTH//2 - 350, pointer_y))
+        
+        pygame.display.flip()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    selected = (selected - 1) % len(helper_options)
+                    ai_speak("Beep", speed=300)
+                if event.key == pygame.K_DOWN:
+                    selected = (selected + 1) % len(helper_options)
+                    ai_speak("Boop", speed=300)
+                if event.key == pygame.K_ESCAPE:
+                    ai_speak("Goodbye! Have fun playing!")
+                    return
+                if event.key == pygame.K_RETURN:
+                    choice = helper_options[selected]
+                    
+                    # Handle AI Helper actions
+                    if "Exit Helper" in choice:
+                        ai_speak("Goodbye! Have fun playing!")
+                        return
+                    
+                    elif "Learn Game Controls" in choice:
+                        ai_speak("Here are the game controls!")
+                        show_controls_help(ai_speak)
+                    
+                    elif "Game Mode Explanations" in choice:
+                        ai_speak("Let me explain the game modes!")
+                        show_mode_explanations(ai_speak)
+                    
+                    elif "Secret Code Hints" in choice:
+                        ai_speak("Ooh, secrets! Let me give you some hints!")
+                        show_secret_hints(ai_speak)
+                    
+                    elif "GitHub Pages Help" in choice:
+                        ai_speak("I can help you put your game on the internet!")
+                        show_github_help(ai_speak)
+                    
+                    elif "General Tips" in choice:
+                        ai_speak("Here are some helpful tips!")
+                        show_general_tips(ai_speak)
+                    
+                    elif "Change My Voice" in choice:
+                        ai_voice = change_ai_voice(ai_speak)
+                        ai_speak("This is my new voice! Do you like it?", voice=ai_voice)
+                    
+                    elif "Tell Me a Joke" in choice:
+                        tell_joke(ai_speak)
+
+
+def show_controls_help(speak_func):
+    """Display game controls with AI narration"""
+    controls_pages = [
+        {
+            "title": "Battle Mode Controls",
+            "text": [
+                "Player 1: WASD to move, Space to shoot",
+                "Player 2: Arrow keys to move, Enter to shoot",
+                "",
+                "Collect items and defeat your opponent!"
+            ],
+            "speech": "Player 1 uses W A S D to move and space to shoot. Player 2 uses arrow keys to move and enter to shoot."
+        },
+        {
+            "title": "Final Mode Controls",
+            "text": [
+                "WASD: Move in 3D space",
+                "Space: Jump",
+                "F: Attack (with cooldown)",
+                "G: Special attack (uses energy)",
+                "",
+                "Defeat 20 enemies to win!"
+            ],
+            "speech": "In Final Mode, use W A S D to move, space to jump, F to attack, and G for special attack. Defeat 20 enemies to win!"
+        }
+    ]
+    
+    page = 0
+    speak_func(controls_pages[page]["speech"])
+    
+    while True:
+        screen.fill((30, 30, 60))
+        
+        # Title
+        title_font = pygame.font.Font(None, 64)
+        title = title_font.render(controls_pages[page]["title"], True, (255, 255, 100))
+        screen.blit(title, (WIDTH//2 - title.get_width()//2, 100))
+        
+        # Text content
+        text_font = pygame.font.Font(None, 48)
+        y_offset = 250
+        for line in controls_pages[page]["text"]:
+            text = text_font.render(line, True, (200, 200, 200))
+            screen.blit(text, (WIDTH//2 - text.get_width()//2, y_offset))
+            y_offset += 60
+        
+        # Navigation hints
+        hint_font = pygame.font.Font(None, 36)
+        if page < len(controls_pages) - 1:
+            next_hint = hint_font.render("Press → for next page", True, (150, 150, 150))
+            screen.blit(next_hint, (WIDTH - next_hint.get_width() - 50, HEIGHT - 100))
+        if page > 0:
+            prev_hint = hint_font.render("Press ← for previous page", True, (150, 150, 150))
+            screen.blit(prev_hint, (50, HEIGHT - 100))
+        
+        back_hint = hint_font.render("Press ESC to go back", True, (150, 150, 150))
+        screen.blit(back_hint, (WIDTH//2 - back_hint.get_width()//2, HEIGHT - 50))
+        
+        pygame.display.flip()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return
+                if event.key == pygame.K_RIGHT and page < len(controls_pages) - 1:
+                    page += 1
+                    speak_func(controls_pages[page]["speech"])
+                if event.key == pygame.K_LEFT and page > 0:
+                    page -= 1
+                    speak_func(controls_pages[page]["speech"])
+
+
+def show_mode_explanations(speak_func):
+    """Show explanations of different game modes"""
+    screen.fill((30, 30, 60))
+    
+    title_font = pygame.font.Font(None, 64)
+    title = title_font.render("Game Modes", True, (255, 255, 100))
+    screen.blit(title, (WIDTH//2 - title.get_width()//2, 50))
+    
+    modes = [
+        "Battle Mode: Classic PvP combat!",
+        "Coin Collection: Race to collect coins!",
+        "Survival Mode: Fight endless waves!",
+        "Final Mode: Epic 3D adventure!",
+        "",
+        "Unlock secret modes by exploring!"
+    ]
+    
+    speak_func("Battle mode is classic player versus player. Coin collection is a race. Survival mode has endless waves. Final mode is an epic 3 D adventure!")
+    
+    text_font = pygame.font.Font(None, 42)
+    y_offset = 200
+    for mode in modes:
+        text = text_font.render(mode, True, (200, 200, 200))
+        screen.blit(text, (WIDTH//2 - text.get_width()//2, y_offset))
+        y_offset += 70
+    
+    hint_font = pygame.font.Font(None, 36)
+    hint = hint_font.render("Press any key to return", True, (150, 150, 150))
+    screen.blit(hint, (WIDTH//2 - hint.get_width()//2, HEIGHT - 100))
+    
+    pygame.display.flip()
+    
+    waiting = True
+    while waiting:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                return
+
+
+def show_secret_hints(speak_func):
+    """Give hints about secret codes"""
+    screen.fill((20, 0, 40))
+    
+    title_font = pygame.font.Font(None, 64)
+    title = title_font.render("🔐 Secret Hints 🔐", True, (255, 100, 255))
+    screen.blit(title, (WIDTH//2 - title.get_width()//2, 50))
+    
+    hints = [
+        "🐑 Try exploring different game modes...",
+        "🎵 Music can lead to hidden paths...",
+        "🐺 Sometimes things disappear, but can return...",
+        "👤 Transformation is key to unlocking power...",
+        "💥 The ultimate mode requires a special code...",
+        "",
+        "✨ Keep playing and experimenting! ✨"
+    ]
+    
+    speak_func("Explore different modes. Music can lead to hidden paths. Transformation is key. Keep experimenting!")
+    
+    text_font = pygame.font.Font(None, 40)
+    y_offset = 200
+    for hint in hints:
+        text = text_font.render(hint, True, (200, 150, 255))
+        screen.blit(text, (WIDTH//2 - text.get_width()//2, y_offset))
+        y_offset += 65
+    
+    hint_font = pygame.font.Font(None, 36)
+    hint = hint_font.render("Press any key to return", True, (150, 150, 150))
+    screen.blit(hint, (WIDTH//2 - hint.get_width()//2, HEIGHT - 100))
+    
+    pygame.display.flip()
+    
+    waiting = True
+    while waiting:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                return
+
+
+def show_github_help(speak_func):
+    """Show GitHub Pages deployment help"""
+    screen.fill((10, 30, 10))
+    
+    title_font = pygame.font.Font(None, 56)
+    title = title_font.render("🌐 Put Your Game Online! 🌐", True, (100, 255, 100))
+    screen.blit(title, (WIDTH//2 - title.get_width()//2, 50))
+    
+    steps = [
+        "1. Check your game folder for these files:",
+        "   • START_HERE.md (read this first!)",
+        "   • deploy_to_github.sh (easy script)",
+        "   • DEPLOYMENT_CHECKLIST.md (step by step)",
+        "",
+        "2. Run: ./deploy_to_github.sh",
+        "",
+        "3. Follow the prompts to create your",
+        "   GitHub repository and enable Pages!",
+        "",
+        "4. Share your game with the world! 🎉"
+    ]
+    
+    speak_func("Check your game folder for START HERE dot M D. Run the deploy to github script. Follow the prompts. Then share your game with the world!")
+    
+    text_font = pygame.font.Font(None, 32)
+    y_offset = 180
+    for step in steps:
+        text = text_font.render(step, True, (200, 255, 200))
+        screen.blit(text, (100, y_offset))
+        y_offset += 45
+    
+    hint_font = pygame.font.Font(None, 36)
+    hint = hint_font.render("Press any key to return", True, (150, 150, 150))
+    screen.blit(hint, (WIDTH//2 - hint.get_width()//2, HEIGHT - 100))
+    
+    pygame.display.flip()
+    
+    waiting = True
+    while waiting:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                return
+
+
+def show_general_tips(speak_func):
+    """Show general gameplay tips"""
+    screen.fill((40, 20, 0))
+    
+    title_font = pygame.font.Font(None, 64)
+    title = title_font.render("💡 Pro Tips 💡", True, (255, 200, 100))
+    screen.blit(title, (WIDTH//2 - title.get_width()//2, 50))
+    
+    tips = [
+        "🎯 Practice makes perfect in Battle Mode!",
+        "🏃 Movement is key - keep moving!",
+        "🔫 Don't waste shots - aim carefully!",
+        "🎵 Some game modes unlock through secrets!",
+        "👥 Play with friends for maximum fun!",
+        "🎮 Try all the different game modes!",
+        "🌟 The shop has special unlockables!",
+        "💪 Survival mode gets harder - stay alert!"
+    ]
+    
+    speak_func("Practice makes perfect! Keep moving, aim carefully, and try all the game modes!")
+    
+    text_font = pygame.font.Font(None, 38)
+    y_offset = 180
+    for tip in tips:
+        text = text_font.render(tip, True, (255, 220, 180))
+        screen.blit(text, (WIDTH//2 - text.get_width()//2, y_offset))
+        y_offset += 60
+    
+    hint_font = pygame.font.Font(None, 36)
+    hint = hint_font.render("Press any key to return", True, (150, 150, 150))
+    screen.blit(hint, (WIDTH//2 - hint.get_width()//2, HEIGHT - 100))
+    
+    pygame.display.flip()
+    
+    waiting = True
+    while waiting:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                return
+
+
+def change_ai_voice(speak_func):
+    """Let user change the AI voice"""
+    voices = ["Zarvox", "Cellos", "Trinoids", "Ralph", "Fred", "Albert", "Bad News", "Bahh", "Bells", "Boing", "Bubbles", "Deranged", "Good News", "Hysterical", "Pipe Organ", "Superstar", "Whisper", "Wobble", "Alex"]
+    selected = 0
+    
+    speak_func("Choose a voice for me!")
+    
+    while True:
+        screen.fill((40, 0, 40))
+        
+        title_font = pygame.font.Font(None, 64)
+        title = title_font.render("Choose AI Voice", True, (255, 100, 255))
+        screen.blit(title, (WIDTH//2 - title.get_width()//2, 50))
+        
+        # Show voices in a grid
+        cols = 3
+        x_start = 200
+        y_start = 200
+        cell_width = (WIDTH - 400) // cols
+        cell_height = 60
+        
+        for i, voice in enumerate(voices):
+            row = i // cols
+            col = i % cols
+            x = x_start + col * cell_width
+            y = y_start + row * cell_height
+            
+            color = (255, 255, 100) if i == selected else (200, 200, 200)
+            voice_font = pygame.font.Font(None, 36)
+            voice_text = voice_font.render(voice, True, color)
+            screen.blit(voice_text, (x, y))
+        
+        # Pointer
+        selected_row = selected // cols
+        selected_col = selected % cols
+        pointer_x = x_start + selected_col * cell_width - 40
+        pointer_y = y_start + selected_row * cell_height + 10
+        pointer_font = pygame.font.Font(None, 48)
+        pointer = pointer_font.render("➤", True, (255, 255, 100))
+        screen.blit(pointer, (pointer_x, pointer_y))
+        
+        hint_font = pygame.font.Font(None, 36)
+        hint = hint_font.render("Arrows to select, Enter to choose, T to test, ESC to cancel", True, (150, 150, 150))
+        screen.blit(hint, (WIDTH//2 - hint.get_width()//2, HEIGHT - 80))
+        
+        pygame.display.flip()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    if selected >= cols:
+                        selected -= cols
+                if event.key == pygame.K_DOWN:
+                    if selected < len(voices) - cols:
+                        selected += cols
+                if event.key == pygame.K_LEFT:
+                    selected = max(0, selected - 1)
+                if event.key == pygame.K_RIGHT:
+                    selected = min(len(voices) - 1, selected + 1)
+                if event.key == pygame.K_t:
+                    # Test the voice
+                    speak_func(f"Hello! This is {voices[selected]}!", voice=voices[selected])
+                if event.key == pygame.K_RETURN:
+                    speak_func(f"Voice changed to {voices[selected]}!", voice=voices[selected])
+                    return voices[selected]
+                if event.key == pygame.K_ESCAPE:
+                    speak_func("Keeping my current voice!")
+                    return "Zarvox"
+
+
+def tell_joke(speak_func):
+    """Tell a random joke!"""
+    jokes = [
+        ("Why did the programmer quit his job?", "Because he didn't get arrays!"),
+        ("What do you call a fake noodle?", "An impasta!"),
+        ("Why don't scientists trust atoms?", "Because they make up everything!"),
+        ("What did the ocean say to the beach?", "Nothing, it just waved!"),
+        ("Why did the scarecrow win an award?", "Because he was outstanding in his field!"),
+        ("What do you call a bear with no teeth?", "A gummy bear!"),
+        ("Why did the bicycle fall over?", "Because it was two tired!"),
+        ("What do you call a dog magician?", "A labracadabrador!"),
+    ]
+    
+    joke = random.choice(jokes)
+    setup, punchline = joke
+    
+    speak_func(setup)
+    
+    # Show setup
+    screen.fill((0, 20, 40))
+    setup_font = pygame.font.Font(None, 48)
+    setup_text = setup_font.render(setup, True, (255, 255, 100))
+    screen.blit(setup_text, (WIDTH//2 - setup_text.get_width()//2, HEIGHT//2 - 100))
+    
+    hint_font = pygame.font.Font(None, 36)
+    hint = hint_font.render("Press any key for punchline...", True, (150, 150, 150))
+    screen.blit(hint, (WIDTH//2 - hint.get_width()//2, HEIGHT - 100))
+    
+    pygame.display.flip()
+    
+    # Wait for key
+    waiting = True
+    while waiting:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                waiting = False
+    
+    # Show punchline
+    speak_func(punchline)
+    pygame.time.wait(500)
+    
+    screen.fill((0, 20, 40))
+    screen.blit(setup_text, (WIDTH//2 - setup_text.get_width()//2, HEIGHT//2 - 150))
+    
+    punchline_font = pygame.font.Font(None, 56)
+    punchline_text = punchline_font.render(punchline, True, (100, 255, 100))
+    screen.blit(punchline_text, (WIDTH//2 - punchline_text.get_width()//2, HEIGHT//2 - 50))
+    
+    laugh_font = pygame.font.Font(None, 72)
+    laugh = laugh_font.render("😂 Ha Ha Ha! 😂", True, (255, 200, 100))
+    screen.blit(laugh, (WIDTH//2 - laugh.get_width()//2, HEIGHT//2 + 80))
+    
+    hint = hint_font.render("Press any key to return", True, (150, 150, 150))
+    screen.blit(hint, (WIDTH//2 - hint.get_width()//2, HEIGHT - 100))
+    
+    pygame.display.flip()
+    
+    # Wait to return
+    waiting = True
+    while waiting:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                return
+
+
 def mode_lobby():
     global session_purchases
     selected = 0
-    base_options = ["Battle Mode", "Coin Collection Mode", "Makka Pakka Mode", "Escape Mom Mode", "Capture the Flag", "Survival Mode", "3D Adventure", "Relax Mode", "Dilly Dolly Mode", "🛒 Shop", "Survival Leaderboard", "Mom Mode Leaderboard", "Play Music", "Stop Music", "Watch Cute Video", "Watch Grandma", "Exit"]
+    base_options = ["🤖 AI Helper", "🧠 Quiz Mode", "Battle Mode", "Coin Collection Mode", "Makka Pakka Mode", "Escape Mom Mode", "Capture the Flag", "Survival Mode", "3D Adventure", "Relax Mode", "Dilly Dolly Mode", "🛒 Shop", "Survival Leaderboard", "Mom Mode Leaderboard", "Play Music", "Stop Music", "Watch Cute Video", "Watch Grandma", "Exit"]
     music_playing = False
     
     # Pointer animation
@@ -8477,8 +9563,10 @@ def mode_lobby():
         shop_unlocked = session_purchases.get('shop_unlocked', False)
         
         screen.fill((30, 30, 30))
-        title = lobby_font.render("Choose Game Mode", True, (255,255,255))
-        screen.blit(title, (WIDTH//2-title.get_width()//2, 50))
+        # Smaller title font
+        small_lobby_font = pygame.font.Font(None, 48)
+        title = small_lobby_font.render("Choose Game Mode", True, (255,255,255))
+        screen.blit(title, (WIDTH//2-title.get_width()//2, 30))
         
         # Update pointer animation
         pointer_frame += 0.1
@@ -8486,26 +9574,33 @@ def mode_lobby():
         
         # Show wolf ate everything warning
         if secret_hack.get('wolf_ate_buttons'):
-            warning = font.render("The wolf ate EVERYTHING!", True, (255, 0, 0))
-            screen.blit(warning, (WIDTH//2-warning.get_width()//2, 20))
+            small_font = pygame.font.Font(None, 28)
+            warning = small_font.render("The wolf ate EVERYTHING!", True, (255, 0, 0))
+            screen.blit(warning, (WIDTH//2-warning.get_width()//2, 5))
             if not secret_hack.get('grass_mode_unlocked'):
-                hint = name_font.render("(The entire menu is gone... only Exit remains)", True, (150, 150, 150))
-                screen.blit(hint, (WIDTH//2-hint.get_width()//2, 45))
+                tiny_font = pygame.font.Font(None, 20)
+                hint = tiny_font.render("(The entire menu is gone... only Exit remains)", True, (150, 150, 150))
+                screen.blit(hint, (WIDTH//2-hint.get_width()//2, 25))
         
         # Show shop status hint (only if wolf hasn't eaten everything)
         if shop_unlocked and not secret_hack.get('wolf_ate_buttons'):
-            shop_hint = font.render("🔑 Secret shop unlocked!", True, (255, 215, 0))
-            screen.blit(shop_hint, (20, 20))
+            small_font = pygame.font.Font(None, 28)
+            shop_hint = small_font.render("🔑 Secret shop unlocked!", True, (255, 215, 0))
+            screen.blit(shop_hint, (10, 5))
         
         # Show transformation status if became human
         if pointer_is_human:
-            human_status = name_font.render("✨ You became HUMAN! ✨", True, (255, 215, 0))
-            screen.blit(human_status, (WIDTH - human_status.get_width() - 20, 20))
+            tiny_font = pygame.font.Font(None, 20)
+            human_status = tiny_font.render("✨ You became HUMAN! ✨", True, (255, 215, 0))
+            screen.blit(human_status, (WIDTH - human_status.get_width() - 10, 5))
         
         # Free modes list
-        free_modes = ["Battle Mode", "Coin Collection Mode", "🛒 Shop", "Survival Leaderboard", 
+        free_modes = ["🤖 AI Helper", "🧠 Quiz Mode", "Battle Mode", "Coin Collection Mode", "🛒 Shop", "Survival Leaderboard", 
                       "Mom Mode Leaderboard", "Play Music", "Stop Music", "Watch Cute Video", 
                       "Watch Grandma", "Exit"]
+        
+        # Smaller menu option font
+        menu_font = pygame.font.Font(None, 32)
         
         for i, opt in enumerate(options):
             # Check if mode is locked (needs purchase from shop)
@@ -8537,19 +9632,20 @@ def mode_lobby():
             # Display mode with lock/unlock status
             if is_locked:
                 color = (100,100,100) if i!=selected else (150,150,150)
-                opt_text = font.render(opt + " 🔒", True, color)
+                opt_text = menu_font.render(opt + " 🔒", True, color)
             elif is_unlocked:
                 color = (255,255,0) if i==selected else (200,200,200)
-                opt_text = font.render(opt + " ✅", True, color)
+                opt_text = menu_font.render(opt + " ✅", True, color)
             else:
                 # Free mode
                 color = (255,255,0) if i==selected else (200,200,200)
-                opt_text = font.render(opt, True, color)
+                opt_text = menu_font.render(opt, True, color)
             
-            screen.blit(opt_text, (WIDTH//2-opt_text.get_width()//2, 120+i*50))
+            # Smaller spacing between options (35 instead of 50)
+            screen.blit(opt_text, (WIDTH//2-opt_text.get_width()//2, 70+i*35))
         
         # Draw the dog/human pointer pointing at the selected option!
-        pointer_y = 120 + selected * 50 + pointer_bob
+        pointer_y = 70 + selected * 35 + pointer_bob
         pointer_x = WIDTH//2 - 200  # Left side of the screen
         
         # Determine transformation level for pointer (0-100)
@@ -8578,16 +9674,22 @@ def mode_lobby():
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.KEYDOWN:
-                # HACK SEQUENCE: Detect jjj, qqq, 67, 6776, and 123654 in main menu
+                # HACK SEQUENCE: Detect jjj, qqq, 67, 6776, 123654, and gagabubu in main menu
                 global menu_key_buffer
                 key_name = pygame.key.name(event.key)
                 
-                # Track j, q, 6, 7, and number presses
-                if key_name in ['j', 'q', '1', '2', '3', '4', '5', '6', '7']:
+                # Track j, q, 6, 7, g, a, b, u, and number presses
+                if key_name in ['j', 'q', '1', '2', '3', '4', '5', '6', '7', 'g', 'a', 'b', 'u']:
                     menu_key_buffer += key_name
-                    # Keep only last 6 characters (for 123654)
-                    if len(menu_key_buffer) > 6:
-                        menu_key_buffer = menu_key_buffer[-6:]
+                    # Keep only last 8 characters (for gagabubu)
+                    if len(menu_key_buffer) > 8:
+                        menu_key_buffer = menu_key_buffer[-8:]
+                    
+                    # Check for gagabubu - RAINBOW EXPLOSION!
+                    if menu_key_buffer[-8:] == "gagabubu":
+                        menu_key_buffer = ""
+                        rainbow_explosion()
+                        continue
                     
                     # Check for 6776 - FINAL MODE EXPLOSION! (only after becoming Tralala)
                     if menu_key_buffer[-4:] == "6776" and secret_hack.get('became_italian') and not secret_hack.get('final_mode_unlocked'):
@@ -8649,6 +9751,10 @@ def mode_lobby():
                     if options[selected] == "Exit":
                         pygame.quit()
                         sys.exit()
+                    elif options[selected] == "🤖 AI Helper":
+                        ai_helper()
+                    elif options[selected] == "🧠 Quiz Mode":
+                        quiz_mode()
                     elif options[selected] == "🔥 FINAL MODE 🔥":
                         final_mode()
                     elif options[selected] == "Grass Mode":
