@@ -10,6 +10,8 @@ const BULLET_SIZE = 10;
 let canvas, ctx;
 let lastTime = 0;
 let gameRunning = false;
+let audioContext;
+let sounds = {};
 
 const keys = {
     w: false, a: false, s: false, d: false,
@@ -58,9 +60,17 @@ window.onload = function() {
     canvas.width = CANVAS_WIDTH;
     canvas.height = CANVAS_HEIGHT;
     
+    // Initialize Audio
+    initAudio();
+
     // Setup input listeners
     window.addEventListener('keydown', (e) => {
         if(keys.hasOwnProperty(e.key)) keys[e.key] = true;
+        
+        // Resume audio context on user interaction (browser policy)
+        if (audioContext && audioContext.state === 'suspended') {
+            audioContext.resume();
+        }
     });
     
     window.addEventListener('keyup', (e) => {
@@ -152,10 +162,12 @@ function update(deltaTime) {
             
             if (rectIntersect(b.x, b.y, BULLET_SIZE, BULLET_SIZE, p.x, p.y, p.width, p.height)) {
                 p.health -= 10;
+                playSound('hit');
                 createParticles(b.x, b.y, p.color);
                 bullets.splice(i, 1);
                 
                 if (p.health <= 0) {
+                    playSound('win');
                     resetGame(b.owner.name + " Wins!");
                 }
                 break;
@@ -230,7 +242,42 @@ function draw() {
 }
 
 // Helper Functions
+function initAudio() {
+    try {
+        window.AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioContext = new AudioContext();
+        
+        // Load sounds
+        loadSound('shoot', 'assets/coin.mp3'); // Using coin sound for shooting for now
+        loadSound('hit', 'assets/fart.mp3');   // Using fart sound for hit
+        loadSound('win', 'assets/321go.mp3');  // Using 321go for win
+        
+    } catch(e) {
+        console.log('Web Audio API is not supported in this browser');
+    }
+}
+
+function loadSound(name, url) {
+    fetch(url)
+        .then(response => response.arrayBuffer())
+        .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
+        .then(audioBuffer => {
+            sounds[name] = audioBuffer;
+        })
+        .catch(e => console.error('Error loading sound:', e));
+}
+
+function playSound(name) {
+    if (sounds[name] && audioContext) {
+        const source = audioContext.createBufferSource();
+        source.buffer = sounds[name];
+        source.connect(audioContext.destination);
+        source.start(0);
+    }
+}
+
 function shoot(player) {
+    playSound('shoot');
     bullets.push({
         x: (player.direction === 1) ? player.x + player.width : player.x - BULLET_SIZE,
         y: player.y + player.height / 2 - BULLET_SIZE / 2,
