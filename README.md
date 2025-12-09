@@ -8,6 +8,7 @@
 
 ## 🌟 Features
 
+- 🌐 **Play in Browser** - No download required! Play instantly on any device.
 - ⚔️ **Epic Multiplayer Combat** - Battle with friends locally or online!
 - 🎭 **Multiple Game Modes** - Battle, Survival, Mom Mode, Dilly Dolly, Final Mode & more!
 - 🎤 **Cinematic Intro** - Movie-style intro with voice narration (Grandpa voice!)
@@ -19,12 +20,10 @@
 
 ## 🚀 Quick Start
 
-### Requirements
-- macOS 10.14+
-- Python 3.7+
-- Pygame
+### Play Online (Recommended)
+[**Click Here to Play Now!**](https://arvingraff.github.io/battle-game/play/)
 
-### Installation
+### Desktop Installation
 
 ```bash
 # Install Pygame
@@ -42,6 +41,13 @@ python3 battlegame.py
 
 ## 🎮 Controls
 
+### Browser Version
+- **Movement:** WASD or Arrow Keys
+- **Attack:** Space
+- **Menu:** 1 (Battle), 2 (Survival), R (Restart)
+- **Touch:** On-screen controls for mobile
+
+### Desktop Version
 - **Movement:** WASD or Arrow Keys
 - **Attack:** Space
 - **Special Attack:** Shift
@@ -49,6 +55,7 @@ python3 battlegame.py
 - **Skip Intro:** Space/Enter/ESC
 
 ### 🔥 Secret Codes
+- Type **67** to transform into **Tralala**!
 - Type **6776** after Tralala transformation to unlock **Final Mode**!
 - Discover more secrets as you play!
 
