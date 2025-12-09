@@ -24,6 +24,7 @@ let wave = 1;
 let enemies = [];
 let secretBuffer = "";
 let godMode = false;
+let finalMode = false;
 
 const keys = {
     w: false, a: false, s: false, d: false,
@@ -43,7 +44,8 @@ const players = [
         direction: 1, // 1 for right, -1 for left
         name: "Player 1",
         score: 0,
-        cooldown: 0
+        cooldown: 0,
+        isTralala: false
     },
     {
         x: CANVAS_WIDTH - 100 - PLAYER_SIZE,
@@ -145,11 +147,22 @@ function handleMenuClick(e) {
 }
 
 function checkSecrets() {
-    if (secretBuffer.includes("6776")) {
-        godMode = !godMode;
-        alert("GOD MODE " + (godMode ? "ACTIVATED" : "DEACTIVATED"));
-        secretBuffer = "";
-        playSound('win');
+    // Tralala Transformation (Code: 67)
+    if (secretBuffer.endsWith("67")) {
+        players[0].isTralala = !players[0].isTralala;
+        playSound('select');
+        // Don't clear buffer to allow chaining for 6776
+    }
+
+    // Final Mode (Code: 6776) - Requires Tralala
+    if (secretBuffer.endsWith("6776")) {
+        if (players[0].isTralala) {
+            finalMode = !finalMode;
+            godMode = finalMode; // Final mode includes God Mode
+            alert("FINAL MODE " + (finalMode ? "ACTIVATED" : "DEACTIVATED"));
+            playSound('win');
+            secretBuffer = "";
+        }
     }
 }
 
@@ -192,21 +205,24 @@ function update(deltaTime) {
 
 function updateBattle(deltaTime) {
     // Player 1 Movement (WASD)
-    if (keys.w && players[0].y > 0) players[0].y -= PLAYER_SPEED;
-    if (keys.s && players[0].y < CANVAS_HEIGHT - PLAYER_SIZE) players[0].y += PLAYER_SPEED;
+    let speed = finalMode ? PLAYER_SPEED * 2 : PLAYER_SPEED;
+    
+    if (keys.w && players[0].y > 0) players[0].y -= speed;
+    if (keys.s && players[0].y < CANVAS_HEIGHT - PLAYER_SIZE) players[0].y += speed;
     if (keys.a && players[0].x > 0) {
-        players[0].x -= PLAYER_SPEED;
+        players[0].x -= speed;
         players[0].direction = -1;
     }
     if (keys.d && players[0].x < CANVAS_WIDTH - PLAYER_SIZE) {
-        players[0].x += PLAYER_SPEED;
+        players[0].x += speed;
         players[0].direction = 1;
     }
     
     // Player 1 Shooting
+    let cooldownTime = finalMode ? 5 : 20;
     if (keys[" "] && players[0].cooldown <= 0) {
         shoot(players[0]);
-        players[0].cooldown = 20; // Frames cooldown
+        players[0].cooldown = cooldownTime; 
     }
     if (players[0].cooldown > 0) players[0].cooldown--;
 
@@ -241,21 +257,24 @@ function updateBattle(deltaTime) {
 
 function updateSurvival(deltaTime) {
     // Player 1 Movement (Same as Battle)
-    if (keys.w && players[0].y > 0) players[0].y -= PLAYER_SPEED;
-    if (keys.s && players[0].y < CANVAS_HEIGHT - PLAYER_SIZE) players[0].y += PLAYER_SPEED;
+    let speed = finalMode ? PLAYER_SPEED * 2 : PLAYER_SPEED;
+
+    if (keys.w && players[0].y > 0) players[0].y -= speed;
+    if (keys.s && players[0].y < CANVAS_HEIGHT - PLAYER_SIZE) players[0].y += speed;
     if (keys.a && players[0].x > 0) {
-        players[0].x -= PLAYER_SPEED;
+        players[0].x -= speed;
         players[0].direction = -1;
     }
     if (keys.d && players[0].x < CANVAS_WIDTH - PLAYER_SIZE) {
-        players[0].x += PLAYER_SPEED;
+        players[0].x += speed;
         players[0].direction = 1;
     }
     
     // Player 1 Shooting
+    let cooldownTime = finalMode ? 5 : 20;
     if (keys[" "] && players[0].cooldown <= 0) {
         shoot(players[0]);
-        players[0].cooldown = 20;
+        players[0].cooldown = cooldownTime;
     }
     if (players[0].cooldown > 0) players[0].cooldown--;
     
@@ -445,6 +464,12 @@ function draw() {
         ctx.font = 'bold 20px Arial';
         ctx.fillText("GOD MODE", 10, CANVAS_HEIGHT - 10);
     }
+    
+    if (finalMode) {
+        ctx.fillStyle = '#e74c3c';
+        ctx.font = 'bold 20px Arial';
+        ctx.fillText("FINAL MODE", 10, CANVAS_HEIGHT - 35);
+    }
 }
 
 function drawMenu() {
@@ -509,17 +534,51 @@ function drawGameOver() {
 }
 
 function drawPlayer(p) {
-    ctx.fillStyle = p.color;
-    // Shadow
-    ctx.shadowColor = 'rgba(0,0,0,0.5)';
-    ctx.shadowBlur = 10;
-    ctx.fillRect(p.x, p.y, p.width, p.height);
-    ctx.shadowBlur = 0;
+    // Final Mode Aura
+    if (p === players[0] && finalMode) {
+        ctx.shadowColor = 'gold';
+        ctx.shadowBlur = 20;
+    } else {
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = 10;
+    }
+
+    if (p.isTralala) {
+        // Draw Tralala Character
+        // Skin
+        ctx.fillStyle = '#d2b48c'; // Tan
+        ctx.fillRect(p.x, p.y, p.width, p.height);
+        
+        // Hair
+        ctx.fillStyle = '#2c3e50';
+        ctx.fillRect(p.x, p.y, p.width, 15);
+        
+        // Face
+        ctx.fillStyle = 'black';
+        // Eyes
+        let eyeOffset = (p.direction === 1) ? 10 : -10;
+        ctx.beginPath();
+        ctx.arc(p.x + p.width/2 + eyeOffset + 8, p.y + 25, 4, 0, Math.PI*2);
+        ctx.arc(p.x + p.width/2 + eyeOffset - 8, p.y + 25, 4, 0, Math.PI*2);
+        ctx.fill();
+        
+        // Smile
+        ctx.beginPath();
+        ctx.arc(p.x + p.width/2 + eyeOffset, p.y + 30, 8, 0, Math.PI, false);
+        ctx.stroke();
+        
+    } else {
+        // Standard Character
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x, p.y, p.width, p.height);
+        
+        // Eyes (to show direction)
+        ctx.fillStyle = 'white';
+        let eyeX = (p.direction === 1) ? p.x + 30 : p.x + 10;
+        ctx.fillRect(eyeX, p.y + 10, 10, 10);
+    }
     
-    // Eyes (to show direction)
-    ctx.fillStyle = 'white';
-    let eyeX = (p.direction === 1) ? p.x + 30 : p.x + 10;
-    ctx.fillRect(eyeX, p.y + 10, 10, 10);
+    ctx.shadowBlur = 0; // Reset shadow
     
     // Health Bar
     ctx.fillStyle = '#c0392b';
