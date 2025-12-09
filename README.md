@@ -2,7 +2,7 @@
 
 **Epic Multiplayer Combat Game with Insane Game Modes!**
 
-[🎮 Play Now](https://arvingraff.github.io/battle-game/) | [⬇️ Download](https://github.com/arvingraff/battle-game/releases/latest/download/BattleGame-v1.0.zip) | [📖 Docs](https://arvingraff.github.io/battle-game/)
+[🎮 Play Now](https://arvingraff.github.io/battle-game/) | [⬇️ Download](https://github.com/arvingraff/battle-game/blob/main/releases/BattleGame-v1.0.zip) | [📖 Docs](https://arvingraff.github.io/battle-game/)
 
 ---
 
