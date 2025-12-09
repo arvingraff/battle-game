@@ -93,6 +93,57 @@
             transform: translateY(-5px);
             background: rgba(255,255,255,0.3);
         }
+
+        /* Touch Controls */
+        #touch-controls {
+            display: none;
+            margin-top: 20px;
+            user-select: none;
+        }
+
+        @media (max-width: 768px) {
+            #touch-controls {
+                display: flex;
+                justify-content: space-between;
+                width: 100%;
+                max-width: 800px;
+            }
+            
+            .d-pad {
+                display: grid;
+                grid-template-columns: repeat(3, 60px);
+                grid-template-rows: repeat(3, 60px);
+                gap: 5px;
+            }
+            
+            .action-btn {
+                width: 80px;
+                height: 80px;
+                border-radius: 50%;
+                background: rgba(255,255,255,0.3);
+                border: 2px solid white;
+                color: white;
+                font-size: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin-left: 20px;
+            }
+            
+            .d-btn {
+                background: rgba(255,255,255,0.2);
+                border: 1px solid white;
+                border-radius: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 24px;
+            }
+            
+            .d-btn:active, .action-btn:active {
+                background: rgba(255,255,255,0.5);
+            }
+        }
         
         .key {
             display: inline-block;
@@ -177,6 +228,20 @@
                 Loading Epic Game...
             </div>
             <canvas id="canvas" style="display:none;"></canvas>
+            
+            <div id="touch-controls">
+                <div class="d-pad">
+                    <div></div>
+                    <div class="d-btn" id="btn-up">⬆️</div>
+                    <div></div>
+                    <div class="d-btn" id="btn-left">⬅️</div>
+                    <div class="d-btn" id="btn-down">⬇️</div>
+                    <div class="d-btn" id="btn-right">➡️</div>
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <div class="action-btn" id="btn-shoot">🔫</div>
+                </div>
+            </div>
         </div>
         
         <div class="controls">
@@ -221,6 +286,30 @@
     
     <script src="game.js"></script>
     <script>
+        // Touch Control Logic
+        function setupTouch(id, key) {
+            const btn = document.getElementById(id);
+            if(!btn) return;
+            
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                // Simulate keydown
+                window.dispatchEvent(new KeyboardEvent('keydown', {'key': key}));
+            });
+            
+            btn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                // Simulate keyup
+                window.dispatchEvent(new KeyboardEvent('keyup', {'key': key}));
+            });
+        }
+
+        setupTouch('btn-up', 'w');
+        setupTouch('btn-down', 's');
+        setupTouch('btn-left', 'a');
+        setupTouch('btn-right', 'd');
+        setupTouch('btn-shoot', ' ');
+
         function shareGame() {
             if (navigator.share) {
                 navigator.share({
