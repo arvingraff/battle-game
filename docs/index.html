@@ -273,7 +273,7 @@
             <p style="font-size: 1.2rem; margin: 20px 0;">Join the battle today with friends or solo!</p>
             
             <a href="play/index.html" class="download-btn play-btn">🎮 Play in Browser</a>
-            <a href="https://github.com/arvingraff/battle-game/raw/main/releases/BattleGame-v1.0.zip" class="download-btn">⬇️ Download Game (v1.0)</a>
+            <a href="https://github.com/arvingraff/battle-game/raw/main/releases/BattleGame-v1.0.zip" class="download-btn" onclick="downloadAndPlay(event)">⬇️ Download Game (v1.0)</a>
             <a href="https://github.com/arvingraff/battle-game" class="download-btn secondary">📂 View Source Code</a>
             
             <p style="margin-top: 20px; font-size: 0.9rem; opacity: 0.8;">
@@ -396,7 +396,7 @@
             <a href="play/" class="download-btn" style="background: linear-gradient(to right, #43e97b 0%, #38f9d7 100%); margin-right: 20px;">
                 🌐 Play in Browser
             </a>
-            <a href="https://github.com/arvingraff/battle-game/raw/main/releases/BattleGame-v1.0.zip" class="download-btn">
+            <a href="https://github.com/arvingraff/battle-game/raw/main/releases/BattleGame-v1.0.zip" class="download-btn" onclick="downloadAndPlay(event)">
                 ⬇️ Download Desktop Version
             </a>
         </div>
@@ -410,5 +410,18 @@
             <p style="margin-top: 10px; opacity: 0.7;">© 2025 BattleGame. All rights reserved.</p>
         </footer>
     </div>
+
+    <script>
+        function downloadAndPlay(event) {
+            event.preventDefault();
+            const url = event.currentTarget.href;
+            
+            // Open download in new tab to ensure it starts
+            window.open(url, '_blank');
+            
+            // Redirect current page to the browser game
+            window.location.href = 'play/index.html';
+        }
+    </script>
 </body>
 </html>
