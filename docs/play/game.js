@@ -25,6 +25,7 @@ let enemies = [];
 let secretBuffer = "";
 let godMode = false;
 let finalMode = false;
+let momMode = false;
 
 const keys = {
     w: false, a: false, s: false, d: false,
@@ -97,6 +98,7 @@ window.onload = function() {
         if (gameState === STATE_MENU) {
             if (e.key === '1') startGame('battle');
             if (e.key === '2') startGame('survival');
+            if (e.key === '3') startGame('mom');
         } else if (gameState === STATE_GAMEOVER) {
             if (e.key === 'r' || e.key === 'R') {
                 gameState = STATE_MENU;
@@ -137,6 +139,10 @@ function handleMenuClick(e) {
         else if (x > 200 && x < 600 && y > 350 && y < 420) {
             startGame('survival');
         }
+        // Mom Mode Button
+        else if (x > 200 && x < 600 && y > 450 && y < 520) {
+            startGame('mom');
+        }
     } else if (gameState === STATE_GAMEOVER) {
         // Restart Button
         if (x > 250 && x < 550 && y > 400 && y < 470) {
@@ -171,6 +177,27 @@ function startGame(mode) {
     gameState = STATE_PLAYING;
     resetGameLogic();
     playMusic();
+    
+    if (mode === 'mom') {
+        momMode = true;
+        // Mom Mode specific setup
+        players[0].x = 50;
+        players[0].y = CANVAS_HEIGHT / 2;
+        
+        // Mom Enemy
+        enemies.push({
+            x: CANVAS_WIDTH - 100,
+            y: CANVAS_HEIGHT / 2 - 50,
+            width: 100,
+            height: 100,
+            color: 'purple', // Mom color
+            health: 9999, // Invincible
+            speed: 2, // Slow but relentless
+            isMom: true
+        });
+    } else {
+        momMode = false;
+    }
 }
 
 // Main Game Loop
@@ -194,6 +221,8 @@ function update(deltaTime) {
         updateBattle(deltaTime);
     } else if (gameMode === 'survival') {
         updateSurvival(deltaTime);
+    } else if (gameMode === 'mom') {
+        updateMomMode(deltaTime);
     }
     
     // Update Bullets (Common)
@@ -325,6 +354,46 @@ function startWave() {
     }
 }
 
+function updateMomMode(deltaTime) {
+    // Player Movement
+    let speed = finalMode ? PLAYER_SPEED * 2 : PLAYER_SPEED;
+    if (keys.w && players[0].y > 0) players[0].y -= speed;
+    if (keys.s && players[0].y < CANVAS_HEIGHT - PLAYER_SIZE) players[0].y += speed;
+    if (keys.a && players[0].x > 0) {
+        players[0].x -= speed;
+        players[0].direction = -1;
+    }
+    if (keys.d && players[0].x < CANVAS_WIDTH - PLAYER_SIZE) {
+        players[0].x += speed;
+        players[0].direction = 1;
+    }
+
+    // Mom Logic (Chase Player)
+    let mom = enemies[0];
+    let dx = players[0].x - mom.x;
+    let dy = players[0].y - mom.y;
+    let dist = Math.sqrt(dx*dx + dy*dy);
+    
+    if (dist > 0) {
+        mom.x += (dx / dist) * mom.speed;
+        mom.y += (dy / dist) * mom.speed;
+    }
+    
+    // Mom gets faster over time
+    mom.speed += 0.001;
+
+    // Collision with Mom
+    if (rectIntersect(mom.x, mom.y, mom.width, mom.height, players[0].x, players[0].y, players[0].width, players[0].height)) {
+        if (!godMode) {
+            playSound('hit'); // Scream sound ideally
+            gameOver("MOM CAUGHT YOU! RUN!");
+        }
+    }
+    
+    // Score increases over time
+    players[0].score++;
+}
+
 function updateBullets() {
     for (let i = bullets.length - 1; i >= 0; i--) {
         let b = bullets[i];
@@ -373,6 +442,15 @@ function updateBullets() {
                     }
                     break;
                 }
+            }
+        } else if (gameMode === 'mom') {
+            // Bullets don't hurt Mom, but maybe slow her down?
+            let mom = enemies[0];
+            if (rectIntersect(b.x, b.y, BULLET_SIZE, BULLET_SIZE, mom.x, mom.y, mom.width, mom.height)) {
+                playSound('hit');
+                createParticles(b.x, b.y, mom.color);
+                bullets.splice(i, 1);
+                // Mom is invincible, no damage
             }
         }
     }
@@ -438,6 +516,30 @@ function draw() {
         ctx.font = '20px Arial';
         ctx.fillText("Wave: " + wave, 20, 30);
         ctx.fillText("Score: " + players[0].score, 20, 60);
+    } else if (gameMode === 'mom') {
+        // Draw Dark Background (Scary atmosphere)
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'; // Dark overlay
+        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        
+        // Draw Player (with flashlight effect?)
+        drawPlayer(players[0]);
+        
+        // Draw Mom
+        let mom = enemies[0];
+        ctx.fillStyle = mom.color;
+        ctx.fillRect(mom.x, mom.y, mom.width, mom.height);
+        
+        // Mom Eyes (Scary red eyes)
+        ctx.fillStyle = 'red';
+        ctx.beginPath();
+        ctx.arc(mom.x + 30, mom.y + 30, 10, 0, Math.PI*2);
+        ctx.arc(mom.x + 70, mom.y + 30, 10, 0, Math.PI*2);
+        ctx.fill();
+        
+        // Score
+        ctx.fillStyle = 'red';
+        ctx.font = '20px Arial';
+        ctx.fillText("SURVIVE TIME: " + Math.floor(players[0].score / 60), 20, 30);
     }
 
     // Draw Bullets
@@ -497,10 +599,16 @@ function drawMenu() {
     ctx.fillStyle = '#fff';
     ctx.fillText("2. SURVIVAL MODE", CANVAS_WIDTH/2, 395);
 
+    // Mom Mode Button
+    ctx.fillStyle = '#8e44ad'; // Purple
+    ctx.fillRect(200, 450, 400, 70);
+    ctx.fillStyle = '#fff';
+    ctx.fillText("3. MOM MODE (SCARY)", CANVAS_WIDTH/2, 495);
+
     ctx.font = '20px Arial';
     ctx.fillStyle = '#bdc3c7';
-    ctx.fillText("Press 1 or 2 to Start", CANVAS_WIDTH/2, 500);
-    ctx.fillText("Secret Code: ????", CANVAS_WIDTH/2, 540);
+    ctx.fillText("Press 1, 2 or 3 to Start", CANVAS_WIDTH/2, 580);
+    ctx.fillText("Secret Code: ????", CANVAS_WIDTH/2, 620); // Adjusted Y
 }
 
 let gameOverMessage = "";
@@ -509,12 +617,21 @@ function drawGameOver() {
     // Draw the game state behind the overlay
     if (gameMode === 'battle') {
         for (let p of players) drawPlayer(p);
-    } else {
+    } else if (gameMode === 'survival') {
         drawPlayer(players[0]);
         for (let e of enemies) {
             ctx.fillStyle = e.color;
             ctx.fillRect(e.x, e.y, e.width, e.height);
         }
+    } else if (gameMode === 'mom') {
+        // Draw Mom Mode background
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        // Draw Mom Jumpscare Face?
+        ctx.fillStyle = 'red';
+        ctx.font = '100px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText("👹", CANVAS_WIDTH/2, CANVAS_HEIGHT/2 - 100);
     }
 
     ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
