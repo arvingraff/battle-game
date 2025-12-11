@@ -26,6 +26,7 @@ let secretBuffer = "";
 let godMode = false;
 let finalMode = false;
 let momMode = false;
+let dillyDollyMode = false;
 
 const keys = {
     w: false, a: false, s: false, d: false,
@@ -99,6 +100,7 @@ window.onload = function() {
             if (e.key === '1') startGame('battle');
             if (e.key === '2') startGame('survival');
             if (e.key === '3') startGame('mom');
+            if (e.key === '4') startGame('dilly');
         } else if (gameState === STATE_GAMEOVER) {
             if (e.key === 'r' || e.key === 'R') {
                 gameState = STATE_MENU;
@@ -143,6 +145,10 @@ function handleMenuClick(e) {
         else if (x > 200 && x < 600 && y > 450 && y < 520) {
             startGame('mom');
         }
+        // Dilly Dolly Mode Button
+        else if (x > 200 && x < 600 && y > 550 && y < 620) {
+            startGame('dilly');
+        }
     } else if (gameState === STATE_GAMEOVER) {
         // Restart Button
         if (x > 250 && x < 550 && y > 400 && y < 470) {
@@ -178,6 +184,9 @@ function startGame(mode) {
     resetGameLogic();
     playMusic();
     
+    momMode = false;
+    dillyDollyMode = false;
+
     if (mode === 'mom') {
         momMode = true;
         // Mom Mode specific setup
@@ -195,8 +204,21 @@ function startGame(mode) {
             speed: 2, // Slow but relentless
             isMom: true
         });
-    } else {
-        momMode = false;
+    } else if (mode === 'dilly') {
+        dillyDollyMode = true;
+        // Dilly Dolly Setup
+        // Create 5 dolls
+        for (let i = 0; i < 5; i++) {
+            enemies.push({
+                x: 100 + i * 150,
+                y: CANVAS_HEIGHT / 2,
+                width: 60,
+                height: 100,
+                color: `hsl(${Math.random() * 360}, 70%, 70%)`,
+                isDoll: true,
+                jumpOffset: Math.random() * Math.PI * 2
+            });
+        }
     }
 }
 
@@ -223,6 +245,8 @@ function update(deltaTime) {
         updateSurvival(deltaTime);
     } else if (gameMode === 'mom') {
         updateMomMode(deltaTime);
+    } else if (gameMode === 'dilly') {
+        updateDillyDolly(deltaTime);
     }
     
     // Update Bullets (Common)
@@ -394,6 +418,21 @@ function updateMomMode(deltaTime) {
     players[0].score++;
 }
 
+function updateDillyDolly(deltaTime) {
+    // Just a fun mode, dolls dance
+    for (let doll of enemies) {
+        if (doll.isDoll) {
+            doll.jumpOffset += 0.1;
+            doll.y = CANVAS_HEIGHT / 2 + Math.sin(doll.jumpOffset) * 50;
+        }
+    }
+    
+    // Create sparkles
+    if (Math.random() < 0.1) {
+        createParticles(Math.random() * CANVAS_WIDTH, Math.random() * CANVAS_HEIGHT, 'gold');
+    }
+}
+
 function updateBullets() {
     for (let i = bullets.length - 1; i >= 0; i--) {
         let b = bullets[i];
@@ -451,6 +490,15 @@ function updateBullets() {
                 createParticles(b.x, b.y, mom.color);
                 bullets.splice(i, 1);
                 // Mom is invincible, no damage
+            }
+        } else if (gameMode === 'dilly') {
+            // Bullets make dolls jump higher? Or just sparkles
+            for (let doll of enemies) {
+                if (rectIntersect(b.x, b.y, BULLET_SIZE, BULLET_SIZE, doll.x, doll.y, doll.width, doll.height)) {
+                    createParticles(b.x, b.y, doll.color);
+                    bullets.splice(i, 1);
+                    playSound('win'); // Happy sound
+                }
             }
         }
     }
@@ -536,10 +584,34 @@ function draw() {
         ctx.arc(mom.x + 70, mom.y + 30, 10, 0, Math.PI*2);
         ctx.fill();
         
-        // Score
-        ctx.fillStyle = 'red';
-        ctx.font = '20px Arial';
-        ctx.fillText("SURVIVE TIME: " + Math.floor(players[0].score / 60), 20, 30);
+        // Score increases over time
+        players[0].score++;
+    } else if (gameMode === 'dilly') {
+        // Draw Pink Background
+        ctx.fillStyle = '#ffc0cb';
+        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        
+        // Draw Dolls
+        for (let doll of enemies) {
+            ctx.fillStyle = doll.color;
+            ctx.fillRect(doll.x, doll.y, doll.width, doll.height);
+            
+            // Doll Face
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(doll.x + 20, doll.y + 20, 5, 0, Math.PI*2);
+            ctx.arc(doll.x + 40, doll.y + 20, 5, 0, Math.PI*2);
+            ctx.fill();
+            
+            // Smile
+            ctx.beginPath();
+            ctx.arc(doll.x + 30, doll.y + 30, 10, 0, Math.PI, false);
+            ctx.stroke();
+        }
+        
+        ctx.fillStyle = '#e91e63';
+        ctx.font = '30px Arial';
+        ctx.fillText("DILLY DOLLY PARTY!", 20, 50);
     }
 
     // Draw Bullets
@@ -605,10 +677,16 @@ function drawMenu() {
     ctx.fillStyle = '#fff';
     ctx.fillText("3. MOM MODE (SCARY)", CANVAS_WIDTH/2, 495);
 
+    // Dilly Dolly Mode Button
+    ctx.fillStyle = '#ff69b4'; // Hot Pink
+    ctx.fillRect(200, 550, 400, 70);
+    ctx.fillStyle = '#fff';
+    ctx.fillText("4. DILLY DOLLY MODE", CANVAS_WIDTH/2, 595);
+
     ctx.font = '20px Arial';
     ctx.fillStyle = '#bdc3c7';
-    ctx.fillText("Press 1, 2 or 3 to Start", CANVAS_WIDTH/2, 580);
-    ctx.fillText("Secret Code: ????", CANVAS_WIDTH/2, 620); // Adjusted Y
+    ctx.fillText("Press 1, 2, 3 or 4 to Start", CANVAS_WIDTH/2, 680);
+    ctx.fillText("Secret Code: ????", CANVAS_WIDTH/2, 720); // Adjusted Y
 }
 
 let gameOverMessage = "";
@@ -632,6 +710,10 @@ function drawGameOver() {
         ctx.font = '100px Arial';
         ctx.textAlign = 'center';
         ctx.fillText("👹", CANVAS_WIDTH/2, CANVAS_HEIGHT/2 - 100);
+    } else if (gameMode === 'dilly') {
+        // Should not really happen, but just in case
+        ctx.fillStyle = '#ffc0cb';
+        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     }
 
     ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
