@@ -94,6 +94,21 @@
             background: rgba(255,255,255,0.3);
         }
 
+        .mode-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            margin-top: 5px;
+            font-weight: bold;
+        }
+        
+        .badge-battle { background: #3498db; }
+        .badge-survival { background: #e74c3c; }
+        .badge-mom { background: #8e44ad; }
+        .badge-dilly { background: #ff69b4; }
+        .badge-combine { background: #27ae60; }
+
         /* Touch Controls */
         #touch-controls {
             display: none;
@@ -272,6 +287,16 @@
                     <strong>Jump (Final Mode)</strong><br>
                     <span class="key">J</span>
                 </div>
+                <div class="control-item">
+                    <h3>Dilly Dolly Mode</h3>
+                    <p>Just dance!</p>
+                    <span class="mode-badge badge-dilly">Fun</span>
+                </div>
+                <div class="control-item">
+                    <h3>Combine Mode</h3>
+                    <p>Collect items to become human!</p>
+                    <span class="mode-badge badge-combine">New!</span>
+                </div>
             </div>
             
             <div class="secret">
@@ -279,6 +304,10 @@
                 Enter <span class="key">6776</span> to unlock FINAL MODE!<br>
                 <small>(After the Tralala transformation)</small>
             </div>
+        </div>
+        
+        <div class="secrets-hint">
+            <p>🤫 Psst... try typing "tralala" followed by "67" in the menu...</p>
         </div>
         
         <div style="margin-top: 20px;">

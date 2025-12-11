@@ -27,6 +27,29 @@ let godMode = false;
 let finalMode = false;
 let momMode = false;
 let dillyDollyMode = false;
+let combineMode = false;
+
+// Combine Mode Variables
+let dogX = 100;
+let dogY = 0;
+let dogVelocityY = 0;
+let dogDirection = 1;
+let transformation = 0;
+let itemsCollected = 0;
+let combineItems = [];
+let combineObstacles = [];
+let combineParticles = [];
+let combineGameTime = 0;
+let combineSpawnTimer = 0;
+let combineObstacleTimer = 0;
+let combineStoryPhase = 0;
+let combineShowCelebration = false;
+let combineCelebrationTimer = 0;
+let combineLives = 5;
+let combineHealth = 100;
+let combineStamina = 100;
+let isJumping = false;
+let isSprinting = false;
 
 const keys = {
     w: false, a: false, s: false, d: false,
@@ -101,6 +124,7 @@ window.onload = function() {
             if (e.key === '2') startGame('survival');
             if (e.key === '3') startGame('mom');
             if (e.key === '4') startGame('dilly');
+            if (e.key === '5') startGame('combine');
         } else if (gameState === STATE_GAMEOVER) {
             if (e.key === 'r' || e.key === 'R') {
                 gameState = STATE_MENU;
@@ -149,6 +173,10 @@ function handleMenuClick(e) {
         else if (x > 200 && x < 600 && y > 550 && y < 620) {
             startGame('dilly');
         }
+        // Combine Mode Button
+        else if (x > 200 && x < 600 && y > 650 && y < 720) {
+            startGame('combine');
+        }
     } else if (gameState === STATE_GAMEOVER) {
         // Restart Button
         if (x > 250 && x < 550 && y > 400 && y < 470) {
@@ -186,6 +214,7 @@ function startGame(mode) {
     
     momMode = false;
     dillyDollyMode = false;
+    combineMode = false;
 
     if (mode === 'mom') {
         momMode = true;
@@ -219,6 +248,23 @@ function startGame(mode) {
                 jumpOffset: Math.random() * Math.PI * 2
             });
         }
+    } else if (mode === 'combine') {
+        combineMode = true;
+        // Combine Mode Setup
+        dogX = 100;
+        dogY = CANVAS_HEIGHT - 150;
+        dogVelocityY = 0;
+        transformation = 0;
+        itemsCollected = 0;
+        combineItems = [];
+        combineObstacles = [];
+        combineParticles = [];
+        combineGameTime = 0;
+        combineLives = 5;
+        combineHealth = 100;
+        combineStamina = 100;
+        combineStoryPhase = 0;
+        combineShowCelebration = false;
     }
 }
 
@@ -247,13 +293,170 @@ function update(deltaTime) {
         updateMomMode(deltaTime);
     } else if (gameMode === 'dilly') {
         updateDillyDolly(deltaTime);
+    } else if (gameMode === 'combine') {
+        updateCombineMode(deltaTime);
     }
     
     // Update Bullets (Common)
-    updateBullets();
+    if (gameMode !== 'combine') {
+        updateBullets();
+    }
     
     // Update Particles (Common)
     updateParticles();
+}
+
+function updateCombineMode(deltaTime) {
+    // Convert deltaTime to seconds
+    let dt = deltaTime / 1000;
+    combineGameTime += dt;
+    combineSpawnTimer += dt;
+    combineObstacleTimer += dt;
+
+    // Player Movement (Dog)
+    let speed = 300 * dt; // Base speed
+    isSprinting = keys.Shift && combineStamina > 0;
+    
+    if (isSprinting) {
+        speed *= 1.8;
+        combineStamina -= dt * 30;
+        if (combineStamina < 0) combineStamina = 0;
+    } else if (combineStamina < 100) {
+        combineStamina += dt * 25;
+    }
+
+    if (keys.a || keys.ArrowLeft) {
+        dogX -= speed;
+        dogDirection = -1;
+    }
+    if (keys.d || keys.ArrowRight) {
+        dogX += speed;
+        dogDirection = 1;
+    }
+
+    // Jumping
+    if ((keys.w || keys.ArrowUp || keys[" "]) && !isJumping) {
+        if (combineStamina >= 20) {
+            dogVelocityY = -600; // Jump force
+            isJumping = true;
+            combineStamina -= 20;
+        }
+    }
+
+    // Gravity
+    if (isJumping || dogY < CANVAS_HEIGHT - 150) {
+        dogY += dogVelocityY * dt;
+        dogVelocityY += 1500 * dt; // Gravity
+
+        if (dogY >= CANVAS_HEIGHT - 150) {
+            dogY = CANVAS_HEIGHT - 150;
+            isJumping = false;
+            dogVelocityY = 0;
+        }
+    }
+
+    // Keep dog on screen
+    if (dogX < 0) dogX = 0;
+    if (dogX > CANVAS_WIDTH - 60) dogX = CANVAS_WIDTH - 60;
+
+    // Spawn Items
+    if (combineSpawnTimer > 0.8 && transformation < 100) {
+        combineSpawnTimer = 0;
+        let itemTypes = [
+            {emoji: "👔", name: "Shirt", points: 3},
+            {emoji: "👞", name: "Shoes", points: 3},
+            {emoji: "🎩", name: "Hat", points: 3},
+            {emoji: "👓", name: "Glasses", points: 3},
+            {emoji: "📚", name: "Book", points: 3},
+            {emoji: "☕", name: "Coffee", points: 3},
+            {emoji: "🍔", name: "Burger", points: 3},
+            {emoji: "💼", name: "Briefcase", points: 5},
+            {emoji: "📱", name: "Phone", points: 5},
+            {emoji: "💎", name: "Diamond", points: 10}
+        ];
+        let item = itemTypes[Math.floor(Math.random() * itemTypes.length)];
+        combineItems.push({
+            x: CANVAS_WIDTH + 50,
+            y: CANVAS_HEIGHT - 200 + Math.random() * 100,
+            emoji: item.emoji,
+            name: item.name,
+            points: item.points,
+            collected: false,
+            floatOffset: Math.random() * Math.PI * 2
+        });
+    }
+
+    // Spawn Obstacles
+    if (combineObstacleTimer > 2.0 && transformation < 100 && combineStoryPhase >= 1) {
+        combineObstacleTimer = 0;
+        let obsTypes = [
+            {type: "car", damage: 10, width: 70, height: 40, color: '#c0392b'},
+            {type: "trash", damage: 5, width: 35, height: 50, color: '#7f8c8d'},
+            {type: "puddle", damage: 5, width: 60, height: 20, color: '#3498db'}
+        ];
+        let obs = obsTypes[Math.floor(Math.random() * obsTypes.length)];
+        combineObstacles.push({
+            x: CANVAS_WIDTH + 50,
+            y: CANVAS_HEIGHT - 120 - (obs.type === 'puddle' ? -20 : 0),
+            ...obs,
+            speed: 200 + Math.random() * 100
+        });
+    }
+
+    // Update Items
+    for (let i = combineItems.length - 1; i >= 0; i--) {
+        let item = combineItems[i];
+        item.x -= 150 * dt; // Scroll speed
+        
+        // Collision
+        if (!item.collected && rectIntersect(dogX, dogY, 60, 80, item.x, item.y, 40, 40)) {
+            item.collected = true;
+            transformation = Math.min(100, transformation + item.points);
+            itemsCollected++;
+            playSound('select'); // Use select sound for pickup
+            createParticles(item.x, item.y, 'gold');
+            combineItems.splice(i, 1);
+        } else if (item.x < -50) {
+            combineItems.splice(i, 1);
+        }
+    }
+
+    // Update Obstacles
+    for (let i = combineObstacles.length - 1; i >= 0; i--) {
+        let obs = combineObstacles[i];
+        obs.x -= obs.speed * dt;
+
+        if (rectIntersect(dogX, dogY, 60, 80, obs.x, obs.y, obs.width, obs.height)) {
+            combineHealth -= obs.damage;
+            playSound('hit');
+            createParticles(dogX, dogY, 'red');
+            combineObstacles.splice(i, 1);
+
+            if (combineHealth <= 0) {
+                combineLives--;
+                combineHealth = 100;
+                if (combineLives <= 0) {
+                    gameOver("Game Over! You collected " + itemsCollected + " items.");
+                }
+            }
+        } else if (obs.x < -100) {
+            combineObstacles.splice(i, 1);
+        }
+    }
+
+    // Update Story Phase
+    if (transformation < 20) combineStoryPhase = 0;
+    else if (transformation < 40) combineStoryPhase = 1;
+    else if (transformation < 70) combineStoryPhase = 2;
+    else if (transformation < 100) combineStoryPhase = 3;
+    else {
+        combineStoryPhase = 4;
+        if (!combineShowCelebration) {
+            combineShowCelebration = true;
+            playSound('win');
+            godMode = true; // Reward
+        }
+    }
 }
 
 function updateBattle(deltaTime) {
@@ -543,6 +746,8 @@ function draw() {
         for (let p of players) {
             drawPlayer(p);
         }
+    } else if (gameMode === 'combine') {
+        drawCombineMode();
     } else if (gameMode === 'survival') {
         // Draw Player 1
         drawPlayer(players[0]);
@@ -646,6 +851,149 @@ function draw() {
     }
 }
 
+function drawCombineMode() {
+    // Background based on phase
+    let bgColors = ['#2c3e50', '#34495e', '#7f8c8d', '#3498db', '#87ceeb'];
+    ctx.fillStyle = bgColors[combineStoryPhase];
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    // Ground
+    ctx.fillStyle = combineStoryPhase < 2 ? '#5d4037' : '#7f8c8d';
+    ctx.fillRect(0, CANVAS_HEIGHT - 80, CANVAS_WIDTH, 80);
+
+    // Draw Dog/Human
+    drawCombineCharacter(dogX, dogY, transformation, dogDirection);
+
+    // Draw Items
+    ctx.font = '40px Arial';
+    for (let item of combineItems) {
+        let floatY = item.y + Math.sin(combineGameTime * 5 + item.floatOffset) * 10;
+        ctx.fillText(item.emoji, item.x, floatY);
+    }
+
+    // Draw Obstacles
+    for (let obs of combineObstacles) {
+        ctx.fillStyle = obs.color;
+        ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+    }
+
+    // UI
+    // Health Bar
+    ctx.fillStyle = '#c0392b';
+    ctx.fillRect(20, 20, 200, 20);
+    ctx.fillStyle = '#2ecc71';
+    ctx.fillRect(20, 20, 200 * (combineHealth / 100), 20);
+    ctx.strokeStyle = 'white';
+    ctx.strokeRect(20, 20, 200, 20);
+    ctx.fillStyle = 'white';
+    ctx.font = '16px Arial';
+    ctx.fillText("Health", 25, 36);
+
+    // Stamina Bar
+    ctx.fillStyle = '#e67e22';
+    ctx.fillRect(20, 50, 200, 15);
+    ctx.fillStyle = '#f1c40f';
+    ctx.fillRect(20, 50, 200 * (combineStamina / 100), 15);
+    ctx.strokeRect(20, 50, 200, 15);
+    ctx.fillStyle = 'white';
+    ctx.fillText("Stamina", 25, 63);
+
+    // Lives
+    ctx.font = '20px Arial';
+    ctx.fillText("Lives: " + "💖".repeat(combineLives), 20, 90);
+
+    // Progress Bar
+    let barWidth = 400;
+    let barX = CANVAS_WIDTH / 2 - barWidth / 2;
+    ctx.fillStyle = '#333';
+    ctx.fillRect(barX, 20, barWidth, 30);
+    ctx.fillStyle = `hsl(${transformation * 1.2}, 70%, 50%)`;
+    ctx.fillRect(barX, 20, barWidth * (transformation / 100), 30);
+    ctx.strokeRect(barX, 20, barWidth, 30);
+    ctx.fillStyle = 'white';
+    ctx.textAlign = 'center';
+    ctx.fillText(Math.floor(transformation) + "% Human", CANVAS_WIDTH / 2, 42);
+
+    // Story Text
+    let stories = [
+        "A lonely dog dreaming of being human...",
+        "Learning to walk upright...",
+        "Becoming civilized...",
+        "Almost human!",
+        "YOU ARE HUMAN! (God Mode Unlocked)"
+    ];
+    ctx.font = '24px Arial';
+    ctx.fillText(stories[combineStoryPhase], CANVAS_WIDTH / 2, 80);
+    ctx.textAlign = 'left'; // Reset
+
+    if (combineShowCelebration) {
+        ctx.fillStyle = 'gold';
+        ctx.font = 'bold 60px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText("CONGRATULATIONS!", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+        ctx.font = '30px Arial';
+        ctx.fillText("You are now fully HUMAN!", CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2 + 50);
+        ctx.textAlign = 'left';
+    }
+}
+
+function drawCombineCharacter(x, y, progress, dir) {
+    ctx.save();
+    if (dir === -1) {
+        ctx.translate(x + 60, 0);
+        ctx.scale(-1, 1);
+        x = 0; // Reset x relative to transform
+    }
+
+    if (progress < 30) {
+        // Dog
+        ctx.fillStyle = '#8b4513'; // SaddleBrown
+        ctx.beginPath();
+        ctx.ellipse(x + 30, y + 50, 30, 20, 0, 0, Math.PI * 2); // Body
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(x + 50, y + 30, 15, 0, Math.PI * 2); // Head
+        ctx.fill();
+        // Legs
+        ctx.fillRect(x + 10, y + 60, 10, 20);
+        ctx.fillRect(x + 40, y + 60, 10, 20);
+        // Tail
+        ctx.beginPath();
+        ctx.moveTo(x, y + 40);
+        ctx.lineTo(x - 10, y + 30);
+        ctx.stroke();
+    } else if (progress < 70) {
+        // Hybrid
+        ctx.fillStyle = '#8b4513';
+        ctx.fillRect(x + 20, y + 30, 20, 40); // Upright body
+        ctx.beginPath();
+        ctx.arc(x + 30, y + 20, 15, 0, Math.PI * 2); // Head
+        ctx.fill();
+        // Arms/Legs
+        ctx.fillRect(x + 10, y + 30, 10, 25);
+        ctx.fillRect(x + 40, y + 30, 10, 25);
+        ctx.fillRect(x + 15, y + 70, 10, 20);
+        ctx.fillRect(x + 35, y + 70, 10, 20);
+    } else {
+        // Human
+        ctx.fillStyle = '#f1c27d'; // Skin
+        ctx.fillRect(x + 20, y + 30, 20, 40); // Body
+        ctx.beginPath();
+        ctx.arc(x + 30, y + 20, 12, 0, Math.PI * 2); // Head
+        ctx.fill();
+        // Clothes
+        ctx.fillStyle = '#3498db'; // Blue shirt
+        ctx.fillRect(x + 20, y + 30, 20, 25);
+        ctx.fillStyle = '#2c3e50'; // Pants
+        ctx.fillRect(x + 20, y + 55, 20, 25);
+        // Limbs
+        ctx.fillStyle = '#f1c27d';
+        ctx.fillRect(x + 10, y + 30, 10, 25); // Arms
+        ctx.fillRect(x + 40, y + 30, 10, 25);
+    }
+    ctx.restore();
+}
+
 function drawMenu() {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
@@ -660,33 +1008,39 @@ function drawMenu() {
 
     // Battle Mode Button
     ctx.fillStyle = '#3498db';
-    ctx.fillRect(200, 250, 400, 70);
+    ctx.fillRect(200, 250, 400, 60);
     ctx.fillStyle = '#fff';
     ctx.font = '30px Arial';
-    ctx.fillText("1. BATTLE MODE", CANVAS_WIDTH/2, 295);
+    ctx.fillText("1. BATTLE MODE", CANVAS_WIDTH/2, 290);
 
     // Survival Mode Button
     ctx.fillStyle = '#e74c3c';
-    ctx.fillRect(200, 350, 400, 70);
+    ctx.fillRect(200, 350, 400, 60);
     ctx.fillStyle = '#fff';
-    ctx.fillText("2. SURVIVAL MODE", CANVAS_WIDTH/2, 395);
+    ctx.fillText("2. SURVIVAL MODE", CANVAS_WIDTH/2, 390);
 
     // Mom Mode Button
     ctx.fillStyle = '#8e44ad'; // Purple
-    ctx.fillRect(200, 450, 400, 70);
+    ctx.fillRect(200, 450, 400, 60);
     ctx.fillStyle = '#fff';
-    ctx.fillText("3. MOM MODE (SCARY)", CANVAS_WIDTH/2, 495);
+    ctx.fillText("3. MOM MODE (SCARY)", CANVAS_WIDTH/2, 490);
 
     // Dilly Dolly Mode Button
     ctx.fillStyle = '#ff69b4'; // Hot Pink
-    ctx.fillRect(200, 550, 400, 70);
+    ctx.fillRect(200, 550, 400, 60);
     ctx.fillStyle = '#fff';
-    ctx.fillText("4. DILLY DOLLY MODE", CANVAS_WIDTH/2, 595);
+    ctx.fillText("4. DILLY DOLLY MODE", CANVAS_WIDTH/2, 590);
+
+    // Combine Mode Button
+    ctx.fillStyle = '#27ae60'; // Green
+    ctx.fillRect(200, 650, 400, 60);
+    ctx.fillStyle = '#fff';
+    ctx.fillText("5. COMBINE MODE", CANVAS_WIDTH/2, 690);
 
     ctx.font = '20px Arial';
     ctx.fillStyle = '#bdc3c7';
-    ctx.fillText("Press 1, 2, 3 or 4 to Start", CANVAS_WIDTH/2, 680);
-    ctx.fillText("Secret Code: ????", CANVAS_WIDTH/2, 720); // Adjusted Y
+    ctx.fillText("Press 1-5 to Start", CANVAS_WIDTH/2, 750);
+    ctx.fillText("Secret Code: ????", CANVAS_WIDTH/2, 780);
 }
 
 let gameOverMessage = "";
@@ -713,6 +1067,10 @@ function drawGameOver() {
     } else if (gameMode === 'dilly') {
         // Should not really happen, but just in case
         ctx.fillStyle = '#ffc0cb';
+        ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    } else if (gameMode === 'combine') {
+        // Draw Combine Mode background
+        ctx.fillStyle = '#2c3e50';
         ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     }
 
