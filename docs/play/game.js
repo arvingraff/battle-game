@@ -10,6 +10,9 @@ const BULLET_SIZE = 10;
 const STATE_MENU = 0;
 const STATE_PLAYING = 1;
 const STATE_GAMEOVER = 2;
+const STATE_SHOP = 3;
+const STATE_SECRET_HUNT = 4;
+const STATE_MATH_CHALLENGE = 5;
 
 // Game State
 let canvas, ctx;
@@ -28,6 +31,31 @@ let finalMode = false;
 let momMode = false;
 let dillyDollyMode = false;
 let combineMode = false;
+
+// Shop & Secrets
+let sessionPurchases = {
+    shopUnlocked: false,
+    relaxMode: false,
+    makkaPakkaMode: false,
+    escapeMomMode: false,
+    captureFlagMode: false,
+    survivalMode: false,
+    adventure3dMode: false,
+    dillyDollyMode: false
+};
+
+let unlockProgress = {
+    foundSecretGame: false,
+    clickedShopWord: false,
+    enteredLllooolll: false,
+    answeredMath: false
+};
+
+let shopCodeInput = "";
+let mathAnswerInput = "";
+let secretHuntItems = [];
+let secretHuntShopRect = null;
+let secretHuntWrongRects = [];
 
 // Combine Mode Variables
 let dogX = 100;
@@ -125,10 +153,69 @@ window.onload = function() {
             if (e.key === '3') startGame('mom');
             if (e.key === '4') startGame('dilly');
             if (e.key === '5') startGame('combine');
+            if (e.key === 's' || e.key === 'S') {
+                gameState = STATE_SHOP;
+                shopCodeInput = "";
+                playSound('select');
+            }
         } else if (gameState === STATE_GAMEOVER) {
             if (e.key === 'r' || e.key === 'R') {
                 gameState = STATE_MENU;
                 playSound('select');
+            }
+        } else if (gameState === STATE_SHOP) {
+            if (e.key === 'Escape') {
+                gameState = STATE_MENU;
+                playSound('select');
+            }
+            
+            // Secret Code Detection in Shop
+            if (!sessionPurchases.shopUnlocked) {
+                if (e.key.length === 1) {
+                    shopCodeInput += e.key;
+                    if (shopCodeInput.length > 20) shopCodeInput = shopCodeInput.slice(-20);
+                    
+                    // Step 1: "ttt" -> Secret Hunt
+                    if (shopCodeInput.endsWith("ttt") && !unlockProgress.foundSecretGame) {
+                        unlockProgress.foundSecretGame = true;
+                        shopCodeInput = "";
+                        startSecretHunt();
+                    }
+                    // Step 2: "lllooolll" -> Math Challenge (after finding word)
+                    else if (shopCodeInput.endsWith("lllooolll") && unlockProgress.clickedShopWord && !unlockProgress.enteredLllooolll) {
+                        unlockProgress.enteredLllooolll = true;
+                        shopCodeInput = "";
+                        playSound('select');
+                        setTimeout(() => {
+                            gameState = STATE_MATH_CHALLENGE;
+                            mathAnswerInput = "";
+                        }, 1000);
+                    }
+                }
+            }
+        } else if (gameState === STATE_SECRET_HUNT) {
+            if (e.key === 'Escape') {
+                gameState = STATE_SHOP; // Return to locked shop screen
+            }
+        } else if (gameState === STATE_MATH_CHALLENGE) {
+            if (e.key === 'Escape') {
+                gameState = STATE_SHOP;
+            } else if (e.key === 'Backspace') {
+                mathAnswerInput = mathAnswerInput.slice(0, -1);
+            } else if (e.key === 'Enter') {
+                // Fake check
+                playSound('hit'); // Wrong answer sound
+                mathAnswerInput = "";
+            } else if (e.key.length === 1) {
+                mathAnswerInput += e.key;
+                // Secret Code: xxxzzzccc
+                if (mathAnswerInput.endsWith("xxxzzzccc")) {
+                    unlockProgress.answeredMath = true;
+                    sessionPurchases.shopUnlocked = true;
+                    playSound('win');
+                    alert("SHOP UNLOCKED! The answer was 'xxxzzzccc'");
+                    gameState = STATE_SHOP;
+                }
             }
         }
     });
@@ -150,7 +237,7 @@ window.onload = function() {
 };
 
 function handleMenuClick(e) {
-    if (gameState !== STATE_MENU && gameState !== STATE_GAMEOVER) return;
+    if (gameState !== STATE_MENU && gameState !== STATE_GAMEOVER && gameState !== STATE_SHOP && gameState !== STATE_SECRET_HUNT) return;
 
     const rect = canvas.getBoundingClientRect();
     const x = (e.clientX - rect.left) * (canvas.width / rect.width);
@@ -177,13 +264,102 @@ function handleMenuClick(e) {
         else if (x > 200 && x < 600 && y > 650 && y < 720) {
             startGame('combine');
         }
+        // Shop Button (New)
+        else if (x > 650 && x < 780 && y > 20 && y < 80) {
+            gameState = STATE_SHOP;
+            shopCodeInput = "";
+            playSound('select');
+        }
     } else if (gameState === STATE_GAMEOVER) {
         // Restart Button
         if (x > 250 && x < 550 && y > 400 && y < 470) {
             gameState = STATE_MENU;
             playSound('select');
         }
+    } else if (gameState === STATE_SHOP) {
+        // Back Button
+        if (x > CANVAS_WIDTH/2 - 100 && x < CANVAS_WIDTH/2 + 100 && y > CANVAS_HEIGHT - 100 && y < CANVAS_HEIGHT - 40) {
+            gameState = STATE_MENU;
+            playSound('select');
+        }
+        
+        // Shop Items (if unlocked)
+        if (sessionPurchases.shopUnlocked) {
+            let yPos = 150;
+            const items = [
+                {key: 'relaxMode', name: 'Relax Mode'},
+                {key: 'makkaPakkaMode', name: 'Makka Pakka Mode'},
+                {key: 'escapeMomMode', name: 'Escape Mom Mode'},
+                {key: 'captureFlagMode', name: 'Capture Flag'},
+                {key: 'survivalMode', name: 'Survival Mode'},
+                {key: 'adventure3dMode', name: '3D Adventure'},
+                {key: 'dillyDollyMode', name: 'Dilly Dolly'}
+            ];
+            
+            for (let item of items) {
+                if (!sessionPurchases[item.key]) {
+                    // Buy Button Rect
+                    if (x > CANVAS_WIDTH/2 - 100 && x < CANVAS_WIDTH/2 + 100 && y > yPos + 55 && y < yPos + 95) {
+                        sessionPurchases[item.key] = true;
+                        playSound('select'); // Buy sound
+                    }
+                }
+                yPos += 110;
+            }
+        }
+    } else if (gameState === STATE_SECRET_HUNT) {
+        // Check clicks on words
+        if (secretHuntShopRect && 
+            x > secretHuntShopRect.x && x < secretHuntShopRect.x + secretHuntShopRect.width &&
+            y > secretHuntShopRect.y && y < secretHuntShopRect.y + secretHuntShopRect.height) {
+            
+            unlockProgress.clickedShopWord = true;
+            playSound('win');
+            alert("YOU FOUND IT! Now go back and continue...");
+            gameState = STATE_SHOP;
+        } else {
+            // Check wrong words
+            for (let rect of secretHuntWrongRects) {
+                if (x > rect.x && x < rect.x + rect.width && y > rect.y && y < rect.y + rect.height) {
+                    // Jumpscare / Reset
+                    playSound('hit');
+                    alert("WRONG WORD! RESETTING PROGRESS!");
+                    unlockProgress.foundSecretGame = false;
+                    unlockProgress.clickedShopWord = false;
+                    unlockProgress.enteredLllooolll = false;
+                    gameState = STATE_MENU;
+                    return;
+                }
+            }
+        }
     }
+}
+
+function startSecretHunt() {
+    gameState = STATE_SECRET_HUNT;
+    secretHuntItems = [];
+    secretHuntWrongRects = [];
+    
+    const words = ["game", "mode", "coin", "battle", "fun", "play", "wolf", "secret", "code", "hidden"];
+    
+    // Generate random words
+    for (let i = 0; i < 30; i++) {
+        let word = words[Math.floor(Math.random() * words.length)];
+        let wx = 50 + Math.random() * (CANVAS_WIDTH - 150);
+        let wy = 100 + Math.random() * (CANVAS_HEIGHT - 200);
+        let color = `rgb(${100 + Math.random()*155}, ${100 + Math.random()*155}, ${100 + Math.random()*155})`;
+        
+        secretHuntItems.push({word: word, x: wx, y: wy, color: color});
+        
+        // Approximate width/height for click detection (simple)
+        secretHuntWrongRects.push({x: wx, y: wy, width: word.length * 15, height: 20});
+    }
+    
+    // Add "shop" word
+    let sx = 200 + Math.random() * (CANVAS_WIDTH - 400);
+    let sy = 200 + Math.random() * (CANVAS_HEIGHT - 400);
+    secretHuntItems.push({word: "shop", x: sx, y: sy, color: "#ff33ff"});
+    secretHuntShopRect = {x: sx, y: sy, width: 60, height: 20};
 }
 
 function checkSecrets() {
@@ -739,6 +915,15 @@ function draw() {
     } else if (gameState === STATE_GAMEOVER) {
         drawGameOver();
         return;
+    } else if (gameState === STATE_SHOP) {
+        drawShop();
+        return;
+    } else if (gameState === STATE_SECRET_HUNT) {
+        drawSecretHunt();
+        return;
+    } else if (gameState === STATE_MATH_CHALLENGE) {
+        drawMathChallenge();
+        return;
     }
 
     if (gameMode === 'battle') {
@@ -1041,6 +1226,169 @@ function drawMenu() {
     ctx.fillStyle = '#bdc3c7';
     ctx.fillText("Press 1-5 to Start", CANVAS_WIDTH/2, 750);
     ctx.fillText("Secret Code: ????", CANVAS_WIDTH/2, 780);
+
+    // Shop Button
+    ctx.fillStyle = '#f39c12'; // Orange
+    ctx.fillRect(650, 20, 130, 60);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 24px Arial';
+    ctx.fillText("SHOP", 715, 58);
+}
+
+function drawShop() {
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    if (!sessionPurchases.shopUnlocked) {
+        // Locked Shop Screen
+        ctx.fillStyle = '#e74c3c';
+        ctx.font = 'bold 40px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText("🔒 SHOP LOCKED", CANVAS_WIDTH/2, 150);
+
+        ctx.font = '20px Arial';
+        ctx.fillStyle = '#bdc3c7';
+        
+        let yPos = 250;
+        if (!unlockProgress.foundSecretGame) {
+            ctx.fillText("The journey begins with three of the same...", CANVAS_WIDTH/2, yPos);
+            ctx.fillStyle = '#7f8c8d';
+            ctx.fillText("Think simple... just three.", CANVAS_WIDTH/2, yPos + 35);
+        } else if (!unlockProgress.clickedShopWord) {
+            ctx.fillStyle = '#2ecc71';
+            ctx.fillText("✓ Secret space discovered!", CANVAS_WIDTH/2, yPos);
+            ctx.fillStyle = '#bdc3c7';
+            ctx.fillText("Find the word you seek in the secret space...", CANVAS_WIDTH/2, yPos + 35);
+        } else if (!unlockProgress.enteredLllooolll) {
+            ctx.fillStyle = '#2ecc71';
+            ctx.fillText("✓ Secret word found!", CANVAS_WIDTH/2, yPos);
+            ctx.fillStyle = '#bdc3c7';
+            ctx.fillText("Now... what makes wolves dance?", CANVAS_WIDTH/2, yPos + 35);
+            ctx.fillStyle = '#7f8c8d';
+            ctx.fillText("(Remember Makka Pakka Mode...)", CANVAS_WIDTH/2, yPos + 70);
+        } else {
+            ctx.fillStyle = '#2ecc71';
+            ctx.fillText("✓ All steps complete!", CANVAS_WIDTH/2, yPos);
+            ctx.fillStyle = '#bdc3c7';
+            ctx.fillText("Solve the final challenge...", CANVAS_WIDTH/2, yPos + 35);
+        }
+
+        ctx.fillStyle = '#e74c3c';
+        ctx.fillText("⚠️ This shop is VERY well hidden... ⚠️", CANVAS_WIDTH/2, 450);
+
+    } else {
+        // Unlocked Shop
+        ctx.fillStyle = '#f1c40f';
+        ctx.font = 'bold 40px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText("🛒 SECRET SHOP", CANVAS_WIDTH/2, 50);
+        
+        ctx.fillStyle = '#2ecc71';
+        ctx.font = '20px Arial';
+        ctx.fillText("All Game Modes Unlocked - FREE!", CANVAS_WIDTH/2, 90);
+
+        let yPos = 150;
+        const items = [
+            {key: 'relaxMode', name: 'Relax Mode', desc: 'Peaceful sheep counting!'},
+            {key: 'makkaPakkaMode', name: 'Makka Pakka Mode', desc: 'Wash faces and steal them!'},
+            {key: 'escapeMomMode', name: 'Escape Mom Mode', desc: 'SCARY! Run from Mom!'},
+            {key: 'captureFlagMode', name: 'Capture Flag', desc: 'Team-based action!'},
+            {key: 'survivalMode', name: 'Survival Mode', desc: 'Endless waves!'},
+            {key: 'adventure3dMode', name: '3D Adventure', desc: 'Explore a 3D world!'},
+            {key: 'dillyDollyMode', name: 'Dilly Dolly', desc: 'Simple Dilly Dolly fun!'}
+        ];
+
+        for (let item of items) {
+            if (sessionPurchases[item.key]) {
+                ctx.fillStyle = '#2ecc71';
+                ctx.font = '20px Arial';
+                ctx.fillText(`✅ ${item.name} - UNLOCKED!`, CANVAS_WIDTH/2, yPos);
+            } else {
+                ctx.fillStyle = '#fff';
+                ctx.font = '20px Arial';
+                ctx.fillText(`🔒 ${item.name}`, CANVAS_WIDTH/2, yPos);
+                ctx.fillStyle = '#bdc3c7';
+                ctx.font = '14px Arial';
+                ctx.fillText(item.desc, CANVAS_WIDTH/2, yPos + 25);
+                
+                // Buy Button
+                ctx.fillStyle = '#27ae60';
+                ctx.fillRect(CANVAS_WIDTH/2 - 100, yPos + 55, 200, 40);
+                ctx.strokeStyle = '#2ecc71';
+                ctx.strokeRect(CANVAS_WIDTH/2 - 100, yPos + 55, 200, 40);
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 16px Arial';
+                ctx.fillText("UNLOCK FREE", CANVAS_WIDTH/2, yPos + 80);
+            }
+            yPos += 110;
+        }
+    }
+
+    // Back Button
+    ctx.fillStyle = '#8e44ad';
+    ctx.fillRect(CANVAS_WIDTH/2 - 100, CANVAS_HEIGHT - 100, 200, 60);
+    ctx.strokeStyle = '#9b59b6';
+    ctx.strokeRect(CANVAS_WIDTH/2 - 100, CANVAS_HEIGHT - 100, 200, 60);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 24px Arial';
+    ctx.fillText("BACK", CANVAS_WIDTH/2, CANVAS_HEIGHT - 62);
+}
+
+function drawSecretHunt() {
+    ctx.fillStyle = '#0a0a1a';
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    ctx.fillStyle = '#2ecc71';
+    ctx.font = 'bold 30px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText("??? SECRET SPACE ???", CANVAS_WIDTH/2, 40);
+    
+    ctx.fillStyle = '#bdc3c7';
+    ctx.font = '20px Arial';
+    ctx.fillText("Find something interesting...", CANVAS_WIDTH/2, 80);
+
+    ctx.font = '20px Arial';
+    for (let item of secretHuntItems) {
+        ctx.fillStyle = item.color;
+        ctx.fillText(item.word, item.x, item.y);
+    }
+
+    ctx.fillStyle = '#7f8c8d';
+    ctx.fillText("Press ESC to exit", CANVAS_WIDTH/2, CANVAS_HEIGHT - 30);
+}
+
+function drawMathChallenge() {
+    ctx.fillStyle = '#2c0a0a';
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    ctx.fillStyle = '#e74c3c';
+    ctx.font = 'bold 40px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText("🔢 FINAL CHALLENGE 🔢", CANVAS_WIDTH/2, 100);
+
+    ctx.fillStyle = '#f1c40f';
+    ctx.font = '30px Arial';
+    ctx.fillText("3666373 × 6736746 = ?", CANVAS_WIDTH/2, 200);
+
+    ctx.fillStyle = '#e74c3c';
+    ctx.font = '20px Arial';
+    ctx.fillText("(You must solve this to unlock the shop)", CANVAS_WIDTH/2, 260);
+
+    // Input Box
+    ctx.fillStyle = '#333';
+    ctx.fillRect(CANVAS_WIDTH/2 - 200, 350, 400, 50);
+    ctx.strokeStyle = '#fff';
+    ctx.strokeRect(CANVAS_WIDTH/2 - 200, 350, 400, 50);
+
+    ctx.fillStyle = '#fff';
+    ctx.font = '30px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText(mathAnswerInput, CANVAS_WIDTH/2 - 190, 385);
+    ctx.textAlign = 'center';
+
+    ctx.fillStyle = '#bdc3c7';
+    ctx.font = '16px Arial';
+    ctx.fillText("Type your answer...", CANVAS_WIDTH/2, 430);
 }
 
 let gameOverMessage = "";
