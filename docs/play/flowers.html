@@ -14,32 +14,31 @@
         #messages { background: rgba(0,0,0,0.85); padding: 15px; border-radius: 15px 15px 0 0; height: 200px; overflow-y: auto; color: white; }
         #chatInput { width: 100%; padding: 15px; border-radius: 0 0 15px 15px; font-size: 16px; background: rgba(0,0,0,0.85); color: white; border: none; }
         .message { margin: 8px 0; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 8px; }
-        #namePrompt { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-        #nameDialog { background: white; padding: 50px; border-radius: 25px; text-align: center; }
-        #nameDialog h2 { margin-bottom: 20px; color: #333; }
+        #namePrompt { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+        #nameDialog { background: white; padding: 50px; border-radius: 25px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        #nameDialog h2 { margin-bottom: 20px; color: #333; font-size: 28px; }
         #nameDialog input { padding: 15px; font-size: 18px; border: 3px solid #ddd; border-radius: 10px; margin: 20px 0; width: 300px; display: block; margin-left: auto; margin-right: auto; }
         #nameDialog button { padding: 15px 40px; font-size: 18px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 30px; cursor: pointer; font-weight: bold; }
-        #nameDialog button:hover { transform: scale(1.05); }
-        .hidden { display: none; }
+        #nameDialog button:hover { background: linear-gradient(135deg, #5568d3 0%, #6a3f8a 100%); }
     </style>
 </head>
 <body>
     <div id="namePrompt">
         <div id="nameDialog">
             <h2>🌸 Welcome to Classroom World!</h2>
-            <p>Enter your name to explore:</p>
+            <p style="color: #666; font-size: 16px;">Enter your name to start exploring:</p>
             <input type="text" id="nameInput" maxlength="20" placeholder="Your name">
             <button id="startBtn">Start Exploring!</button>
         </div>
     </div>
     <canvas id="gameCanvas"></canvas>
-    <div id="ui" class="hidden">
+    <div id="ui" style="display:none;">
         <div><strong>🌸 Classroom World</strong></div>
-        <div id="location">📍 Classroom</div>
+        <div id="location">�� Classroom</div>
         <div id="playerCount">👥 Players: 1</div>
     </div>
-    <div id="playerList" class="hidden"><h3>👥 Online</h3><div id="players"></div></div>
-    <div id="chat" class="hidden"><div id="messages"></div><input type="text" id="chatInput" placeholder="Type to chat..."></div>
+    <div id="playerList" style="display:none;"><h3>👥 Online</h3><div id="players"></div></div>
+    <div id="chat" style="display:none;"><div id="messages"></div><input type="text" id="chatInput" placeholder="Type to chat..."></div>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script>
 const canvas=document.getElementById('gameCanvas');
@@ -82,16 +81,18 @@ const AREAS={
 document.getElementById('startBtn').addEventListener('click',function(){
     const name=document.getElementById('nameInput').value.trim();
     if(!name){alert('Please enter a name!');return;}
-    document.getElementById('namePrompt').classList.add('hidden');
-    document.getElementById('ui').classList.remove('hidden');
-    document.getElementById('playerList').classList.remove('hidden');
-    document.getElementById('chat').classList.remove('hidden');
+    
+    document.getElementById('namePrompt').style.display='none';
+    document.getElementById('ui').style.display='block';
+    document.getElementById('playerList').style.display='block';
+    document.getElementById('chat').style.display='block';
+    
     socket=io('https://socketio-chat-server.onrender.com/');
     socket.on('connect',()=>{
         myPlayer={id:socket.id,name:name,x:canvas.width/2,y:canvas.height/2,area:'classroom',color:['#FF6B6B','#4ECDC4','#45B7D1','#FFA07A','#98D8C8'][Math.floor(Math.random()*5)]};
         players[myPlayer.id]=myPlayer;
         socket.emit('player-joined',myPlayer);
-        addMsg('System',name+' joined!','#FFA500');
+        addMsg('System',name+' joined the world!','#FFA500');
     });
     socket.on('players-update',p=>{players=p;if(myPlayer)players[myPlayer.id]=myPlayer;updateList();});
     socket.on('player-moved',p=>{if(p.id!==myPlayer.id)players[p.id]=p;});
