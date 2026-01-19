@@ -301,32 +301,13 @@
             gameStartTime = Date.now();
             gameRunning = true;
             
-            // Add some demo players
-            addDemoPlayers();
+            // No demo players - only real players!
             
             gameLoop();
             updateTimer();
         }
         
         window.startGame = startGame;
-        
-        // Add demo players for testing
-        function addDemoPlayers() {
-            const demoNames = ['Emma', 'Liam', 'Olivia', 'Noah', 'Ava'];
-            for (let i = 0; i < 3; i++) {
-                const id = 'demo_' + i;
-                players.set(id, {
-                    id: id,
-                    name: demoNames[i],
-                    x: Math.random() * (canvas.width - 200) + 100,
-                    y: Math.random() * (canvas.height - 300) + 100,
-                    color: COLORS[i + 5],
-                    vx: (Math.random() - 0.5) * 3,
-                    vy: (Math.random() - 0.5) * 3,
-                    angle: Math.random() * Math.PI * 2
-                });
-            }
-        }
         
         // Update game state
         function update() {
@@ -377,32 +358,6 @@
                             winGame();
                         }
                     }
-                }
-            });
-            
-            // Update demo players
-            players.forEach(player => {
-                player.x += player.vx;
-                player.y += player.vy;
-                
-                // Bounce off walls
-                if (player.x < 30 || player.x > canvas.width - 30) {
-                    player.vx *= -1;
-                    player.angle = Math.atan2(player.vy, player.vx);
-                }
-                if (player.y < 30 || player.y > canvas.height - 180) {
-                    player.vy *= -1;
-                    player.angle = Math.atan2(player.vy, player.vx);
-                }
-                
-                player.x = Math.max(30, Math.min(canvas.width - 30, player.x));
-                player.y = Math.max(30, Math.min(canvas.height - 180, player.y));
-                
-                // Randomly change direction sometimes
-                if (Math.random() < 0.02) {
-                    player.vx = (Math.random() - 0.5) * 3;
-                    player.vy = (Math.random() - 0.5) * 3;
-                    player.angle = Math.atan2(player.vy, player.vx);
                 }
             });
             
