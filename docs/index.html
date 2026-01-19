@@ -49,35 +49,35 @@
         
         .game-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 30px;
-            margin: 40px 0;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 40px;
+            margin: 60px 0;
         }
         
         .game-card {
             background: rgba(255,255,255,0.1);
             backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 40px;
+            border-radius: 30px;
+            padding: 50px;
             text-align: center;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            box-shadow: 0 15px 50px rgba(0,0,0,0.3);
             transition: transform 0.3s;
         }
         
         .game-card:hover {
-            transform: translateY(-10px);
+            transform: translateY(-15px);
         }
         
         .game-card h2 {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
+            font-size: 3rem;
+            margin-bottom: 25px;
         }
         
         .game-card p {
-            font-size: 1.1rem;
-            margin-bottom: 30px;
-            line-height: 1.6;
-            min-height: 80px;
+            font-size: 1.3rem;
+            margin-bottom: 35px;
+            line-height: 1.8;
+            min-height: 100px;
         }
         
         .play-btn {
@@ -85,21 +85,17 @@
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             color: white;
             text-decoration: none;
-            padding: 18px 45px;
-            font-size: 1.3rem;
+            padding: 25px 55px;
+            font-size: 1.5rem;
             border-radius: 50px;
             font-weight: bold;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
             transition: all 0.3s;
         }
         
         .play-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 12px 30px rgba(0,0,0,0.4);
-        }
-        
-        .play-btn.peaceful {
-            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            transform: scale(1.1);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
         }
         
         .play-btn.flower {
@@ -108,23 +104,23 @@
         
         footer {
             text-align: center;
-            padding: 30px;
+            padding: 40px;
             background: rgba(0,0,0,0.2);
-            margin-top: 60px;
+            margin-top: 80px;
             border-radius: 20px;
         }
         
         .download-section {
             text-align: center;
-            margin-top: 60px;
-            padding: 40px;
+            margin-top: 80px;
+            padding: 50px;
             background: rgba(255,255,255,0.1);
-            border-radius: 20px;
+            border-radius: 30px;
         }
         
         .download-section h2 {
-            font-size: 2.5rem;
-            margin-bottom: 20px;
+            font-size: 2.8rem;
+            margin-bottom: 25px;
         }
         
         .download-btn {
@@ -132,17 +128,17 @@
             background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
             color: #333;
             text-decoration: none;
-            padding: 15px 35px;
-            font-size: 1.2rem;
+            padding: 18px 40px;
+            font-size: 1.3rem;
             border-radius: 50px;
             font-weight: bold;
             margin: 10px;
-            box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
             transition: all 0.3s;
         }
         
         .download-btn:hover {
-            transform: scale(1.05);
+            transform: scale(1.08);
         }
     </style>
 </head>
@@ -157,37 +153,30 @@
             <!-- Flower Garden Card -->
             <div class="game-card">
                 <h2>🌸 Flower Garden</h2>
-                <p>Collect 50 beautiful flowers in a peaceful garden! Race against time and enjoy the scenery.</p>
+                <p>Collect 50 beautiful flowers in a peaceful garden! Enjoy the sunshine, explore the beautiful scenery, and race against time. Perfect for relaxing gameplay!</p>
                 <a href="play/flowers.html" class="play-btn flower">🌻 Play Flower Garden</a>
-            </div>
-            
-            <!-- Classroom Adventure Card -->
-            <div class="game-card">
-                <h2>🌿 Classroom Adventure</h2>
-                <p>A peaceful cooperative game where up to 25 players work together to collect flowers!</p>
-                <a href="play/classroom.html" class="play-btn peaceful">🌻 Play Classroom Mode</a>
             </div>
             
             <!-- Battle Mode Card -->
             <div class="game-card">
                 <h2>⚔️ Battle Mode</h2>
-                <p>Epic multiplayer combat with weapons, power-ups, and intense action! Fight to be the last one standing.</p>
+                <p>Epic multiplayer combat with weapons, power-ups, and intense action! Fight to be the last one standing in this thrilling battle royale experience!</p>
                 <a href="play/index.html" class="play-btn">🎮 Play Battle Mode</a>
             </div>
         </div>
         
         <div class="download-section">
             <h2>📥 Download for Desktop</h2>
-            <p style="font-size: 1.2rem; margin-bottom: 20px;">Want to play offline? Download the desktop version!</p>
-            <p style="font-size: 1rem; opacity: 0.8; margin-bottom: 30px;">Works on Mac, Windows & Linux • Requires Python 3.7+ & Pygame</p>
+            <p style="font-size: 1.3rem; margin-bottom: 25px;">Want to play offline? Download the desktop version!</p>
+            <p style="font-size: 1.1rem; opacity: 0.8; margin-bottom: 35px;">Works on Mac, Windows & Linux • Requires Python 3.7+ & Pygame</p>
             
             <a href="battlegame.py" class="download-btn" download>⬇️ Download battlegame.py</a>
             <a href="network.py" class="download-btn" download>⬇️ Download network.py</a>
         </div>
         
         <footer>
-            <p style="font-size: 1.5rem; margin-bottom: 10px;">🎮 BattleGame - Made with ❤️ for everyone!</p>
-            <p style="opacity: 0.8;">All games support multiplayer and work on any device!</p>
+            <p style="font-size: 1.6rem; margin-bottom: 15px;">🎮 BattleGame - Made with ❤️ for everyone!</p>
+            <p style="opacity: 0.8; font-size: 1.1rem;">Both games support multiplayer and work on any device!</p>
         </footer>
     </div>
 </body>
