@@ -248,6 +248,7 @@ document.getElementById('startBtn').addEventListener('click',function(){
         socket.emit('player-joined',myPlayer);
         addMsg('System',name+' joined the world!','#FFA500');
     });
+    socket.on('player-joined',p=>{if(p&&p.id!==myPlayer.id){players[p.id]=p;addMsg('System',p.name+' joined!','#4CAF50');updateList();}});
     socket.on('players-update',p=>{players=p;if(myPlayer)players[myPlayer.id]=myPlayer;updateList();});
     socket.on('player-moved',p=>{if(p.id!==myPlayer.id)players[p.id]=p;});
     socket.on('player-left',id=>{delete players[id];updateList();});
