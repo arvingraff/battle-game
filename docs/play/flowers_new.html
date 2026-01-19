@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classroom World - Multiplayer Fun!</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; overflow: hidden; }
+        #gameCanvas { display: block; background: #87CEEB; margin: 0 auto; }
+        #ui {
+            position: absolute; top: 20px; left: 20px; color: white;
+            background: rgba(0,0,0,0.85); padding: 20px; border-radius: 15px;
+            font-size: 18px; z-index: 100;
+        }
+        #playerList {
+            position: absolute; top: 20px; right: 20px; color: white;
+            background: rgba(0,0,0,0.85); padding: 20px; border-radius: 15px;
+            max-width: 280px; max-height: 500px; overflow-y: auto; z-index: 100;
+        }
+        .player-item {
+            margin: 8px 0; padding: 8px;
+            background: rgba(255,255,255,0.1); border-radius: 8px;
+        }
+        #chat {
+            position: absolute; bottom: 20px; left: 20px;
+            width: 400px; z-index: 100;
+        }
+        #messages {
+            background: rgba(0,0,0,0.85); padding: 15px;
+            border-radius: 15px 15px 0 0; height: 200px;
+            overflow-y: auto; color: white; font-size: 15px;
+        }
+        #chatInput {
+            width: 100%; padding: 15px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 0 0 15px 15px; font-size: 16px;
+            background: rgba(0,0,0,0.85); color: white;
+        }
+        #namePrompt {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 1000;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #namePrompt.hidden { display: none !important; }
+        .prompt-box {
+            background: white; padding: 40px; border-radius: 20px;
+            text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        .prompt-box h2 { color: #333; margin-bottom: 20px; }
+        .prompt-box input {
+            padding: 15px; font-size: 18px; border: 2px solid #ddd;
+            border-radius: 10px; width: 300px; margin-bottom: 20px;
+        }
+        .prompt-box button {
+            padding: 15px 40px; font-size: 18px; background: #4CAF50;
+            color: white; border: none; border-radius: 10px; cursor: pointer;
+        }
+        .prompt-box button:hover { background: #45a049; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="ui">
+        <div id="location">📍 Location: <span style="color: #4CAF50">Classroom</span></div>
+        <div id="playerCount">👥 Players: <span style="color: #2196F3">1</span></div>
+        <div style="margin-top: 10px; font-size: 14px; color: #AAA;">
+            ⬆️⬇️⬅️➡️ Move | 💬 Chat | 🖱️ Click objects
+        </div>
+    </div>
+    
+    <div id="playerList">
+        <h3>👥 Players Online</h3>
+        <div id="players"></div>
+    </div>
+    
+    <div id="chat">
+        <div id="messages"></div>
+        <input type="text" id="chatInput" placeholder="Type to chat..." maxlength="200">
+    </div>
+    
+    <div id="namePrompt">
+        <div class="prompt-box">
+            <h2>🌍 Welcome to Classroom World!</h2>
+            <p style="color: #666; margin-bottom: 20px;">Enter your name to start exploring</p>
+            <input type="text" id="nameInput" placeholder="Your name" maxlength="20" autofocus>
+            <br>
+            <button id="startButton">Start Exploring!</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
