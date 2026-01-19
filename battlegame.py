@@ -3272,6 +3272,384 @@ except:
     has_battle_background = False
     print("ball.jpg not found, using solid color background for battle mode")
 
+def classroom_adventure_menu():
+    """PEACEFUL CLASSROOM MODE - Appears BEFORE main game. Type 'jaaaa' to skip to battle mode"""
+    clock = pygame.time.Clock()
+    
+    # Peaceful colors
+    SKY_BLUE = (135, 206, 250)
+    GRASS_GREEN = (34, 139, 34)
+    YELLOW = (255, 255, 0)
+    GOLD = (255, 215, 0)
+    PINK = (255, 192, 203)
+    WHITE = (255, 255, 255)
+    BLACK = (0, 0, 0)
+    LIGHT_BLUE = (173, 216, 230)
+    
+    key_buffer = ""
+    server_code = ""  # Player types server code here
+    
+    while True:
+        screen.fill(SKY_BLUE)
+        
+        # Draw grass at bottom
+        pygame.draw.rect(screen, GRASS_GREEN, (0, HEIGHT - 150, WIDTH, 150))
+        
+        # Draw cute flowers
+        for i in range(20):
+            flower_x = i * (WIDTH // 20) + 50
+            flower_y = HEIGHT - 100
+            # Petals (4 circles around center)
+            pygame.draw.circle(screen, PINK, (flower_x - 10, flower_y), 8)
+            pygame.draw.circle(screen, YELLOW, (flower_x + 10, flower_y), 8)
+            pygame.draw.circle(screen, PINK, (flower_x, flower_y - 10), 8)
+            pygame.draw.circle(screen, YELLOW, (flower_x, flower_y + 10), 8)
+            # Center
+            pygame.draw.circle(screen, GOLD, (flower_x, flower_y), 8)
+            # Stem
+            pygame.draw.line(screen, GRASS_GREEN, (flower_x, flower_y), (flower_x, flower_y + 30), 3)
+        
+        # Title with shadow
+        title_font = pygame.font.SysFont(None, 120)
+        subtitle_font = pygame.font.SysFont(None, 60)
+        instruction_font = pygame.font.SysFont(None, 40)
+        
+        # Shadow
+        shadow_text = title_font.render("CLASSROOM ADVENTURE", True, (100, 100, 100))
+        shadow_rect = shadow_text.get_rect(center=(WIDTH//2 + 3, HEIGHT//4 + 3))
+        screen.blit(shadow_text, shadow_rect)
+        
+        # Title
+        title_text = title_font.render("CLASSROOM ADVENTURE", True, GOLD)
+        title_rect = title_text.get_rect(center=(WIDTH//2, HEIGHT//4))
+        screen.blit(title_text, title_rect)
+        
+        # Subtitle
+        subtitle_text = subtitle_font.render("A Peaceful Game for Your Entire Class!", True, WHITE)
+        subtitle_rect = subtitle_text.get_rect(center=(WIDTH//2, HEIGHT//3 + 50))
+        screen.blit(subtitle_text, subtitle_rect)
+        
+        # Instructions
+        option_y = HEIGHT//2 + 20
+        instruction_text = subtitle_font.render("Enter Server Code to Join:", True, WHITE)
+        instruction_rect = instruction_text.get_rect(center=(WIDTH//2, option_y))
+        screen.blit(instruction_text, instruction_rect)
+        
+        # Server code input box
+        input_box_rect = pygame.Rect(WIDTH//2 - 150, option_y + 60, 300, 80)
+        pygame.draw.rect(screen, LIGHT_BLUE, input_box_rect)
+        pygame.draw.rect(screen, GOLD, input_box_rect, 5)
+        
+        # Display typed server code
+        code_font = pygame.font.SysFont(None, 100)
+        if server_code:
+            code_text = code_font.render(server_code, True, BLACK)
+        else:
+            code_text = code_font.render("___", True, (150, 150, 150))
+        code_rect = code_text.get_rect(center=input_box_rect.center)
+        screen.blit(code_text, code_rect)
+        
+        # Server options below
+        info_y = option_y + 180
+        info_font = pygame.font.SysFont(None, 50)
+        info1 = info_font.render("Server 1: Type '123'", True, PINK)
+        info1_rect = info1.get_rect(center=(WIDTH//2, info_y))
+        screen.blit(info1, info1_rect)
+        
+        info2 = info_font.render("Server 2: Type '321'", True, YELLOW)
+        info2_rect = info2.get_rect(center=(WIDTH//2, info_y + 60))
+        screen.blit(info2, info2_rect)
+        
+        # Secret instruction at bottom (hidden/small)
+        secret_text = instruction_font.render("(Secret code unlocks Battle Mode)", True, (150, 150, 150))
+        secret_rect = secret_text.get_rect(center=(WIDTH//2, HEIGHT - 80))
+        screen.blit(secret_text, secret_rect)
+        
+        pygame.display.flip()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            
+            if event.type == pygame.KEYDOWN:
+                # Handle backspace
+                if event.key == pygame.K_BACKSPACE:
+                    server_code = server_code[:-1]
+                    key_buffer = key_buffer[:-1] if key_buffer else ""
+                
+                # Handle number input for server codes
+                elif event.unicode.isdigit():
+                    if len(server_code) < 3:
+                        server_code += event.unicode
+                        key_buffer += event.unicode.lower()
+                    
+                    # Check if valid server code entered
+                    if server_code == "123":
+                        return 'server1'
+                    elif server_code == "321":
+                        return 'server2'
+                
+                # Track all key presses for secret code
+                elif event.unicode:
+                    key_buffer += event.unicode.lower()
+                    if len(key_buffer) > 10:
+                        key_buffer = key_buffer[-10:]
+                    
+                    # Check for secret code "jaaaa" - ONLY way to get to battle mode!
+                    if "jaaaa" in key_buffer:
+                        return  # Skip to talking intro
+        
+        clock.tick(60)
+
+def play_classroom_game(server_name):
+    """The actual peaceful classroom game - collaborative and fun!"""
+    import socket
+    import threading
+    import json
+    
+    clock = pygame.time.Clock()
+    
+    # Colors
+    SKY_BLUE = (135, 206, 250)
+    GRASS_GREEN = (34, 139, 34)
+    YELLOW = (255, 255, 0)
+    GOLD = (255, 215, 0)
+    PINK = (255, 192, 203)
+    WHITE = (255, 255, 255)
+    BLACK = (0, 0, 0)
+    ORANGE = (255, 165, 0)
+    RED = (255, 0, 0)
+    BLUE = (0, 100, 255)
+    PURPLE = (160, 32, 240)
+    
+    # Player setup
+    player_x = WIDTH // 2
+    player_y = HEIGHT - 200
+    player_speed = 5
+    
+    # Ask for player name
+    player_name = ""
+    entering_name = True
+    
+    while entering_name:
+        screen.fill(SKY_BLUE)
+        pygame.draw.rect(screen, GRASS_GREEN, (0, HEIGHT - 150, WIDTH, 150))
+        
+        title_font = pygame.font.SysFont(None, 80)
+        title_text = title_font.render("Enter Your Name:", True, GOLD)
+        title_rect = title_text.get_rect(center=(WIDTH//2, HEIGHT//2 - 100))
+        screen.blit(title_text, title_rect)
+        
+        name_font = pygame.font.SysFont(None, 100)
+        name_display = player_name if player_name else "___"
+        name_text = name_font.render(name_display, True, WHITE)
+        name_rect = name_text.get_rect(center=(WIDTH//2, HEIGHT//2))
+        screen.blit(name_text, name_rect)
+        
+        hint_font = pygame.font.SysFont(None, 40)
+        hint = hint_font.render("Press ENTER when done", True, WHITE)
+        hint_rect = hint.get_rect(center=(WIDTH//2, HEIGHT//2 + 80))
+        screen.blit(hint, hint_rect)
+        
+        pygame.display.flip()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN and player_name.strip():
+                    entering_name = False
+                elif event.key == pygame.K_BACKSPACE:
+                    player_name = player_name[:-1]
+                elif len(player_name) < 15 and event.unicode.isprintable():
+                    player_name += event.unicode
+    
+    # Network setup
+    other_players = {}  # Dictionary of {player_id: {name, x, y, color}}
+    my_player_id = str(random.randint(1000, 9999))
+    
+    # Server ports - different for each server
+    server_port = 5556 if server_name == "Server 1" else 5557
+    
+    # UDP socket for multiplayer
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    sock.settimeout(0.001)
+    
+    try:
+        sock.bind(('', server_port))
+    except:
+        pass  # If binding fails, can still send
+    
+    # Random color for this player
+    player_colors = [PINK, ORANGE, RED, BLUE, PURPLE, YELLOW]
+    my_color = random.choice(player_colors)
+    
+    def receive_updates():
+        """Background thread to receive other players' positions"""
+        while running:
+            try:
+                data, addr = sock.recvfrom(1024)
+                msg = json.loads(data.decode())
+                
+                if msg['id'] != my_player_id:  # Don't add ourselves
+                    other_players[msg['id']] = {
+                        'name': msg['name'],
+                        'x': msg['x'],
+                        'y': msg['y'],
+                        'color': tuple(msg['color'])
+                    }
+            except:
+                pass
+    
+    # Start background thread
+    running = True
+    listener_thread = threading.Thread(target=receive_updates, daemon=True)
+    listener_thread.start()
+    
+    # Collectible flowers
+    flowers = []
+    for i in range(15):
+        flowers.append({
+            'x': random.randint(50, WIDTH - 50),
+            'y': random.randint(100, HEIGHT - 200),
+            'collected': False
+        })
+    
+    score = 0
+    last_broadcast = 0
+    
+    running = True
+    while running:
+        screen.fill(SKY_BLUE)
+        
+        # Draw grass
+        pygame.draw.rect(screen, GRASS_GREEN, (0, HEIGHT - 150, WIDTH, 150))
+        
+        # Draw flowers to collect
+        for flower in flowers:
+            if not flower['collected']:
+                # Draw flower
+                x, y = flower['x'], flower['y']
+                pygame.draw.circle(screen, PINK, (x - 10, y), 8)
+                pygame.draw.circle(screen, YELLOW, (x + 10, y), 8)
+                pygame.draw.circle(screen, PINK, (x, y - 10), 8)
+                pygame.draw.circle(screen, YELLOW, (x, y + 10), 8)
+                pygame.draw.circle(screen, GOLD, (x, y), 10)
+        
+        # Draw OTHER REAL PLAYERS from network!
+        for player_id, other in list(other_players.items()):
+            pygame.draw.circle(screen, other['color'], (int(other['x']), int(other['y'])), 20)
+            name_font = pygame.font.SysFont(None, 30)
+            name_text = name_font.render(other['name'], True, WHITE)
+            screen.blit(name_text, (other['x'] - name_text.get_width()//2, other['y'] - 40))
+        
+        # Draw MY player
+        pygame.draw.circle(screen, my_color, (player_x, player_y), 25)
+        pygame.draw.circle(screen, WHITE, (player_x - 8, player_y - 5), 5)  # Eye
+        pygame.draw.circle(screen, WHITE, (player_x + 8, player_y - 5), 5)  # Eye
+        pygame.draw.circle(screen, BLACK, (player_x - 8, player_y - 5), 3)  # Pupil
+        pygame.draw.circle(screen, BLACK, (player_x + 8, player_y - 5), 3)  # Pupil
+        
+        # Draw my name
+        my_name_font = pygame.font.SysFont(None, 35)
+        my_name_text = my_name_font.render(player_name, True, GOLD)
+        screen.blit(my_name_text, (player_x - my_name_text.get_width()//2, player_y - 50))
+        
+        # Draw UI
+        title_font = pygame.font.SysFont(None, 60)
+        title_text = title_font.render(f"Connected to {server_name}!", True, GOLD)
+        screen.blit(title_text, (20, 20))
+        
+        score_font = pygame.font.SysFont(None, 50)
+        score_text = score_font.render(f"Flowers: {score}/15 | Players: {len(other_players) + 1}", True, WHITE)
+        screen.blit(score_text, (20, 80))
+        
+        instruction_font = pygame.font.SysFont(None, 40)
+        inst = instruction_font.render("WASD to move • Collect all flowers! • ESC to leave", True, WHITE)
+        screen.blit(inst, (WIDTH//2 - inst.get_width()//2, HEIGHT - 30))
+        
+        pygame.display.flip()
+        
+        # Broadcast my position to other players
+        current_time = pygame.time.get_ticks()
+        if current_time - last_broadcast > 50:  # Every 50ms
+            try:
+                my_data = {
+                    'id': my_player_id,
+                    'name': player_name,
+                    'x': player_x,
+                    'y': player_y,
+                    'color': list(my_color)
+                }
+                sock.sendto(json.dumps(my_data).encode(), ('<broadcast>', server_port))
+                last_broadcast = current_time
+            except:
+                pass
+        
+        # Handle events
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
+                    sock.close()
+                    return  # Exit classroom game
+        
+        # Handle movement
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_w] or keys[pygame.K_UP]:
+            player_y -= player_speed
+        if keys[pygame.K_s] or keys[pygame.K_DOWN]:
+            player_y += player_speed
+        if keys[pygame.K_a] or keys[pygame.K_LEFT]:
+            player_x -= player_speed
+        if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+            player_x += player_speed
+        
+        # Keep player on screen
+        player_x = max(25, min(WIDTH - 25, player_x))
+        player_y = max(25, min(HEIGHT - 160, player_y))
+        
+        # Check flower collection
+        for flower in flowers:
+            if not flower['collected']:
+                distance = ((player_x - flower['x'])**2 + (player_y - flower['y'])**2)**0.5
+                if distance < 35:
+                    flower['collected'] = True
+                    score += 1
+        
+        # Remove players who haven't sent data in a while (disconnected)
+        current_time = pygame.time.get_ticks()
+        # (We'd add timeout logic here if needed)
+        
+        # Win condition
+        if score >= 15:
+            running = False
+            sock.close()
+            
+            screen.fill(SKY_BLUE)
+            win_font = pygame.font.SysFont(None, 100)
+            win_text = win_font.render("ALL FLOWERS COLLECTED!", True, GOLD)
+            win_rect = win_text.get_rect(center=(WIDTH//2, HEIGHT//2 - 50))
+            screen.blit(win_text, win_rect)
+            
+            congrats_font = pygame.font.SysFont(None, 60)
+            congrats = congrats_font.render("Great teamwork everyone! 🌸", True, WHITE)
+            congrats_rect = congrats.get_rect(center=(WIDTH//2, HEIGHT//2 + 50))
+            screen.blit(congrats, congrats_rect)
+            
+            pygame.display.flip()
+            pygame.time.wait(3000)
+            return
+        
+        clock.tick(60)
+
 def talking_intro():
     """EPIC TALKING INTRO with voice narration and animated presenter before main menu"""
     import os
@@ -16543,6 +16921,41 @@ def run_escape_mom_mode():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if back_button.collidepoint(event.pos):
                     return 'lobby'
+
+# Show classroom adventure menu FIRST (type 'jaaaa' to skip)
+try:
+    if not hasattr(classroom_adventure_menu, 'shown'):
+        result = classroom_adventure_menu()
+        classroom_adventure_menu.shown = True
+        
+        # If a server code was entered, start classroom game
+        if result == 'server1' or result == 'server2':
+            # Clear screen and show connecting message
+            screen.fill((135, 206, 250))  # Sky blue
+            connect_font = pygame.font.SysFont(None, 80)
+            server_name = "Server 1" if result == 'server1' else "Server 2"
+            connect_text = connect_font.render(f"Connecting to {server_name}...", True, (255, 215, 0))
+            connect_rect = connect_text.get_rect(center=(WIDTH//2, HEIGHT//2))
+            screen.blit(connect_text, connect_rect)
+            
+            # Show instructions
+            instruction_font = pygame.font.SysFont(None, 50)
+            inst1 = instruction_font.render("Classroom Adventure Mode!", True, (255, 255, 255))
+            inst2 = instruction_font.render("Everyone on the same server can play together!", True, (255, 255, 255))
+            screen.blit(inst1, (WIDTH//2 - inst1.get_width()//2, HEIGHT//2 + 80))
+            screen.blit(inst2, (WIDTH//2 - inst2.get_width()//2, HEIGHT//2 + 140))
+            
+            pygame.display.flip()
+            pygame.time.wait(2000)  # Show message for 2 seconds
+            
+            # NOW START THE ACTUAL CLASSROOM GAME!
+            play_classroom_game(server_name)
+            
+            # After game ends, allow them to play again
+            classroom_adventure_menu.shown = False
+            
+except:
+    pass  # If classroom menu fails, continue
 
 # Play talking intro sequence ONCE when game starts
 try:

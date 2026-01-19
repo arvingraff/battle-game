@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 Talking Robot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+        
+        .container {
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 800px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+        
+        h1 {
+            text-align: center;
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px #00ff00;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #00ff00;
+            margin-bottom: 30px;
+            font-size: 1.2rem;
+        }
+        
+        #output {
+            background: #000;
+            border: 3px solid #00ff00;
+            border-radius: 10px;
+            padding: 20px;
+            height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+        
+        .robot-text {
+            color: #00ff00;
+            margin: 10px 0;
+        }
+        
+        .user-text {
+            color: #00bfff;
+            margin: 10px 0;
+        }
+        
+        .input-container {
+            display: flex;
+            gap: 10px;
+        }
+        
+        #userInput {
+            flex: 1;
+            padding: 15px;
+            font-size: 1.2rem;
+            background: #1a1a1a;
+            color: white;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        #userInput:focus {
+            outline: none;
+            border-color: #00bfff;
+            box-shadow: 0 0 20px rgba(0, 191, 255, 0.5);
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            background: #00ff00;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            font-family: 'Courier New', monospace;
+        }
+        
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px #00ff00;
+        }
+        
+        button.active {
+            background: #ff00ff;
+            color: white;
+        }
+        
+        .robot-face {
+            text-align: center;
+            font-size: 5rem;
+            margin: 20px 0;
+            animation: blink 3s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 90%, 100% { opacity: 1; }
+            95% { opacity: 0.3; }
+        }
+        
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #00ff00;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 TALKING ROBOT 🤖</h1>
+        <p class="subtitle">Type anything and I'll say it!</p>
+        
+        <div class="robot-face" id="robotFace">🤖</div>
+        
+        <div id="output"></div>
+        
+        <div class="input-container">
+            <input type="text" id="userInput" placeholder="Type something..." autofocus>
+        </div>
+        
+        <div class="controls">
+            <button onclick="setMode('normal')" id="normalBtn" class="active">Normal</button>
+            <button onclick="setMode('loud')" id="loudBtn">LOUD</button>
+            <button onclick="setMode('fast')" id="fastBtn">Fast</button>
+            <button onclick="setMode('robot')" id="robotBtn">R0B0T</button>
+            <button onclick="clearOutput()">Clear</button>
+        </div>
+    </div>
+
+    <script>
+        const output = document.getElementById('output');
+        const userInput = document.getElementById('userInput');
+        const robotFace = document.getElementById('robotFace');
+        
+        let mode = 'normal';
+        let speechRate = 1.0;
+        let speechPitch = 1.0;
+        let speechVolume = 1.0;
+        
+        // Welcome message
+        addMessage('robot', 'Hello! I am your talking robot! 🤖');
+        addMessage('robot', 'Type anything and press ENTER!');
+        
+        // Handle enter key
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const text = userInput.value.trim();
+                if (text) {
+                    addMessage('user', text);
+                    speak(text);
+                    userInput.value = '';
+                } else {
+                    addMessage('robot', "(You didn't say anything!)");
+                }
+            }
+        });
+        
+        function addMessage(type, text) {
+            const div = document.createElement('div');
+            div.className = type === 'robot' ? 'robot-text' : 'user-text';
+            div.textContent = (type === 'robot' ? '🤖: ' : 'YOU: ') + text;
+            output.appendChild(div);
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function speak(text) {
+            // Animate robot face
+            robotFace.style.transform = 'scale(1.2)';
+            setTimeout(() => {
+                robotFace.style.transform = 'scale(1)';
+            }, 200);
+            
+            // Transform text based on mode
+            let spokenText = text;
+            if (mode === 'loud') {
+                spokenText = text.toUpperCase() + '!!!';
+            } else if (mode === 'robot') {
+                spokenText = text.replace(/[aeiou]/gi, '0').toUpperCase();
+            }
+            
+            addMessage('robot', spokenText);
+            
+            // Use Web Speech API if available
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(spokenText);
+                utterance.rate = speechRate;
+                utterance.pitch = speechPitch;
+                utterance.volume = speechVolume;
+                
+                window.speechSynthesis.cancel(); // Stop any ongoing speech
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+        
+        function setMode(newMode) {
+            mode = newMode;
+            
+            // Update button states
+            document.querySelectorAll('.controls button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Set speech parameters
+            switch(mode) {
+                case 'normal':
+                    speechRate = 1.0;
+                    speechPitch = 1.0;
+                    speechVolume = 1.0;
+                    document.getElementById('normalBtn').classList.add('active');
+                    addMessage('robot', 'Normal mode activated!');
+                    break;
+                case 'loud':
+                    speechRate = 0.9;
+                    speechPitch = 1.2;
+                    speechVolume = 1.0;
+                    document.getElementById('loudBtn').classList.add('active');
+                    addMessage('robot', 'LOUD MODE ACTIVATED!!!');
+                    break;
+                case 'fast':
+                    speechRate = 2.0;
+                    speechPitch = 1.5;
+                    speechVolume = 1.0;
+                    document.getElementById('fastBtn').classList.add('active');
+                    addMessage('robot', 'Fast mode activated! Speaking super quickly now!');
+                    break;
+                case 'robot':
+                    speechRate = 0.8;
+                    speechPitch = 0.5;
+                    speechVolume = 1.0;
+                    document.getElementById('robotBtn').classList.add('active');
+                    addMessage('robot', 'R0B0T M0D3 4CT1V4T3D!');
+                    break;
+            }
+        }
+        
+        function clearOutput() {
+            output.innerHTML = '';
+            addMessage('robot', 'Console cleared! Ready for more!');
+        }
+        
+        // Stop speech when page is closed
+        window.addEventListener('beforeunload', () => {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+            }
+        });
+    </script>
+</body>
+</html>
