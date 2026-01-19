@@ -192,25 +192,9 @@
             keys[e.key.toLowerCase()] = false;
         });
         
-        // Add some simulated players for demo
-        function addSimulatedPlayers() {
-            for (let i = 0; i < 4; i++) {
-                const id = 'bot_' + i;
-                players.set(id, {
-                    id: id,
-                    name: ['Alice', 'Bob', 'Charlie', 'Diana'][i],
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
-                    color: COLORS[i],
-                    vx: (Math.random() - 0.5) * 2,
-                    vy: (Math.random() - 0.5) * 2
-                });
-            }
-        }
-        
         // Start game
         function startGame() {
-            addSimulatedPlayers();
+            // No simulated players - only show REAL players!
             gameLoop();
         }
         
@@ -249,21 +233,7 @@
                 }
             });
             
-            // Update simulated players
-            players.forEach(player => {
-                player.x += player.vx;
-                player.y += player.vy;
-                
-                // Bounce off walls
-                if (player.x < 30 || player.x > canvas.width - 30) player.vx *= -1;
-                if (player.y < 30 || player.y > canvas.height - 150) player.vy *= -1;
-                
-                // Keep in bounds
-                player.x = Math.max(30, Math.min(canvas.width - 30, player.x));
-                player.y = Math.max(30, Math.min(canvas.height - 150, player.y));
-            });
-            
-            // Update player count
+            // Update player count (only real players now!)
             document.getElementById('playerCount').textContent = players.size + 1;
         }
         
