@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classroom World - Endless Exploration</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #2c3e50;
+            overflow: hidden;
+        }
+        
+        #gameCanvas {
+            display: block;
+            background: #87CEEB;
+            margin: 0 auto;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            z-index: 100;
+        }
+        
+        #playerList {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 15px;
+            border-radius: 10px;
+            max-width: 250px;
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 100;
+        }
+        
+        #chat {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 350px;
+            z-index: 100;
+        }
+        
+        #messages {
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 10px 10px 0 0;
+            height: 150px;
+            overflow-y: auto;
+            color: white;
+        }
+        
+        #chatInput {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 0 0 10px 10px;
+            font-size: 14px;
+        }
+        
+        .message {
+            margin: 5px 0;
+        }
+        
+        .player-name {
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        
+        #namePrompt {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        #nameDialog {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+        }
+        
+        #nameDialog h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        #nameDialog input {
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            width: 250px;
+        }
+        
+        #nameDialog button {
+            padding: 12px 30px;
+            font-size: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        #nameDialog button:hover {
+            transform: scale(1.05);
+        }
+
+        #instructions {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            z-index: 99;
+        }
+
+        #instructions h3 {
+            margin-bottom: 15px;
+        }
+
+        #instructions p {
+            margin: 10px 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="namePrompt">
+        <div id="nameDialog">
+            <h2>🌸 Welcome to Classroom World!</h2>
+            <p>Enter your name to start exploring:</p>
+            <input type="text" id="nameInput" maxlength="20" placeholder="Your name">
+            <br>
+            <button onclick="startGame()">Start Exploring!</button>
+        </div>
+    </div>
+
+    <div id="instructions" class="hidden">
+        <h3>🎮 Controls</h3>
+        <p>⬆️⬇️⬅️➡️ Arrow Keys - Move</p>
+        <p>💬 Type to chat with others</p>
+        <p>🌍 Explore the endless world - classroom, hallway, playground, and more!</p>
+        <p><small>Click anywhere to close</small></p>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="ui">
+        <div><strong>🌸 Classroom World</strong></div>
+        <div id="location">Location: Classroom</div>
+        <div id="playerCount">Players: 1</div>
+        <div style="margin-top: 10px; font-size: 12px;">Press ? for controls</div>
+    </div>
+
+    <div id="playerList">
+        <strong>👥 Players Online</strong>
+        <div id="players"></div>
+    </div>
+
+    <div id="chat">
+        <div id="messages"></div>
+        <input type="text" id="chatInput" placeholder="Type to chat..." disabled>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Game state
+        let myPlayer = null;
+        let players = {};
+        let socket = null;
+        let keys = {};
+        let currentArea = 'classroom';
+
+        // Define different areas in the world
+        const AREAS = {
+            classroom: {
+                name: 'Classroom',
+                color: '#F5DEB3',
+                objects: [
+                    { type: 'desk', x: 200, y: 200, width: 60, height: 40, color: '#8B4513' },
+                    { type: 'desk', x: 300, y: 200, width: 60, height: 40, color: '#8B4513' },
+                    { type: 'desk', x: 200, y: 300, width: 60, height: 40, color: '#8B4513' },
+                    { type: 'desk', x: 300, y: 300, width: 60, height: 40, color: '#8B4513' },
+                    { type: 'board', x: 50, y: 100, width: 150, height: 100, color: '#2F4F2F' },
+                    { type: 'door', x: canvas.width - 50, y: canvas.height / 2 - 40, width: 40, height: 80, color: '#654321', exit: 'hallway' }
+                ]
+            },
+            hallway: {
+                name: 'Hallway',
+                color: '#D3D3D3',
+                objects: [
+                    { type: 'locker', x: 100, y: 100, width: 40, height: 80, color: '#4169E1' },
+                    { type: 'locker', x: 150, y: 100, width: 40, height: 80, color: '#4169E1' },
+                    { type: 'locker', x: 200, y: 100, width: 40, height: 80, color: '#4169E1' },
+                    { type: 'fountain', x: 400, y: 300, width: 60, height: 60, color: '#87CEEB' },
+                    { type: 'door', x: 50, y: canvas.height / 2 - 40, width: 40, height: 80, color: '#654321', exit: 'classroom' },
+                    { type: 'door', x: canvas.width - 50, y: canvas.height / 2 - 40, width: 40, height: 80, color: '#654321', exit: 'playground' }
+                ]
+            },
+            playground: {
+                name: 'Playground',
+                color: '#90EE90',
+                objects: [
+                    { type: 'tree', x: 150, y: 150, radius: 40, color: '#228B22' },
+                    { type: 'tree', x: 400, y: 200, radius: 40, color: '#228B22' },
+                    { type: 'swing', x: 250, y: 300, width: 50, height: 100, color: '#FFD700' },
+                    { type: 'slide', x: 500, y: 250, width: 80, height: 120, color: '#FF6347' },
+                    { type: 'flower', x: 100, y: 400, radius: 15, color: '#FF69B4' },
+                    { type: 'flower', x: 150, y: 420, radius: 15, color: '#FF1493' },
+                    { type: 'flower', x: 180, y: 390, radius: 15, color: '#FFB6C1' },
+                    { type: 'door', x: 50, y: canvas.height / 2 - 40, width: 40, height: 80, color: '#654321', exit: 'hallway' },
+                    { type: 'door', x: canvas.width - 50, y: canvas.height / 2 - 40, width: 40, height: 80, color: '#654321', exit: 'garden' }
+                ]
+            },
+            garden: {
+                name: 'Garden',
+                color: '#98FB98',
+                objects: [
+                    { type: 'flower', x: 100, y: 100, radius: 15, color: '#FF69B4' },
+                    { type: 'flower', x: 200, y: 150, radius: 15, color: '#FF1493' },
+                    { type: 'flower', x: 300, y: 120, radius: 15, color: '#FFB6C1' },
+                    { type: 'flower', x: 150, y: 250, radius: 15, color: '#FF69B4' },
+                    { type: 'flower', x: 400, y: 300, radius: 15, color: '#FF1493' },
+                    { type: 'flower', x: 250, y: 350, radius: 15, color: '#FFB6C1' },
+                    { type: 'tree', x: 500, y: 200, radius: 50, color: '#228B22' },
+                    { type: 'tree', x: 600, y: 400, radius: 50, color: '#228B22' },
+                    { type: 'door', x: 50, y: canvas.height / 2 - 40, width: 40, height: 80, color: '#654321', exit: 'playground' }
+                ]
+            }
+        };
+
+        function startGame() {
+            const name = document.getElementById('nameInput').value.trim();
+            if (name.length < 1) {
+                alert('Please enter a name!');
+                return;
+            }
+
+            document.getElementById('namePrompt').style.display = 'none';
+            document.getElementById('chatInput').disabled = false;
+            
+            // Show instructions briefly
+            const instructions = document.getElementById('instructions');
+            instructions.classList.remove('hidden');
+            setTimeout(() => instructions.classList.add('hidden'), 5000);
+            instructions.onclick = () => instructions.classList.add('hidden');
+
+            connectToServer(name);
+            gameLoop();
+        }
+
+        function connectToServer(playerName) {
+            // Connect to a free multiplayer server
+            socket = io('https://socketio-chat-server.onrender.com/');
+
+            socket.on('connect', () => {
+                console.log('Connected to server');
+                myPlayer = {
+                    id: socket.id,
+                    name: playerName,
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    area: 'classroom',
+                    color: getRandomColor()
+                };
+                
+                socket.emit('player-joined', myPlayer);
+            });
+
+            socket.on('players-update', (serverPlayers) => {
+                players = serverPlayers;
+                updatePlayerList();
+            });
+
+            socket.on('player-moved', (player) => {
+                if (players[player.id]) {
+                    players[player.id] = player;
+                }
+            });
+
+            socket.on('player-left', (playerId) => {
+                delete players[playerId];
+                updatePlayerList();
+            });
+
+            socket.on('chat-message', (data) => {
+                addMessage(data.name, data.message);
+            });
+        }
+
+        function getRandomColor() {
+            const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (e.target.id === 'chatInput') return;
+            
+            if (e.key === '?') {
+                const instructions = document.getElementById('instructions');
+                instructions.classList.toggle('hidden');
+                return;
+            }
+            
+            keys[e.key] = true;
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        // Chat functionality
+        document.getElementById('chatInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const input = e.target;
+                const message = input.value.trim();
+                if (message && socket) {
+                    socket.emit('chat-message', { name: myPlayer.name, message });
+                    input.value = '';
+                }
+            }
+        });
+
+        function addMessage(name, message) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            messageDiv.innerHTML = `<span class="player-name" style="color: ${getPlayerColor(name)};">${name}:</span>${message}`;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            // Keep only last 50 messages
+            while (messagesDiv.children.length > 50) {
+                messagesDiv.removeChild(messagesDiv.firstChild);
+            }
+        }
+
+        function getPlayerColor(name) {
+            for (let id in players) {
+                if (players[id].name === name) {
+                    return players[id].color;
+                }
+            }
+            return '#FFFFFF';
+        }
+
+        function updatePlayerList() {
+            const playersDiv = document.getElementById('players');
+            const playerCount = Object.keys(players).length;
+            document.getElementById('playerCount').textContent = `Players: ${playerCount}`;
+            
+            playersDiv.innerHTML = '';
+            for (let id in players) {
+                const player = players[id];
+                const playerDiv = document.createElement('div');
+                playerDiv.style.color = player.color;
+                playerDiv.style.margin = '5px 0';
+                playerDiv.textContent = `${player.name} (${AREAS[player.area]?.name || player.area})`;
+                playersDiv.appendChild(playerDiv);
+            }
+        }
+
+        function update() {
+            if (!myPlayer || !socket) return;
+
+            const speed = 5;
+            let moved = false;
+            let oldX = myPlayer.x;
+            let oldY = myPlayer.y;
+
+            if (keys['ArrowUp']) {
+                myPlayer.y -= speed;
+                moved = true;
+            }
+            if (keys['ArrowDown']) {
+                myPlayer.y += speed;
+                moved = true;
+            }
+            if (keys['ArrowLeft']) {
+                myPlayer.x -= speed;
+                moved = true;
+            }
+            if (keys['ArrowRight']) {
+                myPlayer.x += speed;
+                moved = true;
+            }
+
+            // Keep player in bounds
+            myPlayer.x = Math.max(20, Math.min(canvas.width - 20, myPlayer.x));
+            myPlayer.y = Math.max(20, Math.min(canvas.height - 20, myPlayer.y));
+
+            // Check for area transitions (doors)
+            const area = AREAS[myPlayer.area];
+            if (area) {
+                for (let obj of area.objects) {
+                    if (obj.type === 'door' && obj.exit) {
+                        if (Math.abs(myPlayer.x - (obj.x + obj.width / 2)) < 40 &&
+                            Math.abs(myPlayer.y - (obj.y + obj.height / 2)) < 60) {
+                            myPlayer.area = obj.exit;
+                            myPlayer.x = canvas.width / 2;
+                            myPlayer.y = canvas.height / 2;
+                            currentArea = obj.exit;
+                            document.getElementById('location').textContent = `Location: ${AREAS[currentArea].name}`;
+                            moved = true;
+                        }
+                    }
+                }
+            }
+
+            if (moved) {
+                players[myPlayer.id] = myPlayer;
+                socket.emit('player-moved', myPlayer);
+            }
+        }
+
+        function draw() {
+            // Clear canvas
+            ctx.fillStyle = AREAS[currentArea]?.color || '#87CEEB';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw current area objects
+            const area = AREAS[currentArea];
+            if (area) {
+                for (let obj of area.objects) {
+                    ctx.fillStyle = obj.color;
+                    if (obj.type === 'tree' || obj.type === 'flower') {
+                        ctx.beginPath();
+                        ctx.arc(obj.x, obj.y, obj.radius, 0, Math.PI * 2);
+                        ctx.fill();
+                    } else {
+                        ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
+                    }
+
+                    // Draw door labels
+                    if (obj.type === 'door' && obj.exit) {
+                        ctx.fillStyle = 'white';
+                        ctx.font = '12px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(`→ ${AREAS[obj.exit].name}`, obj.x + obj.width / 2, obj.y - 10);
+                    }
+                }
+            }
+
+            // Draw all players
+            for (let id in players) {
+                const player = players[id];
+                if (player.area === currentArea) {
+                    // Draw player
+                    ctx.fillStyle = player.color;
+                    ctx.beginPath();
+                    ctx.arc(player.x, player.y, 15, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Draw name
+                    ctx.fillStyle = 'white';
+                    ctx.strokeStyle = 'black';
+                    ctx.lineWidth = 3;
+                    ctx.font = 'bold 14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.strokeText(player.name, player.x, player.y - 25);
+                    ctx.fillText(player.name, player.x, player.y - 25);
+                }
+            }
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Enter name on pressing Enter
+        document.getElementById('nameInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                startGame();
+            }
+        });
+    </script>
+</body>
+</html>
