@@ -81,8 +81,7 @@ const AREAS={
 
 function showAction(text){
     const ui=document.getElementById('action');
-    ui.querySelector('div').textContent=text;
-    setTimeout(()=>ui.querySelector('div').textContent='',3000);
+    if(ui){ui.textContent=text;ui.style.display='block';setTimeout(()=>{ui.textContent='';ui.style.display='none';},3000);}
 }
 
 function drawDesk(x,y,interacted){
