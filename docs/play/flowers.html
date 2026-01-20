@@ -240,7 +240,7 @@ document.getElementById('startBtn').addEventListener('click',function(){
     document.getElementById('ui').style.display='block';
     document.getElementById('playerList').style.display='block';
     document.getElementById('chat').style.display='block';
-    socket=io('https://socketio-chat-server.onrender.com/');
+    socket=io('https://socketio-chat-h9bk.onrender.com',{transports:['polling','websocket']});
     socket.on('connect',()=>{
         myPlayer={id:socket.id,name:name,x:canvas.width/2,y:canvas.height/2,area:'classroom',color:['#FF6B6B','#4ECDC4','#45B7D1','#FFA07A','#98D8C8','#9B59B6','#E74C3C','#3498DB'][Math.floor(Math.random()*8)]};
         players[myPlayer.id]=myPlayer;
