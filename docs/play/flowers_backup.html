@@ -245,13 +245,17 @@ document.getElementById('startBtn').addEventListener('click',function(){
         myPlayer={id:socket.id,name:name,x:canvas.width/2,y:canvas.height/2,area:'classroom',color:['#FF6B6B','#4ECDC4','#45B7D1','#FFA07A','#98D8C8','#9B59B6','#E74C3C','#3498DB'][Math.floor(Math.random()*8)]};
         players[myPlayer.id]=myPlayer;
         socket.emit('player-joined',myPlayer);
+        socket.emit('message',name+' joined!');
         addMsg('System',name+' joined the world!','#FFA500');
+        setInterval(()=>{if(myPlayer)socket.emit('player-update',myPlayer);},200);
     });
     socket.on('player-joined',p=>{if(p&&p.id!==myPlayer.id){players[p.id]=p;addMsg('System',p.name+' joined!','#4CAF50');updateList();}});
+    socket.on('player-update',p=>{if(p&&p.id!==myPlayer.id){players[p.id]=p;updateList();}});
     socket.on('players-update',p=>{players=p;if(myPlayer)players[myPlayer.id]=myPlayer;updateList();});
-    socket.on('player-moved',p=>{if(p.id!==myPlayer.id)players[p.id]=p;});
+    socket.on('player-moved',p=>{if(p&&p.id!==myPlayer.id)players[p.id]=p;});
     socket.on('player-left',id=>{delete players[id];updateList();});
     socket.on('chat-message',d=>addMsg(d.name,d.message,d.color));
+    socket.on('message',m=>{if(typeof m==='string')addMsg('System',m,'#FFA500');});
     gameLoop();
 });
 
