@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classroom World - Local Network</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #1a1a1a; overflow: hidden; }
+        #gameCanvas { display: block; background: #87CEEB; }
+        #ui { position: absolute; top: 20px; left: 20px; color: white; background: rgba(0,0,0,0.85); padding: 20px; border-radius: 15px; z-index: 100; }
+        #playerList { position: absolute; top: 20px; right: 20px; color: white; background: rgba(0,0,0,0.85); padding: 20px; border-radius: 15px; max-width: 280px; z-index: 100; }
+        #chat { position: absolute; bottom: 20px; left: 20px; width: 400px; z-index: 100; }
+        #messages { background: rgba(0,0,0,0.85); padding: 15px; border-radius: 15px 15px 0 0; height: 200px; overflow-y: auto; color: white; }
+        #chatInput { width: 100%; padding: 15px; border-radius: 0 0 15px 15px; font-size: 16px; background: rgba(0,0,0,0.85); color: white; border: none; }
+        .message { margin: 8px 0; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 8px; }
+        #namePrompt { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+        #nameDialog { background: white; padding: 50px; border-radius: 25px; text-align: center; }
+        #nameDialog h2 { margin-bottom: 20px; color: #333; }
+        #nameDialog input { padding: 15px; font-size: 18px; border: 3px solid #ddd; border-radius: 10px; margin: 20px 0; width: 300px; }
+        #nameDialog button { padding: 15px 40px; font-size: 18px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 30px; cursor: pointer; }
+        #serverInfo { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(255,193,7,0.9); padding: 10px 20px; border-radius: 10px; color: black; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="namePrompt">
+        <div id="nameDialog">
+            <h2>🌸 Classroom World</h2>
+            <p style="color: #666;">Enter your name:</p>
+            <input type="text" id="nameInput" maxlength="20" placeholder="Your name">
+            <button id="startBtn">Start!</button>
+        </div>
+    </div>
+    <div id="serverInfo">🌐 Multiplayer via PubNub - Works Anywhere!</div>
+    <canvas id="gameCanvas"></canvas>
+    <div id="ui" style="display:none;">
+        <div><strong>🌸 Classroom World</strong></div>
+        <div id="location">📍 Classroom</div>
+        <div id="playerCount">👥 Players: 1</div>
+    </div>
+    <div id="playerList" style="display:none;"><h3>👥 Online</h3><div id="players"></div></div>
+    <div id="chat" style="display:none;"><div id="messages"></div><input type="text" id="chatInput" placeholder="Type to chat..."></div>
+    
+    <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.4.0.min.js"></script>
+    <script>
+const canvas=document.getElementById('gameCanvas');
+const ctx=canvas.getContext('2d');
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+
+let myPlayer=null,players={},keys={},area='classroom';
+const CHANNEL='classroom-world-game';
+
+// Initialize PubNub (free, reliable, works everywhere)
+const pubnub=new PubNub({
+    publishKey:'pub-c-6e2e34e1-3a2d-4c85-b1e6-3e0c91c9b8ea',
+    subscribeKey:'sub-c-4377a8d2-f939-11e3-aa40-02ee2ddab7fe',
+    uuid:Math.random().toString(36).substring(7)
+});
+
+const AREAS={
+    classroom:{name:'Classroom',bg:'#F5DEB3',floor:'#DAA520',obj:[
+        {t:'desk',x:200,y:200},{t:'desk',x:350,y:200},{t:'desk',x:200,y:320},{t:'desk',x:350,y:320},
+        {t:'board',x:300,y:50},{t:'door',x:500,y:450,e:'hallway'}
+    ]},
+    hallway:{name:'Hallway',bg:'#E6E6FA',floor:'#B0C4DE',obj:[
+        {t:'locker',x:100,y:100},{t:'locker',x:170,y:100},{t:'locker',x:240,y:100},
+        {t:'door',x:100,y:450,e:'classroom'},{t:'door',x:500,y:450,e:'playground'}
+    ]},
+    playground:{name:'Playground',bg:'#87CEEB',floor:'#90EE90',obj:[
+        {t:'swing',x:200,y:250},{t:'slide',x:450,y:250},{t:'tree',x:150,y:150},{t:'tree',x:550,y:150},
+        {t:'flower',x:100,y:400},{t:'flower',x:140,y:420},{t:'flower',x:180,y:400},
+        {t:'door',x:350,y:50,e:'hallway'}
+    ]}
+};
+
+document.getElementById('startBtn').onclick=()=>{
+    const name=document.getElementById('nameInput').value.trim();
+    if(!name)return alert('Please enter a name!');
+    document.getElementById('namePrompt').style.display='none';
+    document.getElementById('ui').style.display='block';
+    document.getElementById('playerList').style.display='block';
+    document.getElementById('chat').style.display='block';
+    
+    myPlayer={id:pubnub.getUUID(),name,x:canvas.width/2,y:canvas.height/2,area:'classroom',color:['#FF6B6B','#4ECDC4','#45B7D1','#FFA07A','#98D8C8'][Math.floor(Math.random()*5)]};
+    players[myPlayer.id]=myPlayer;
+    
+    pubnub.subscribe({channels:[CHANNEL]});
+    pubnub.publish({channel:CHANNEL,message:{type:'join',player:myPlayer}});
+    addMsg('System',name+' joined!','#4CAF50');
+    
+    pubnub.addListener({
+        message:(m)=>{
+            const d=m.message;
+            if(d.type==='join'&&d.player.id!==myPlayer.id){
+                players[d.player.id]=d.player;
+                addMsg('System',d.player.name+' joined!','#4CAF50');
+                updateList();
+            }
+            if(d.type==='move'&&d.player.id!==myPlayer.id){
+                players[d.player.id]=d.player;
+                updateList();
+            }
+            if(d.type==='chat'){
+                addMsg(d.name,d.msg,d.color);
+            }
+        }
+    });
+    
+    setInterval(()=>pubnub.publish({channel:CHANNEL,message:{type:'move',player:myPlayer}}),500);
+    gameLoop();
+};
+
+document.getElementById('nameInput').addEventListener('keypress',e=>{if(e.key==='Enter')document.getElementById('startBtn').click();});
+document.addEventListener('keydown',e=>{if(e.target.id==='chatInput')return;keys[e.key]=true;});
+document.addEventListener('keyup',e=>keys[e.key]=false);
+document.getElementById('chatInput').addEventListener('keypress',e=>{
+    if(e.key==='Enter'){
+        const m=e.target.value.trim();
+        if(m&&myPlayer){
+            pubnub.publish({channel:CHANNEL,message:{type:'chat',name:myPlayer.name,msg:m,color:myPlayer.color}});
+            addMsg(myPlayer.name,m,myPlayer.color);
+            e.target.value='';
+        }
+    }
+});
+
+function addMsg(n,m,c){
+    const d=document.getElementById('messages'),div=document.createElement('div');
+    div.className='message';
+    div.innerHTML='<b style="color:'+c+'">'+n+':</b> '+m;
+    d.appendChild(div);
+    d.scrollTop=d.scrollHeight;
+}
+
+function updateList(){
+    const d=document.getElementById('players'),c=Object.keys(players).length;
+    document.getElementById('playerCount').textContent='👥 Players: '+c;
+    d.innerHTML='';
+    for(let id in players){
+        const p=players[id],div=document.createElement('div');
+        div.style.color=p.color;
+        div.textContent=p.name+(id===myPlayer.id?' (You)':'');
+        d.appendChild(div);
+    }
+}
+
+function update(){
+    if(!myPlayer)return;
+    const s=6;let m=false;
+    if(keys['ArrowUp']||keys['w']||keys['W']){myPlayer.y-=s;m=true;}
+    if(keys['ArrowDown']||keys['s']||keys['S']){myPlayer.y+=s;m=true;}
+    if(keys['ArrowLeft']||keys['a']||keys['A']){myPlayer.x-=s;m=true;}
+    if(keys['ArrowRight']||keys['d']||keys['D']){myPlayer.x+=s;m=true;}
+    myPlayer.x=Math.max(35,Math.min(canvas.width-35,myPlayer.x));
+    myPlayer.y=Math.max(35,Math.min(canvas.height-35,myPlayer.y));
+    
+    const ar=AREAS[myPlayer.area];
+    if(ar){
+        for(let o of ar.obj){
+            if(o.t==='door'&&o.e){
+                const dx=o.x+30,dy=o.y+50;
+                if(Math.abs(myPlayer.x-dx)<50&&Math.abs(myPlayer.y-dy)<70){
+                    myPlayer.area=o.e;
+                    myPlayer.x=canvas.width/2;
+                    myPlayer.y=canvas.height/2;
+                    area=o.e;
+                    document.getElementById('location').textContent='📍 '+AREAS[area].name;
+                    m=true;
+                    addMsg('System','Entered '+AREAS[area].name,'#FFA500');
+                }
+            }
+        }
+    }
+    if(m)players[myPlayer.id]=myPlayer;
+}
+
+function draw(){
+    const ar=AREAS[area];
+    ctx.fillStyle=ar.bg;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle=ar.floor;
+    for(let x=0;x<canvas.width;x+=100)for(let y=0;y<canvas.height;y+=100)if((x+y)%200===0)ctx.fillRect(x,y,50,50);
+    
+    if(ar){
+        for(let o of ar.obj){
+            if(o.t==='desk'){
+                ctx.fillStyle='#8B4513';
+                ctx.fillRect(o.x,o.y,80,60);
+                ctx.fillStyle='rgba(139,69,19,0.5)';
+                ctx.fillRect(o.x+5,o.y+5,70,50);
+            }
+            if(o.t==='board'){
+                ctx.fillStyle='#2F4F2F';
+                ctx.fillRect(o.x,o.y,150,80);
+                ctx.fillStyle='#90EE90';
+                ctx.fillRect(o.x+10,o.y+10,130,60);
+            }
+            if(o.t==='locker'){
+                ctx.fillStyle='#4169E1';
+                ctx.fillRect(o.x,o.y,60,120);
+                ctx.strokeStyle='#000';
+                ctx.lineWidth=2;
+                ctx.strokeRect(o.x,o.y,60,120);
+            }
+            if(o.t==='swing'){
+                ctx.fillStyle='#8B4513';
+                ctx.fillRect(o.x,o.y,70,10);
+                ctx.fillRect(o.x,o.y+120,70,10);
+                ctx.fillStyle='#FFD700';
+                ctx.fillRect(o.x+10,o.y+40,50,40);
+            }
+            if(o.t==='slide'){
+                ctx.fillStyle='#FF6347';
+                ctx.beginPath();
+                ctx.moveTo(o.x,o.y);
+                ctx.lineTo(o.x+100,o.y+100);
+                ctx.lineTo(o.x+100,o.y+80);
+                ctx.lineTo(o.x+20,o.y);
+                ctx.fill();
+            }
+            if(o.t==='tree'){
+                ctx.fillStyle='#8B4513';
+                ctx.fillRect(o.x-10,o.y+20,20,40);
+                ctx.fillStyle='#228B22';
+                ctx.beginPath();
+                ctx.arc(o.x,o.y,30,0,Math.PI*2);
+                ctx.fill();
+            }
+            if(o.t==='flower'){
+                ctx.fillStyle='#FF69B4';
+                ctx.beginPath();
+                ctx.arc(o.x,o.y,15,0,Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle='#FFD700';
+                ctx.beginPath();
+                ctx.arc(o.x,o.y,5,0,Math.PI*2);
+                ctx.fill();
+            }
+            if(o.t==='door'){
+                ctx.fillStyle='#8B4513';
+                ctx.fillRect(o.x,o.y,60,100);
+                ctx.fillStyle='#FFD700';
+                ctx.beginPath();
+                ctx.arc(o.x+50,o.y+50,5,0,Math.PI*2);
+                ctx.fill();
+                ctx.fillStyle='white';
+                ctx.font='14px Arial';
+                ctx.textAlign='center';
+                ctx.fillText('→ '+AREAS[o.e].name,o.x+30,o.y-10);
+            }
+        }
+    }
+    
+    for(let id in players){
+        const p=players[id];
+        if(p.area===area){
+            const isMe=id===myPlayer.id;
+            ctx.fillStyle=p.color;
+            ctx.beginPath();
+            ctx.arc(p.x,p.y,25,0,Math.PI*2);
+            ctx.fill();
+            ctx.strokeStyle=isMe?'#FFD700':'white';
+            ctx.lineWidth=isMe?4:2;
+            ctx.stroke();
+            ctx.fillStyle='white';
+            ctx.beginPath();
+            ctx.arc(p.x-8,p.y-5,6,0,Math.PI*2);
+            ctx.arc(p.x+8,p.y-5,6,0,Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle='black';
+            ctx.beginPath();
+            ctx.arc(p.x-8,p.y-5,3,0,Math.PI*2);
+            ctx.arc(p.x+8,p.y-5,3,0,Math.PI*2);
+            ctx.fill();
+            ctx.strokeStyle='black';
+            ctx.lineWidth=2;
+            ctx.beginPath();
+            ctx.arc(p.x,p.y+5,12,0,Math.PI,false);
+            ctx.stroke();
+            ctx.font='bold 16px Arial';
+            ctx.textAlign='center';
+            ctx.strokeStyle='black';
+            ctx.lineWidth=3;
+            ctx.strokeText(p.name,p.x,p.y-35);
+            ctx.fillStyle=p.color;
+            ctx.fillText(p.name,p.x,p.y-35);
+        }
+    }
+}
+
+function gameLoop(){update();draw();requestAnimationFrame(gameLoop);}
+window.addEventListener('resize',()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight;});
+    </script>
+</body>
+</html>
