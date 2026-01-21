@@ -3,294 +3,870 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Classroom World - Local Network</title>
+    <title>Classroom World - Live Multiplayer!</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: #1a1a1a; overflow: hidden; }
-        #gameCanvas { display: block; background: #87CEEB; }
-        #ui { position: absolute; top: 20px; left: 20px; color: white; background: rgba(0,0,0,0.85); padding: 20px; border-radius: 15px; z-index: 100; }
-        #playerList { position: absolute; top: 20px; right: 20px; color: white; background: rgba(0,0,0,0.85); padding: 20px; border-radius: 15px; max-width: 280px; z-index: 100; }
-        #chat { position: absolute; bottom: 20px; left: 20px; width: 400px; z-index: 100; }
-        #messages { background: rgba(0,0,0,0.85); padding: 15px; border-radius: 15px 15px 0 0; height: 200px; overflow-y: auto; color: white; }
-        #chatInput { width: 100%; padding: 15px; border-radius: 0 0 15px 15px; font-size: 16px; background: rgba(0,0,0,0.85); color: white; border: none; }
-        .message { margin: 8px 0; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 8px; }
-        #namePrompt { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center; z-index: 2000; }
-        #nameDialog { background: white; padding: 50px; border-radius: 25px; text-align: center; }
-        #nameDialog h2 { margin-bottom: 20px; color: #333; }
-        #nameDialog input { padding: 15px; font-size: 18px; border: 3px solid #ddd; border-radius: 10px; margin: 20px 0; width: 300px; }
-        #nameDialog button { padding: 15px 40px; font-size: 18px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 30px; cursor: pointer; }
-        #serverInfo { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(255,193,7,0.9); padding: 10px 20px; border-radius: 10px; color: black; font-weight: bold; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            overflow: hidden;
+        }
+        
+        #gameCanvas {
+            display: block;
+            background: #87CEEB;
+            margin: 0 auto;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0,0,0,0.85);
+            padding: 20px;
+            border-radius: 15px;
+            font-size: 18px;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+        
+        #ui div {
+            margin: 8px 0;
+        }
+        
+        #playerList {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            background: rgba(0,0,0,0.85);
+            padding: 20px;
+            border-radius: 15px;
+            max-width: 280px;
+            max-height: 500px;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+        
+        #playerList h3 {
+            margin-bottom: 10px;
+            font-size: 20px;
+        }
+        
+        .player-item {
+            margin: 8px 0;
+            padding: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        #chat {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 400px;
+            z-index: 100;
+        }
+        
+        #messages {
+            background: rgba(0,0,0,0.85);
+            padding: 15px;
+            border-radius: 15px 15px 0 0;
+            height: 200px;
+            overflow-y: auto;
+            color: white;
+            font-size: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-bottom: none;
+        }
+        
+        #chatInput {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 0 0 15px 15px;
+            font-size: 16px;
+            background: rgba(0,0,0,0.85);
+            color: white;
+            border-top: none;
+        }
+        
+        #chatInput:focus {
+            outline: none;
+            background: rgba(0,0,0,0.95);
+        }
+        
+        #namePrompt {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        #nameDialog {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 50px;
+            border-radius: 25px;
+            text-align: center;
+            color: white;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            max-width: 500px;
+        }
+        
+        #nameDialog h2 {
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+        
+        #nameDialog p {
+            font-size: 18px;
+            margin-bottom: 25px;
+            opacity: 0.9;
+        }
+        
+        #nameInput {
+            width: 100%;
+            padding: 18px;
+            font-size: 20px;
+            border: none;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        #nameDialog button {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 18px 45px;
+            font-size: 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        #nameDialog button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(255,255,255,0.3);
+        }
+        
+        #instructions {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95);
+            color: white;
+            padding: 40px;
+            border-radius: 20px;
+            z-index: 500;
+            border: 3px solid #667eea;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+            max-width: 600px;
+        }
+        
+        #instructions h3 {
+            font-size: 32px;
+            margin-bottom: 25px;
+            color: #667eea;
+        }
+        
+        #instructions p {
+            margin: 15px 0;
+            font-size: 18px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 24px;
+            z-index: 999;
+            text-align: center;
+        }
+
+        #connectionStatus {
+            background: rgba(255, 193, 7, 0.9);
+            color: black;
+            padding: 10px 20px;
+            border-radius: 10px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        #connectionStatus.connected {
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+        }
+
+        #connectionStatus.error {
+            background: rgba(244, 67, 54, 0.9);
+            color: white;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.3);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255,255,255,0.5);
+        }
+
+        @media (max-width: 768px) {
+            #chat {
+                width: calc(100% - 40px);
+            }
+            
+            #playerList {
+                max-width: 200px;
+            }
+            
+            #nameDialog {
+                padding: 30px;
+                max-width: 90%;
+            }
+        }
     </style>
 </head>
 <body>
-    <div id="namePrompt">
+    <div id="loading">
+        <div>🚀 Loading Classroom World...</div>
+        <div id="connectionStatus">Connecting to multiplayer server...</div>
+    </div>
+
+    <div id="namePrompt" class="hidden">
         <div id="nameDialog">
-            <h2>🌸 Classroom World</h2>
-            <p style="color: #666;">Enter your name:</p>
+            <h2>🌸 Welcome to Classroom World!</h2>
+            <p>Enter your name to join the adventure:</p>
             <input type="text" id="nameInput" maxlength="20" placeholder="Your name">
-            <button id="startBtn">Start!</button>
+            <br>
+            <button onclick="startGame()">Start Exploring!</button>
         </div>
     </div>
-    <div id="serverInfo">🌐 Multiplayer via PubNub - Works Anywhere!</div>
-    <canvas id="gameCanvas"></canvas>
-    <div id="ui" style="display:none;">
-        <div><strong>🌸 Classroom World</strong></div>
-        <div id="location">📍 Classroom</div>
-        <div id="playerCount">👥 Players: 1</div>
+
+    <div id="instructions" class="hidden">
+        <h3>🎮 How to Play</h3>
+        <p>⬆️⬇️⬅️➡️ <strong>Arrow Keys or WASD</strong> - Move around</p>
+        <p>💬 <strong>Type and press Enter</strong> - Chat with other players</p>
+        <p>🚪 <strong>Walk to doors</strong> - Explore new areas!</p>
+        <p>🎯 <strong>Interactive Objects</strong> - Walk into desks, lockers, and more!</p>
+        <p><small>Click anywhere to close</small></p>
     </div>
-    <div id="playerList" style="display:none;"><h3>👥 Online</h3><div id="players"></div></div>
-    <div id="chat" style="display:none;"><div id="messages"></div><input type="text" id="chatInput" placeholder="Type to chat..."></div>
-    
-    <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.4.0.min.js"></script>
-    <script>
-const canvas=document.getElementById('gameCanvas');
-const ctx=canvas.getContext('2d');
-canvas.width=window.innerWidth;
-canvas.height=window.innerHeight;
 
-let myPlayer=null,players={},keys={},area='classroom';
-const CHANNEL='classroom-world-game';
-
-// Initialize PubNub (free, reliable, works everywhere)
-const pubnub=new PubNub({
-    publishKey:'pub-c-6e2e34e1-3a2d-4c85-b1e6-3e0c91c9b8ea',
-    subscribeKey:'sub-c-4377a8d2-f939-11e3-aa40-02ee2ddab7fe',
-    uuid:Math.random().toString(36).substring(7)
-});
-
-const AREAS={
-    classroom:{name:'Classroom',bg:'#F5DEB3',floor:'#DAA520',obj:[
-        {t:'desk',x:200,y:200},{t:'desk',x:350,y:200},{t:'desk',x:200,y:320},{t:'desk',x:350,y:320},
-        {t:'board',x:300,y:50},{t:'door',x:500,y:450,e:'hallway'}
-    ]},
-    hallway:{name:'Hallway',bg:'#E6E6FA',floor:'#B0C4DE',obj:[
-        {t:'locker',x:100,y:100},{t:'locker',x:170,y:100},{t:'locker',x:240,y:100},
-        {t:'door',x:100,y:450,e:'classroom'},{t:'door',x:500,y:450,e:'playground'}
-    ]},
-    playground:{name:'Playground',bg:'#87CEEB',floor:'#90EE90',obj:[
-        {t:'swing',x:200,y:250},{t:'slide',x:450,y:250},{t:'tree',x:150,y:150},{t:'tree',x:550,y:150},
-        {t:'flower',x:100,y:400},{t:'flower',x:140,y:420},{t:'flower',x:180,y:400},
-        {t:'door',x:350,y:50,e:'hallway'}
-    ]}
-};
-
-document.getElementById('startBtn').onclick=()=>{
-    const name=document.getElementById('nameInput').value.trim();
-    if(!name)return alert('Please enter a name!');
-    document.getElementById('namePrompt').style.display='none';
-    document.getElementById('ui').style.display='block';
-    document.getElementById('playerList').style.display='block';
-    document.getElementById('chat').style.display='block';
+    <canvas id="gameCanvas"></canvas>
     
-    myPlayer={id:pubnub.getUUID(),name,x:canvas.width/2,y:canvas.height/2,area:'classroom',color:['#FF6B6B','#4ECDC4','#45B7D1','#FFA07A','#98D8C8'][Math.floor(Math.random()*5)]};
-    players[myPlayer.id]=myPlayer;
-    
-    pubnub.subscribe({channels:[CHANNEL]});
-    pubnub.publish({channel:CHANNEL,message:{type:'join',player:myPlayer}});
-    addMsg('System',name+' joined!','#4CAF50');
-    
-    pubnub.addListener({
-        message:(m)=>{
-            const d=m.message;
-            if(d.type==='join'&&d.player.id!==myPlayer.id){
-                players[d.player.id]=d.player;
-                addMsg('System',d.player.name+' joined!','#4CAF50');
-                updateList();
+    <div id="ui" class="hidden">
+        <div><strong>🌸 Classroom World</strong></div>
+        <div id="location">📍 Location: <span style="color: #4CAF50">Classroom</span></div>
+        <div id="playerCount">👥 Players: <span style="color: #2196F3">1</span></div>
+        <div style="margin-top: 15px; font-size: 14px; color: #aaa;">Press ? for help</div>
+    </div>
+
+    <div id="playerList" class="hidden">
+        <h3>👥 Players Online</h3>
+        <div id="players"></div>
+    </div>
+
+    <div id="chat" class="hidden">
+        <div id="messages"></div>
+        <input type="text" id="chatInput" placeholder="Type to chat and press Enter..." disabled>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+        // ⚠️ REPLACE THESE WITH YOUR SUPABASE CREDENTIALS ⚠️
+        // Get them from: https://supabase.com → Your Project → Settings → API
+        const SUPABASE_URL = 'https://ccaxxjaliknhieszifuo.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjYXh4amFsaWtuaGllc3ppZnVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkwMDg0MTksImV4cCI6MjA4NDU4NDQxOX0.xIgnPWvpxXF5gKCCM09nBYdeH1AZdZaGVQBNG2aWfvA';
+
+        // Check if credentials are set
+        if (SUPABASE_URL === 'YOUR_PROJECT_URL_HERE' || SUPABASE_KEY === 'YOUR_ANON_KEY_HERE') {
+            document.getElementById('loading').innerHTML = `
+                <div style="max-width: 600px; text-align: left; background: rgba(244, 67, 54, 0.9); padding: 30px; border-radius: 20px;">
+                    <h2>⚠️ Setup Required</h2>
+                    <p style="margin: 15px 0;">Please follow the setup guide to configure Supabase:</p>
+                    <ol style="margin: 15px 0; padding-left: 20px;">
+                        <li>Open <strong>SUPABASE_SETUP.md</strong> in your project</li>
+                        <li>Create a free Supabase account (2 minutes)</li>
+                        <li>Get your Project URL and API key</li>
+                        <li>Replace the credentials in this HTML file (line 303-304)</li>
+                    </ol>
+                    <p>Need help? Check the full guide at: <a href="https://github.com/yourusername/battlegame/blob/main/SUPABASE_SETUP.md" style="color: white;">SUPABASE_SETUP.md</a></p>
+                </div>
+            `;
+            throw new Error('Supabase credentials not configured');
+        }
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        console.log('🚀 Supabase multiplayer initializing...');
+        
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let myPlayer = {
+            id: 'player_' + Math.random().toString(36).substr(2, 9),
+            name: '',
+            x: 400,
+            y: 300,
+            location: 'classroom',
+            color: '#' + Math.floor(Math.random()*16777215).toString(16)
+        };
+
+        let players = {};
+        let keys = {};
+        let lastUpdate = Date.now();
+        let updateInterval = null;
+        let playerSubscription = null;
+        let chatSubscription = null;
+
+        const AREAS = {
+            classroom: {
+                name: 'Classroom',
+                color: '#F5F5DC',
+                objects: [
+                    // Teacher's desk
+                    {type: 'desk', x: 400, y: 100, width: 120, height: 60, color: '#8B4513', label: '👨‍🏫 Teacher'},
+                    // Student desks (3 rows)
+                    {type: 'desk', x: 200, y: 250, width: 80, height: 50, color: '#D2691E', label: '📚'},
+                    {type: 'desk', x: 350, y: 250, width: 80, height: 50, color: '#D2691E', label: '📚'},
+                    {type: 'desk', x: 500, y: 250, width: 80, height: 50, color: '#D2691E', label: '📚'},
+                    {type: 'desk', x: 200, y: 350, width: 80, height: 50, color: '#D2691E', label: '📚'},
+                    {type: 'desk', x: 350, y: 350, width: 80, height: 50, color: '#D2691E', label: '📚'},
+                    {type: 'desk', x: 500, y: 350, width: 80, height: 50, color: '#D2691E', label: '📚'},
+                    // Whiteboard
+                    {type: 'board', x: 300, y: 30, width: 200, height: 40, color: 'white', label: '📝 Whiteboard'},
+                    // Door to hallway
+                    {type: 'door', x: canvas.width - 60, y: canvas.height/2 - 40, width: 50, height: 80, color: '#8B4513', label: '🚪 Hallway', target: 'hallway'}
+                ]
+            },
+            hallway: {
+                name: 'Hallway',
+                color: '#E8E8E8',
+                objects: [
+                    // Lockers
+                    {type: 'locker', x: 50, y: 100, width: 40, height: 80, color: '#4169E1', label: '🔒'},
+                    {type: 'locker', x: 50, y: 200, width: 40, height: 80, color: '#4169E1', label: '🔒'},
+                    {type: 'locker', x: 50, y: 300, width: 40, height: 80, color: '#4169E1', label: '🔒'},
+                    {type: 'locker', x: 50, y: 400, width: 40, height: 80, color: '#4169E1', label: '🔒'},
+                    // Doors
+                    {type: 'door', x: 60, y: canvas.height/2 - 40, width: 50, height: 80, color: '#8B4513', label: '🚪 Classroom', target: 'classroom'},
+                    {type: 'door', x: canvas.width - 110, y: 200, width: 50, height: 80, color: '#8B4513', label: '🚪 Playground', target: 'playground'},
+                    {type: 'door', x: canvas.width/2 - 25, y: 50, width: 50, height: 80, color: '#8B4513', label: '🚪 Gym', target: 'gym'}
+                ]
+            },
+            playground: {
+                name: 'Playground',
+                color: '#90EE90',
+                objects: [
+                    // Swings
+                    {type: 'swing', x: 200, y: 200, width: 60, height: 100, color: '#FFD700', label: '🤸 Swing'},
+                    {type: 'swing', x: 300, y: 200, width: 60, height: 100, color: '#FFD700', label: '🤸 Swing'},
+                    // Slide
+                    {type: 'slide', x: 500, y: 250, width: 100, height: 120, color: '#FF6347', label: '🛝 Slide'},
+                    // Flowers
+                    {type: 'flower', x: 150, y: 400, width: 30, height: 30, color: '#FF69B4', label: '🌸'},
+                    {type: 'flower', x: 200, y: 420, width: 30, height: 30, color: '#FF1493', label: '🌺'},
+                    {type: 'flower', x: 250, y: 400, width: 30, height: 30, color: '#FFB6C1', label: '🌷'},
+                    // Door back
+                    {type: 'door', x: 60, y: canvas.height/2 - 40, width: 50, height: 80, color: '#8B4513', label: '🚪 Hallway', target: 'hallway'}
+                ]
+            },
+            gym: {
+                name: 'Gym',
+                color: '#FFA500',
+                objects: [
+                    // Basketball hoop
+                    {type: 'hoop', x: 100, y: 100, width: 80, height: 120, color: '#FF4500', label: '🏀 Hoop'},
+                    {type: 'hoop', x: canvas.width - 180, y: 100, width: 80, height: 120, color: '#FF4500', label: '🏀 Hoop'},
+                    // Bleachers
+                    {type: 'bleacher', x: 50, y: 400, width: 200, height: 80, color: '#8B4513', label: '🪑 Bleachers'},
+                    // Door back
+                    {type: 'door', x: canvas.width/2 - 25, y: canvas.height - 80, width: 50, height: 80, color: '#8B4513', label: '🚪 Hallway', target: 'hallway'}
+                ]
             }
-            if(d.type==='move'&&d.player.id!==myPlayer.id){
-                players[d.player.id]=d.player;
-                updateList();
-            }
-            if(d.type==='chat'){
-                addMsg(d.name,d.msg,d.color);
+        };
+
+        // Initialize Supabase connection
+        async function initMultiplayer() {
+            try {
+                console.log('🔗 Connecting to Supabase...');
+                
+                // Test connection
+                const { data, error } = await supabase.from('players').select('count');
+                if (error) throw error;
+                
+                console.log('✅ Connected to Supabase!');
+                document.getElementById('connectionStatus').textContent = '✅ Connected to multiplayer!';
+                document.getElementById('connectionStatus').className = 'connected';
+                
+                // Subscribe to player updates
+                playerSubscription = supabase
+                    .channel('players')
+                    .on('postgres_changes', 
+                        { event: '*', schema: 'public', table: 'players' },
+                        (payload) => {
+                            if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+                                const player = payload.new;
+                                if (player.id !== myPlayer.id) {
+                                    players[player.id] = player;
+                                }
+                            } else if (payload.eventType === 'DELETE') {
+                                delete players[payload.old.id];
+                            }
+                            updatePlayerList();
+                        }
+                    )
+                    .subscribe();
+
+                // Subscribe to chat messages
+                chatSubscription = supabase
+                    .channel('messages')
+                    .on('postgres_changes',
+                        { event: 'INSERT', schema: 'public', table: 'messages' },
+                        (payload) => {
+                            const msg = payload.new;
+                            if (msg.location === myPlayer.location) {
+                                addMessage(msg.player_name, msg.message);
+                            }
+                        }
+                    )
+                    .subscribe();
+
+                // Load existing players
+                const { data: existingPlayers } = await supabase
+                    .from('players')
+                    .select('*');
+                
+                if (existingPlayers) {
+                    existingPlayers.forEach(player => {
+                        if (player.id !== myPlayer.id) {
+                            players[player.id] = player;
+                        }
+                    });
+                }
+
+                // Load recent messages for current location
+                const { data: messages } = await supabase
+                    .from('messages')
+                    .select('*')
+                    .eq('location', myPlayer.location)
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+                
+                if (messages) {
+                    messages.reverse().forEach(msg => {
+                        addMessage(msg.player_name, msg.message);
+                    });
+                }
+
+                updatePlayerList();
+                
+                setTimeout(() => {
+                    document.getElementById('loading').classList.add('hidden');
+                    document.getElementById('namePrompt').classList.remove('hidden');
+                }, 500);
+                
+            } catch (error) {
+                console.error('❌ Failed to connect:', error);
+                document.getElementById('connectionStatus').textContent = '❌ Connection failed: ' + error.message;
+                document.getElementById('connectionStatus').className = 'error';
+                document.getElementById('loading').innerHTML += '<br><br><small>Check console for details (F12)</small>';
             }
         }
-    });
-    
-    setInterval(()=>pubnub.publish({channel:CHANNEL,message:{type:'move',player:myPlayer}}),500);
-    gameLoop();
-};
 
-document.getElementById('nameInput').addEventListener('keypress',e=>{if(e.key==='Enter')document.getElementById('startBtn').click();});
-document.addEventListener('keydown',e=>{if(e.target.id==='chatInput')return;keys[e.key]=true;});
-document.addEventListener('keyup',e=>keys[e.key]=false);
-document.getElementById('chatInput').addEventListener('keypress',e=>{
-    if(e.key==='Enter'){
-        const m=e.target.value.trim();
-        if(m&&myPlayer){
-            pubnub.publish({channel:CHANNEL,message:{type:'chat',name:myPlayer.name,msg:m,color:myPlayer.color}});
-            addMsg(myPlayer.name,m,myPlayer.color);
-            e.target.value='';
+        // Update player position in database
+        async function updatePlayerPosition() {
+            try {
+                await supabase
+                    .from('players')
+                    .upsert({
+                        id: myPlayer.id,
+                        name: myPlayer.name,
+                        x: myPlayer.x,
+                        y: myPlayer.y,
+                        location: myPlayer.location,
+                        color: myPlayer.color,
+                        last_active: new Date().toISOString()
+                    });
+            } catch (error) {
+                console.error('Failed to update position:', error);
+            }
         }
-    }
-});
 
-function addMsg(n,m,c){
-    const d=document.getElementById('messages'),div=document.createElement('div');
-    div.className='message';
-    div.innerHTML='<b style="color:'+c+'">'+n+':</b> '+m;
-    d.appendChild(div);
-    d.scrollTop=d.scrollHeight;
-}
+        // Send chat message
+        async function sendMessage(message) {
+            try {
+                await supabase
+                    .from('messages')
+                    .insert({
+                        player_name: myPlayer.name,
+                        message: message,
+                        location: myPlayer.location
+                    });
+            } catch (error) {
+                console.error('Failed to send message:', error);
+            }
+        }
 
-function updateList(){
-    const d=document.getElementById('players'),c=Object.keys(players).length;
-    document.getElementById('playerCount').textContent='👥 Players: '+c;
-    d.innerHTML='';
-    for(let id in players){
-        const p=players[id],div=document.createElement('div');
-        div.style.color=p.color;
-        div.textContent=p.name+(id===myPlayer.id?' (You)':'');
-        d.appendChild(div);
-    }
-}
+        // Cleanup on disconnect
+        window.addEventListener('beforeunload', async () => {
+            if (myPlayer.id) {
+                await supabase.from('players').delete().eq('id', myPlayer.id);
+            }
+        });
 
-function update(){
-    if(!myPlayer)return;
-    const s=6;let m=false;
-    if(keys['ArrowUp']||keys['w']||keys['W']){myPlayer.y-=s;m=true;}
-    if(keys['ArrowDown']||keys['s']||keys['S']){myPlayer.y+=s;m=true;}
-    if(keys['ArrowLeft']||keys['a']||keys['A']){myPlayer.x-=s;m=true;}
-    if(keys['ArrowRight']||keys['d']||keys['D']){myPlayer.x+=s;m=true;}
-    myPlayer.x=Math.max(35,Math.min(canvas.width-35,myPlayer.x));
-    myPlayer.y=Math.max(35,Math.min(canvas.height-35,myPlayer.y));
-    
-    const ar=AREAS[myPlayer.area];
-    if(ar){
-        for(let o of ar.obj){
-            if(o.t==='door'&&o.e){
-                const dx=o.x+30,dy=o.y+50;
-                if(Math.abs(myPlayer.x-dx)<50&&Math.abs(myPlayer.y-dy)<70){
-                    myPlayer.area=o.e;
-                    myPlayer.x=canvas.width/2;
-                    myPlayer.y=canvas.height/2;
-                    area=o.e;
-                    document.getElementById('location').textContent='📍 '+AREAS[area].name;
-                    m=true;
-                    addMsg('System','Entered '+AREAS[area].name,'#FFA500');
+        // Periodic cleanup of inactive players
+        setInterval(async () => {
+            const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+            await supabase
+                .from('players')
+                .delete()
+                .lt('last_active', fiveMinutesAgo);
+        }, 60000); // Check every minute
+
+        function startGame() {
+            const nameInput = document.getElementById('nameInput');
+            const name = nameInput.value.trim();
+            
+            if (name.length === 0) {
+                alert('Please enter your name!');
+                return;
+            }
+            
+            if (name.length > 20) {
+                alert('Name must be 20 characters or less!');
+                return;
+            }
+            
+            myPlayer.name = name;
+            
+            document.getElementById('namePrompt').classList.add('hidden');
+            document.getElementById('ui').classList.remove('hidden');
+            document.getElementById('playerList').classList.remove('hidden');
+            document.getElementById('chat').classList.remove('hidden');
+            document.getElementById('chatInput').disabled = false;
+            
+            // Add player to database
+            updatePlayerPosition();
+            
+            // Start update loop
+            updateInterval = setInterval(updatePlayerPosition, 100); // Update 10 times per second
+            
+            addMessage('System', `Welcome ${name}! Use WASD or arrows to move.`);
+            
+            // Show instructions
+            document.getElementById('instructions').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('instructions').classList.add('hidden');
+            }, 5000);
+            
+            gameLoop();
+        }
+
+        function updatePlayerList() {
+            const playerListDiv = document.getElementById('players');
+            const allPlayers = Object.values(players).filter(p => p.location === myPlayer.location);
+            
+            playerListDiv.innerHTML = '';
+            
+            // Add my player first
+            const myItem = document.createElement('div');
+            myItem.className = 'player-item';
+            myItem.innerHTML = `<span style="color: ${myPlayer.color}">●</span> ${myPlayer.name} (You)`;
+            playerListDiv.appendChild(myItem);
+            
+            // Add other players
+            allPlayers.forEach(player => {
+                const item = document.createElement('div');
+                item.className = 'player-item';
+                item.innerHTML = `<span style="color: ${player.color}">●</span> ${player.name}`;
+                playerListDiv.appendChild(item);
+            });
+            
+            document.getElementById('playerCount').innerHTML = 
+                `👥 Players: <span style="color: #2196F3">${allPlayers.length + 1}</span>`;
+        }
+
+        function addMessage(sender, text) {
+            const messagesDiv = document.getElementById('messages');
+            const msgDiv = document.createElement('div');
+            msgDiv.style.marginBottom = '8px';
+            
+            if (sender === 'System') {
+                msgDiv.innerHTML = `<span style="color: #FFD700">🔔 ${text}</span>`;
+            } else {
+                msgDiv.innerHTML = `<strong style="color: #4CAF50">${sender}:</strong> ${text}`;
+            }
+            
+            messagesDiv.appendChild(msgDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        document.getElementById('chatInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                const input = e.target;
+                const message = input.value.trim();
+                
+                if (message.length > 0) {
+                    sendMessage(message);
+                    input.value = '';
+                }
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (document.activeElement === document.getElementById('chatInput')) return;
+            
+            keys[e.key.toLowerCase()] = true;
+            
+            if (e.key === '?') {
+                document.getElementById('instructions').classList.toggle('hidden');
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+        });
+
+        document.getElementById('instructions').addEventListener('click', () => {
+            document.getElementById('instructions').classList.add('hidden');
+        });
+
+        function movePlayer() {
+            const speed = 5;
+            let moved = false;
+            let newX = myPlayer.x;
+            let newY = myPlayer.y;
+            
+            if (keys['w'] || keys['arrowup']) {
+                newY -= speed;
+                moved = true;
+            }
+            if (keys['s'] || keys['arrowdown']) {
+                newY += speed;
+                moved = true;
+            }
+            if (keys['a'] || keys['arrowleft']) {
+                newX -= speed;
+                moved = true;
+            }
+            if (keys['d'] || keys['arrowright']) {
+                newX += speed;
+                moved = true;
+            }
+            
+            // Keep in bounds
+            newX = Math.max(25, Math.min(canvas.width - 25, newX));
+            newY = Math.max(25, Math.min(canvas.height - 25, newY));
+            
+            // Check collisions with objects
+            const currentArea = AREAS[myPlayer.location];
+            let collision = false;
+            
+            for (let obj of currentArea.objects) {
+                if (obj.type === 'door') continue;
+                
+                if (newX + 15 > obj.x && newX - 15 < obj.x + obj.width &&
+                    newY + 15 > obj.y && newY - 15 < obj.y + obj.height) {
+                    collision = true;
+                    
+                    if (Date.now() - lastUpdate > 2000) {
+                        addMessage('System', `You touched ${obj.label}!`);
+                        lastUpdate = Date.now();
+                    }
+                    break;
+                }
+            }
+            
+            if (!collision) {
+                myPlayer.x = newX;
+                myPlayer.y = newY;
+            }
+            
+            // Check door transitions
+            for (let obj of currentArea.objects) {
+                if (obj.type === 'door') {
+                    if (Math.abs(myPlayer.x - (obj.x + obj.width/2)) < 40 &&
+                        Math.abs(myPlayer.y - (obj.y + obj.height/2)) < 50) {
+                        changeArea(obj.target);
+                        break;
+                    }
                 }
             }
         }
-    }
-    if(m)players[myPlayer.id]=myPlayer;
-}
 
-function draw(){
-    const ar=AREAS[area];
-    ctx.fillStyle=ar.bg;
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.fillStyle=ar.floor;
-    for(let x=0;x<canvas.width;x+=100)for(let y=0;y<canvas.height;y+=100)if((x+y)%200===0)ctx.fillRect(x,y,50,50);
-    
-    if(ar){
-        for(let o of ar.obj){
-            if(o.t==='desk'){
-                ctx.fillStyle='#8B4513';
-                ctx.fillRect(o.x,o.y,80,60);
-                ctx.fillStyle='rgba(139,69,19,0.5)';
-                ctx.fillRect(o.x+5,o.y+5,70,50);
+        function changeArea(newArea) {
+            myPlayer.location = newArea;
+            
+            // Set spawn position based on which door was used
+            if (newArea === 'classroom') {
+                myPlayer.x = canvas.width - 100;
+                myPlayer.y = canvas.height/2;
+            } else if (newArea === 'hallway') {
+                myPlayer.x = canvas.width/2;
+                myPlayer.y = canvas.height/2;
+            } else if (newArea === 'playground') {
+                myPlayer.x = 100;
+                myPlayer.y = canvas.height/2;
+            } else if (newArea === 'gym') {
+                myPlayer.x = canvas.width/2;
+                myPlayer.y = canvas.height - 100;
             }
-            if(o.t==='board'){
-                ctx.fillStyle='#2F4F2F';
-                ctx.fillRect(o.x,o.y,150,80);
-                ctx.fillStyle='#90EE90';
-                ctx.fillRect(o.x+10,o.y+10,130,60);
-            }
-            if(o.t==='locker'){
-                ctx.fillStyle='#4169E1';
-                ctx.fillRect(o.x,o.y,60,120);
-                ctx.strokeStyle='#000';
-                ctx.lineWidth=2;
-                ctx.strokeRect(o.x,o.y,60,120);
-            }
-            if(o.t==='swing'){
-                ctx.fillStyle='#8B4513';
-                ctx.fillRect(o.x,o.y,70,10);
-                ctx.fillRect(o.x,o.y+120,70,10);
-                ctx.fillStyle='#FFD700';
-                ctx.fillRect(o.x+10,o.y+40,50,40);
-            }
-            if(o.t==='slide'){
-                ctx.fillStyle='#FF6347';
-                ctx.beginPath();
-                ctx.moveTo(o.x,o.y);
-                ctx.lineTo(o.x+100,o.y+100);
-                ctx.lineTo(o.x+100,o.y+80);
-                ctx.lineTo(o.x+20,o.y);
-                ctx.fill();
-            }
-            if(o.t==='tree'){
-                ctx.fillStyle='#8B4513';
-                ctx.fillRect(o.x-10,o.y+20,20,40);
-                ctx.fillStyle='#228B22';
-                ctx.beginPath();
-                ctx.arc(o.x,o.y,30,0,Math.PI*2);
-                ctx.fill();
-            }
-            if(o.t==='flower'){
-                ctx.fillStyle='#FF69B4';
-                ctx.beginPath();
-                ctx.arc(o.x,o.y,15,0,Math.PI*2);
-                ctx.fill();
-                ctx.fillStyle='#FFD700';
-                ctx.beginPath();
-                ctx.arc(o.x,o.y,5,0,Math.PI*2);
-                ctx.fill();
-            }
-            if(o.t==='door'){
-                ctx.fillStyle='#8B4513';
-                ctx.fillRect(o.x,o.y,60,100);
-                ctx.fillStyle='#FFD700';
-                ctx.beginPath();
-                ctx.arc(o.x+50,o.y+50,5,0,Math.PI*2);
-                ctx.fill();
-                ctx.fillStyle='white';
-                ctx.font='14px Arial';
-                ctx.textAlign='center';
-                ctx.fillText('→ '+AREAS[o.e].name,o.x+30,o.y-10);
-            }
+            
+            document.getElementById('location').innerHTML = 
+                `📍 Location: <span style="color: #4CAF50">${AREAS[newArea].name}</span>`;
+            
+            addMessage('System', `Entered ${AREAS[newArea].name}!`);
+            
+            updatePlayerPosition();
+            updatePlayerList();
         }
-    }
-    
-    for(let id in players){
-        const p=players[id];
-        if(p.area===area){
-            const isMe=id===myPlayer.id;
-            ctx.fillStyle=p.color;
-            ctx.beginPath();
-            ctx.arc(p.x,p.y,25,0,Math.PI*2);
-            ctx.fill();
-            ctx.strokeStyle=isMe?'#FFD700':'white';
-            ctx.lineWidth=isMe?4:2;
-            ctx.stroke();
-            ctx.fillStyle='white';
-            ctx.beginPath();
-            ctx.arc(p.x-8,p.y-5,6,0,Math.PI*2);
-            ctx.arc(p.x+8,p.y-5,6,0,Math.PI*2);
-            ctx.fill();
-            ctx.fillStyle='black';
-            ctx.beginPath();
-            ctx.arc(p.x-8,p.y-5,3,0,Math.PI*2);
-            ctx.arc(p.x+8,p.y-5,3,0,Math.PI*2);
-            ctx.fill();
-            ctx.strokeStyle='black';
-            ctx.lineWidth=2;
-            ctx.beginPath();
-            ctx.arc(p.x,p.y+5,12,0,Math.PI,false);
-            ctx.stroke();
-            ctx.font='bold 16px Arial';
-            ctx.textAlign='center';
-            ctx.strokeStyle='black';
-            ctx.lineWidth=3;
-            ctx.strokeText(p.name,p.x,p.y-35);
-            ctx.fillStyle=p.color;
-            ctx.fillText(p.name,p.x,p.y-35);
-        }
-    }
-}
 
-function gameLoop(){update();draw();requestAnimationFrame(gameLoop);}
-window.addEventListener('resize',()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight;});
+        function drawGame() {
+            const currentArea = AREAS[myPlayer.location];
+            
+            // Background
+            ctx.fillStyle = currentArea.color;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw objects
+            currentArea.objects.forEach(obj => {
+                ctx.fillStyle = obj.color;
+                ctx.fillRect(obj.x, obj.y, obj.width, obj.height);
+                
+                if (obj.type === 'door') {
+                    ctx.strokeStyle = '#654321';
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(obj.x, obj.y, obj.width, obj.height);
+                }
+                
+                ctx.fillStyle = 'black';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(obj.label, obj.x + obj.width/2, obj.y - 5);
+            });
+            
+            // Draw other players
+            Object.values(players).forEach(player => {
+                if (player.location === myPlayer.location) {
+                    // Player circle
+                    ctx.fillStyle = player.color;
+                    ctx.beginPath();
+                    ctx.arc(player.x, player.y, 20, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Player name
+                    ctx.fillStyle = 'white';
+                    ctx.strokeStyle = 'black';
+                    ctx.lineWidth = 3;
+                    ctx.font = 'bold 14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.strokeText(player.name, player.x, player.y - 30);
+                    ctx.fillText(player.name, player.x, player.y - 30);
+                }
+            });
+            
+            // Draw my player (on top)
+            ctx.fillStyle = myPlayer.color;
+            ctx.beginPath();
+            ctx.arc(myPlayer.x, myPlayer.y, 20, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // My player name
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 3;
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.strokeText(myPlayer.name, myPlayer.x, myPlayer.y - 30);
+            ctx.fillText(myPlayer.name, myPlayer.x, myPlayer.y - 30);
+        }
+
+        function gameLoop() {
+            movePlayer();
+            drawGame();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Mobile touch controls
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touchX = e.touches[0].clientX;
+            const touchY = e.touches[0].clientY;
+            const dx = touchX - touchStartX;
+            const dy = touchY - touchStartY;
+            
+            // Convert touch to keys
+            if (Math.abs(dx) > Math.abs(dy)) {
+                if (dx > 20) keys['d'] = true;
+                else if (dx < -20) keys['a'] = true;
+            } else {
+                if (dy > 20) keys['s'] = true;
+                else if (dy < -20) keys['w'] = true;
+            }
+        });
+
+        canvas.addEventListener('touchend', () => {
+            keys['w'] = keys['a'] = keys['s'] = keys['d'] = false;
+        });
+
+        // Start the game
+        initMultiplayer();
     </script>
 </body>
 </html>
