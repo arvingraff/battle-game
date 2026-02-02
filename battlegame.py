@@ -386,6 +386,11 @@ def post_credits_scene(screen):
         if jumpscare_triggered:
             jumpscare_timer += dt
             if jumpscare_timer > 3.0:
+                return 'jumpscare' # Exit back to menu (or loop)
+            
+            # Draw jumpscare
+            jumpscare_timer += dt
+            if jumpscare_timer > 3.0:
                 running = False # Exit back to menu
             
             # Draw jumpscare
