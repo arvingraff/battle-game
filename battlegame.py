@@ -48,13 +48,14 @@ secret_hack = {
     'skibidi_triggered': saved_secrets.get('skibidi_triggered', False),
     'wolf_ate_buttons': False,  # Don't persist wolf state
     'grass_mode_unlocked': False,  # Reset each session - must do hack sequence!
-    'combine_mode_unlocked': True,  # NOW ALWAYS AVAILABLE FROM START!
+    'combine_mode_unlocked': False, # Reset each session - must do hack sequence!
     'entered_battle_after_music': saved_secrets.get('entered_battle_after_music', False),
     'everything_restored': False,  # Don't persist restoration
     'became_human': False,  # Don't persist - resets each session!
     'became_italian': False,  # Secret transformation - press 67 when human!
     'god_mode_unlocked': saved_secrets.get('god_mode_unlocked', False),  # PERMANENT REWARD for completing Combine Mode!
-    'final_mode_unlocked': False,  # THE ULTIMATE MODE - press 6776 after becoming Tralala!
+    'final_mode_unlocked': True,  # THE ULTIMATE MODE - Unlocked for testing 'arvin' code!
+    'post_credits_scene_unlocked': False, # New 3D horror area after credits
     'explosion_triggered': False,  # Explosion animation state
 }
 
@@ -346,6 +347,301 @@ def save_highscore(name, score, mode='survival', extra_data=None):
         pass  # If can't write (in bundled app), that's okay
     
     return scores
+
+
+def post_credits_scene(screen):
+    """
+    POST-CREDITS SCENE - A creepy 3D exploration area
+    Triggered after 'arvin' credits sequence.
+    """
+    
+    # Setup 3D variables
+    player_pos = {'x': 0, 'y': 0, 'z': 0}
+    player_angle = 0
+    
+    # Generate some creepy pillars
+    pillars = []
+    for _ in range(50):
+        pillars.append({
+            'x': random.uniform(-1000, 1000),
+            'z': random.uniform(-1000, 1000),
+            'w': random.uniform(20, 100),
+            'h': random.uniform(100, 400),
+            'color': (random.randint(10, 50), 0, 0) # Dark red
+        })
+        
+    running = True
+    clock = pygame.time.Clock()
+    jumpscare_triggered = False
+    jumpscare_timer = 0
+    step_timer = 0
+    
+    pygame.mouse.set_visible(False)
+    pygame.event.set_grab(True)
+    
+    while running:
+        dt = clock.tick(60) / 1000.0
+        
+        # Jumpscare logic
+        if jumpscare_triggered:
+            jumpscare_timer += dt
+            if jumpscare_timer > 3.0:
+                running = False # Exit back to menu
+            
+            # Draw jumpscare
+            screen.fill((0, 0, 0))
+            if int(jumpscare_timer * 20) % 2 == 0:
+                pygame.draw.circle(screen, (255, 0, 0), (WIDTH//2, HEIGHT//2), 300)
+                pygame.draw.circle(screen, (0, 0, 0), (WIDTH//2 - 100, HEIGHT//2 - 50), 50) # Eye
+                pygame.draw.circle(screen, (0, 0, 0), (WIDTH//2 + 100, HEIGHT//2 - 50), 50) # Eye
+                
+                # SCREAM TEXT
+                s_font = pygame.font.Font(None, 200)
+                text = s_font.render("FOUND YOU!", True, (255, 255, 255))
+                screen.blit(text, (WIDTH//2 - text.get_width()//2, HEIGHT//2 + 100))
+                
+                # Play scary sound if just triggered
+                if jumpscare_timer < 0.1:
+                    try:
+                        pygame.mixer.Sound("scary-scream.mp3").play()
+                    except:
+                        pass
+                        
+            pygame.display.flip()
+            continue
+            
+        # Normal game logic
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
+            if event.type == pygame.MOUSEMOTION:
+                dx, dy = event.rel
+                player_angle += dx * 0.002
+                
+        # Movement
+        keys = pygame.key.get_pressed()
+        speed = 5
+        moved = False
+        
+        if keys[pygame.K_w]:
+            player_pos['x'] += math.sin(player_angle) * speed
+            player_pos['z'] += math.cos(player_angle) * speed
+            moved = True
+        if keys[pygame.K_s]:
+            player_pos['x'] -= math.sin(player_angle) * speed
+            player_pos['z'] -= math.cos(player_angle) * speed
+            moved = True
+        if keys[pygame.K_a]:
+            player_pos['x'] -= math.cos(player_angle) * speed
+            player_pos['z'] += math.sin(player_angle) * speed
+            moved = True
+        if keys[pygame.K_d]:
+            player_pos['x'] += math.cos(player_angle) * speed
+            player_pos['z'] -= math.sin(player_angle) * speed
+            moved = True
+            
+        # Walking sound / footsteps effect
+        if moved:
+            step_timer += dt
+            if step_timer > 0.5:
+                step_timer = 0
+                # Could play footstep sound here
+        
+        # Random jumpscare trigger (or if you walk too far)
+        if random.random() < 0.001 or (abs(player_pos['x']) > 800 or abs(player_pos['z']) > 800):
+             jumpscare_triggered = True
+             
+        # Rendering
+        screen.fill((5, 5, 5)) # Almost black
+        
+        # Floor grid - 3D projection
+        for i in range(-10, 11):
+            # Simple line drawing perspective isn't trivial without a full engine, 
+            # let's stick to object rendering sorted by depth
+            pass
+            
+        # Draw pillars relative to player
+        objects_to_draw = []
+        
+        for p in pillars:
+            # Transform relative to player
+            rx = p['x'] - player_pos['x']
+            rz = p['z'] - player_pos['z']
+            
+            # Rotate around player
+            tx = rx * math.cos(-player_angle) - rz * math.sin(-player_angle)
+            tz = rx * math.sin(-player_angle) + rz * math.cos(-player_angle)
+            
+            if tz > 10: # Only draw in front of camera
+                proj_scale = 400 / tz
+                screen_x = WIDTH // 2 + tx * proj_scale
+                screen_y = HEIGHT // 2
+                
+                w = p['w'] * proj_scale
+                h = p['h'] * proj_scale
+                
+                dist = math.sqrt(rx*rx + rz*rz)
+                shade = max(0, min(255, 255 - dist/4))
+                color = (shade * (p['color'][0]/255), 0, 0)
+                
+                objects_to_draw.append({
+                    'depth': tz,
+                    'rect': (screen_x - w/2, screen_y - h/2, w, h),
+                    'color': color
+                })
+                
+        # Sort by depth (painters algorithm)
+        objects_to_draw.sort(key=lambda o: o['depth'], reverse=True)
+        
+        for o in objects_to_draw:
+            pygame.draw.rect(screen, o['color'], o['rect'])
+            
+        # Fog/Darkness overlay
+        # fade = pygame.Surface((WIDTH, HEIGHT))
+        # fade.fill((0,0,0))
+        # fade.set_alpha(50) 
+        # screen.blit(fade, (0,0))
+
+        # Crosshair
+        pygame.draw.circle(screen, (50, 50, 50), (WIDTH//2, HEIGHT//2), 2)
+        
+        # Instructions
+        if not jumpscare_triggered:
+            font = pygame.font.Font(None, 30)
+            text = font.render("Where am I? (WASD to move)", True, (100, 100, 100))
+            screen.blit(text, (20, HEIGHT - 50))
+
+        pygame.display.flip()
+        
+    pygame.mouse.set_visible(True)
+    pygame.event.set_grab(False)
+    
+def credits_sequence(screen):
+    """
+    ULTIMATE CREDITS SEQUENCE
+    Triggered by code 'arvin' after unlocking final mode (6776).
+    Movie-like credits showing the creator and story.
+    """
+    import time
+    
+    # Store previous font scaling
+    old_mode = screen.get_size()
+    
+    # Fade out
+    fade = pygame.Surface((WIDTH, HEIGHT))
+    fade.fill((0, 0, 0))
+    for alpha in range(0, 255, 5):
+        fade.set_alpha(alpha)
+        screen.blit(fade, (0, 0))
+        pygame.display.flip()
+        pygame.time.wait(10)
+        
+    # Credits content
+    lines = [
+        ("EXECUTIVE PRODUCER", 60, (255, 215, 0)),
+        ("ARVIN GREENBERG GRAFF", 90, (255, 255, 255)),
+        ("", 40, (0,0,0)), 
+        ("CREATED BY", 50, (200, 200, 200)),
+        ("ARVIN", 80, (0, 255, 255)),
+        ("", 40, (0,0,0)),
+        ("LEAD PROGRAMMER", 50, (200, 200, 200)),
+        ("ARVIN", 70, (0, 255, 0)),
+        ("", 40, (0,0,0)),
+        ("STORY & CONCEPT", 50, (200, 200, 200)),
+        ("ARVIN", 70, (255, 100, 100)),
+        ("", 80, (0,0,0)),
+        ("SPECIAL THANKS TO", 50, (200, 200, 200)),
+        ("MOM & DAD", 70, (255, 0, 255)),
+        ("", 80, (0,0,0)),
+        ("BATTLEGAME DELUXE", 100, (255, 215, 0)),
+        ("THE ULTIMATE EDITION", 60, (150, 150, 150)),
+        ("", 150, (0,0,0)),
+        ("THANKS FOR PLAYING!", 80, (50, 255, 50))
+    ]
+    
+    # Star field background
+    stars = []
+    for _ in range(200):
+        stars.append([random.randint(0, WIDTH), random.randint(0, HEIGHT), random.randint(1, 3)])
+        
+    start_time = time.time()
+    scroll_y = HEIGHT + 50
+    
+    # Music switch
+    pygame.mixer.music.stop()
+    # Try to play emotional music if available, otherwise just use silence/sound effects
+    try:
+        if os.path.exists("coolwav.mp3"):
+            pygame.mixer.music.load("coolwav.mp3")
+            pygame.mixer.music.play(-1)
+    except:
+        pass
+        
+    running = True
+    while running:
+        current_time = time.time()
+        
+        # Event handling (press ESC to skip)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE or event.key == pygame.K_SPACE:
+                    running = False
+                    
+        # Update background
+        screen.fill((0, 5, 20)) # Dark blue/black space
+        
+        # Draw stars
+        for star in stars:
+            star[1] += 0.5 # Move down slowly (simulating moving up)
+            if star[1] > HEIGHT:
+                star[1] = 0
+                star[0] = random.randint(0, WIDTH)
+            pygame.draw.circle(screen, (255, 255, 255), (int(star[0]), int(star[1])), star[2])
+            
+        # Draw text
+        current_y = scroll_y
+        for text, size, color in lines:
+            if current_y > -100 and current_y < HEIGHT + 100:
+                try:
+                    c_font = pygame.font.Font(None, size)
+                    shadow = c_font.render(text, True, (0, 0, 0))
+                    surf = c_font.render(text, True, color)
+                    
+                    # Center text
+                    rect = surf.get_rect(center=(WIDTH//2, current_y))
+                    s_rect = shadow.get_rect(center=(WIDTH//2 + 3, current_y + 3))
+                    
+                    screen.blit(shadow, s_rect)
+                    screen.blit(surf, rect)
+                except:
+                    pass
+            current_y += size + 20
+            
+        # Scroll up
+        scroll_y -= 1.5
+        
+        # End condition
+        if scroll_y < -(len(lines) * 100 + 500):
+            running = False
+            
+        pygame.display.flip()
+        pygame.time.wait(10)
+        
+    # Restore music
+    try:
+        pygame.mixer.music.load(background_music)
+        pygame.mixer.music.play(-1)
+    except:
+        pass
 
 
 def explosion_sequence(screen):
@@ -10057,7 +10353,7 @@ def mode_lobby():
                 key_name = pygame.key.name(event.key)
                 
                 # Track j, q, 6, 7, g, a, b, u, and number presses
-                if key_name in ['j', 'q', '1', '2', '3', '4', '5', '6', '7', 'g', 'a', 'b', 'u']:
+                if key_name in ['j', 'q', '1', '2', '3', '4', '5', '6', '7', 'g', 'a', 'b', 'u', 'r', 'v', 'i', 'n']:
                     menu_key_buffer += key_name
                     # Keep only last 8 characters (for gagabubu)
                     if len(menu_key_buffer) > 8:
@@ -10076,6 +10372,12 @@ def mode_lobby():
                         menu_key_buffer = ""
                         # EPIC EXPLOSION SEQUENCE!
                         explosion_sequence(screen)
+                        continue
+                        
+                    # Check for 'arvin' - SECRET CREDITS SEQUENCE (only if Final Mode unlocked)
+                    if menu_key_buffer[-5:] == "arvin" and secret_hack.get('final_mode_unlocked'):
+                        menu_key_buffer = ""
+                        credits_sequence(screen)
                         continue
                     
                     # Check for 67 - TRALALA MODE! (only works if human)
