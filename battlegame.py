@@ -355,6 +355,9 @@ def post_credits_scene(screen):
     Triggered after 'arvin' credits sequence.
     """
     
+    # STOP ALL MUSIC - silence is terrifying
+    pygame.mixer.music.stop()
+    
     # Setup 3D variables
     player_pos = {'x': 0, 'y': 0, 'z': 0}
     player_angle = 0
@@ -395,15 +398,91 @@ def post_credits_scene(screen):
             
             # Draw jumpscare
             screen.fill((0, 0, 0))
-            if int(jumpscare_timer * 20) % 2 == 0:
-                pygame.draw.circle(screen, (255, 0, 0), (WIDTH//2, HEIGHT//2), 300)
-                pygame.draw.circle(screen, (0, 0, 0), (WIDTH//2 - 100, HEIGHT//2 - 50), 50) # Eye
-                pygame.draw.circle(screen, (0, 0, 0), (WIDTH//2 + 100, HEIGHT//2 - 50), 50) # Eye
+            
+            # Ultra terrifying face with multiple layers
+            flicker = int(jumpscare_timer * 20) % 2 == 0
+            
+            if flicker:
+                # Main giant face - blood red with veins
+                pygame.draw.circle(screen, (180, 0, 0), (WIDTH//2, HEIGHT//2), 400)
+                pygame.draw.circle(screen, (255, 0, 0), (WIDTH//2, HEIGHT//2), 380)
+                pygame.draw.circle(screen, (200, 0, 0), (WIDTH//2, HEIGHT//2), 360)
                 
-                # SCREAM TEXT
-                s_font = pygame.font.Font(None, 200)
+                # Horrible glowing eyes with multiple rings
+                for i in range(5):
+                    eye_size = 80 - i*15
+                    eye_color = (255 - i*50, 255 - i*50, 255 - i*50)
+                    pygame.draw.circle(screen, eye_color, (WIDTH//2 - 120, HEIGHT//2 - 60), eye_size)
+                    pygame.draw.circle(screen, eye_color, (WIDTH//2 + 120, HEIGHT//2 - 60), eye_size)
+                
+                # Pitch black pupils that stare into your soul
+                pygame.draw.circle(screen, (0, 0, 0), (WIDTH//2 - 120, HEIGHT//2 - 60), 40)
+                pygame.draw.circle(screen, (0, 0, 0), (WIDTH//2 + 120, HEIGHT//2 - 60), 40)
+                
+                # Bloodshot veins in eyes
+                for _ in range(10):
+                    vein_start_x = WIDTH//2 - 120 + random.randint(-60, 60)
+                    vein_start_y = HEIGHT//2 - 60 + random.randint(-60, 60)
+                    vein_end_x = WIDTH//2 - 120 + random.randint(-80, 80)
+                    vein_end_y = HEIGHT//2 - 60 + random.randint(-80, 80)
+                    pygame.draw.line(screen, (150, 0, 0), (vein_start_x, vein_start_y), (vein_end_x, vein_end_y), 2)
+                    
+                    vein_start_x = WIDTH//2 + 120 + random.randint(-60, 60)
+                    vein_start_y = HEIGHT//2 - 60 + random.randint(-60, 60)
+                    vein_end_x = WIDTH//2 + 120 + random.randint(-80, 80)
+                    vein_end_y = HEIGHT//2 - 60 + random.randint(-80, 80)
+                    pygame.draw.line(screen, (150, 0, 0), (vein_start_x, vein_start_y), (vein_end_x, vein_end_y), 2)
+                
+                # Horrifying jagged mouth - multiple layers
+                mouth_points = [
+                    (WIDTH//2 - 150, HEIGHT//2 + 80),
+                    (WIDTH//2 - 100, HEIGHT//2 + 120),
+                    (WIDTH//2 - 50, HEIGHT//2 + 100),
+                    (WIDTH//2, HEIGHT//2 + 130),
+                    (WIDTH//2 + 50, HEIGHT//2 + 100),
+                    (WIDTH//2 + 100, HEIGHT//2 + 120),
+                    (WIDTH//2 + 150, HEIGHT//2 + 80),
+                    (WIDTH//2 + 100, HEIGHT//2 + 60),
+                    (WIDTH//2, HEIGHT//2 + 70),
+                    (WIDTH//2 - 100, HEIGHT//2 + 60),
+                ]
+                pygame.draw.polygon(screen, (0, 0, 0), mouth_points)
+                pygame.draw.polygon(screen, (100, 0, 0), mouth_points, 5)
+                
+                # Dripping effect
+                for i in range(5):
+                    drip_x = WIDTH//2 - 150 + i * 75
+                    drip_y = HEIGHT//2 + 130 + random.randint(0, 50)
+                    pygame.draw.circle(screen, (150, 0, 0), (drip_x, drip_y), 5)
+                
+                # Sharp teeth
+                for i in range(10):
+                    tooth_x = WIDTH//2 - 140 + i * 30
+                    tooth_points = [
+                        (tooth_x, HEIGHT//2 + 80),
+                        (tooth_x + 10, HEIGHT//2 + 110),
+                        (tooth_x + 20, HEIGHT//2 + 80)
+                    ]
+                    pygame.draw.polygon(screen, (255, 255, 255), tooth_points)
+                
+                # Distorted SCREAMING text with glitch effect
+                s_font = pygame.font.Font(None, 250)
                 text = s_font.render("FOUND YOU!", True, (255, 255, 255))
-                screen.blit(text, (WIDTH//2 - text.get_width()//2, HEIGHT//2 + 100))
+                
+                # Glitch effect - multiple overlapping texts
+                screen.blit(text, (WIDTH//2 - text.get_width()//2 + random.randint(-10, 10), HEIGHT//2 + 200 + random.randint(-5, 5)))
+                text_red = s_font.render("FOUND YOU!", True, (255, 0, 0))
+                screen.blit(text_red, (WIDTH//2 - text_red.get_width()//2 + random.randint(-8, 8), HEIGHT//2 + 200 + random.randint(-5, 5)))
+                
+                # Additional scary text
+                small_font = pygame.font.Font(None, 80)
+                msgs = ["YOU CAN'T ESCAPE", "I SEE YOU", "FOREVER", "NO WAY OUT"]
+                for idx, msg in enumerate(msgs):
+                    angle = (jumpscare_timer * 50 + idx * 90) % 360
+                    x = WIDTH//2 + int(math.cos(math.radians(angle)) * 400)
+                    y = HEIGHT//2 + int(math.sin(math.radians(angle)) * 300)
+                    msg_surf = small_font.render(msg, True, (200, 0, 0))
+                    screen.blit(msg_surf, (x - msg_surf.get_width()//2, y))
                 
                 # Play scary sound if just triggered
                 if jumpscare_timer < 0.1:
@@ -462,7 +541,7 @@ def post_credits_scene(screen):
              jumpscare_triggered = True
              
         # Rendering
-        screen.fill((5, 5, 5)) # Almost black
+        screen.fill((15, 15, 20)) # Slightly lighter so you can see a bit more
         
         # Floor grid - 3D projection
         for i in range(-10, 11):
