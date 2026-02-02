@@ -10383,6 +10383,16 @@ def mode_lobby():
                     if menu_key_buffer[-5:] == "arvin" and secret_hack.get('final_mode_unlocked'):
                         menu_key_buffer = ""
                         credits_sequence(screen)
+                        # After credits, unlock AND TRIGGER the post-credits scene
+                        secret_hack['post_credits_scene_unlocked'] = True
+                        
+                        # Loop the post-credits scene so we stay there unless user explicitly quits
+                        while True:
+                            action = post_credits_scene(screen)
+                            if action == 'escape':
+                                break
+                            # If action is 'jumpscare' or anything else, we restart the loop
+                        
                         continue
                     
                     # Check for 67 - TRALALA MODE! (only works if human)
