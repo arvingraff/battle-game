@@ -660,10 +660,12 @@ def credits_sequence(screen):
     pygame.mixer.music.stop()
     # Try to play emotional music if available, otherwise just use silence/sound effects
     try:
-        if os.path.exists("coolwav.mp3"):
-            pygame.mixer.music.load("coolwav.mp3")
+        music_file = resource_path("coolwav.mp3")
+        if os.path.exists(music_file):
+            pygame.mixer.music.load(music_file)
             pygame.mixer.music.play(-1)
-    except:
+    except Exception as e:
+        print(f"Credits music error: {e}")
         pass
         
     running = True
@@ -720,12 +722,9 @@ def credits_sequence(screen):
         pygame.display.flip()
         pygame.time.wait(10)
         
-    # Restore music
-    try:
-        pygame.mixer.music.load(background_music)
-        pygame.mixer.music.play(-1)
-    except:
-        pass
+    # Restore music (don't restore - horror scene wants silence)
+    # Music will be stopped before entering horror scene anyway
+    pygame.mixer.music.stop()
 
 
 def explosion_sequence(screen):

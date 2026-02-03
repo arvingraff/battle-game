@@ -14,7 +14,7 @@
 		</data>
 		<key>Resources/base_library.zip</key>
 		<data>
-		ggOwk7KoMrbfGtHbnSMe+rxYDVE=
+		lXKO5JjlIjUimJ3p9vGeS509xAI=
 		</data>
 		<key>Resources/coin.mp3</key>
 		<data>
@@ -75,6 +75,10 @@
 		<key>Resources/cv2/version.py</key>
 		<data>
 		TcRy8441LgFj+sj/HyrgFye5C34=
+		</data>
+		<key>Resources/fart.MP4</key>
+		<data>
+		L8GNUsstbhNQ8YQ17ZKMkih9FuM=
 		</data>
 		<key>Resources/fart.mp3</key>
 		<data>
@@ -851,6 +855,11 @@
 		<dict>
 			<key>symlink</key>
 			<string>../../Resources/cv2/version.py</string>
+		</dict>
+		<key>Frameworks/fart.MP4</key>
+		<dict>
+			<key>symlink</key>
+			<string>../Resources/fart.MP4</string>
 		</dict>
 		<key>Frameworks/fart.mp3</key>
 		<dict>
@@ -2499,7 +2508,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			F6qIsi1eqvFS+aPqptbAvIXP/j+nfvkQEUCHh9TjAag=
+			Nn/tqwzRsfCd+q40EokvNgpc5gzbQL572OLCINDkoOE=
 			</data>
 		</dict>
 		<key>Resources/charset_normalizer</key>
@@ -2620,6 +2629,13 @@
 			<key>hash2</key>
 			<data>
 			Z5AB6EB8NKiMcFYzT9AgjGAdwZ9+HGJQSt0WSntf02Y=
+			</data>
+		</dict>
+		<key>Resources/fart.MP4</key>
+		<dict>
+			<key>hash2</key>
+			<data>
+			baFn9IRyZxCkfWUw4SKMMFgiMlMCNZXTywhABJ6sCaI=
 			</data>
 		</dict>
 		<key>Resources/fart.mp3</key>
