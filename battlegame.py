@@ -17377,39 +17377,40 @@ def run_escape_mom_mode():
                     return 'lobby'
 
 # Show classroom adventure menu FIRST (type 'jaaaa' to skip)
-try:
-    if not hasattr(classroom_adventure_menu, 'shown'):
-        result = classroom_adventure_menu()
-        classroom_adventure_menu.shown = True
-        
-        # If a server code was entered, start classroom game
-        if result == 'server1' or result == 'server2':
-            # Clear screen and show connecting message
-            screen.fill((135, 206, 250))  # Sky blue
-            connect_font = pygame.font.SysFont(None, 80)
-            server_name = "Server 1" if result == 'server1' else "Server 2"
-            connect_text = connect_font.render(f"Connecting to {server_name}...", True, (255, 215, 0))
-            connect_rect = connect_text.get_rect(center=(WIDTH//2, HEIGHT//2))
-            screen.blit(connect_text, connect_rect)
-            
-            # Show instructions
-            instruction_font = pygame.font.SysFont(None, 50)
-            inst1 = instruction_font.render("Classroom Adventure Mode!", True, (255, 255, 255))
-            inst2 = instruction_font.render("Everyone on the same server can play together!", True, (255, 255, 255))
-            screen.blit(inst1, (WIDTH//2 - inst1.get_width()//2, HEIGHT//2 + 80))
-            screen.blit(inst2, (WIDTH//2 - inst2.get_width()//2, HEIGHT//2 + 140))
-            
-            pygame.display.flip()
-            pygame.time.wait(2000)  # Show message for 2 seconds
-            
-            # NOW START THE ACTUAL CLASSROOM GAME!
-            play_classroom_game(server_name)
-            
-            # After game ends, allow them to play again
-            classroom_adventure_menu.shown = False
-            
-except:
-    pass  # If classroom menu fails, continue
+# DISABLED - Go straight to intro
+# try:
+#     if not hasattr(classroom_adventure_menu, 'shown'):
+#         result = classroom_adventure_menu()
+#         classroom_adventure_menu.shown = True
+#         
+#         # If a server code was entered, start classroom game
+#         if result == 'server1' or result == 'server2':
+#             # Clear screen and show connecting message
+#             screen.fill((135, 206, 250))  # Sky blue
+#             connect_font = pygame.font.SysFont(None, 80)
+#             server_name = "Server 1" if result == 'server1' else "Server 2"
+#             connect_text = connect_font.render(f"Connecting to {server_name}...", True, (255, 215, 0))
+#             connect_rect = connect_text.get_rect(center=(WIDTH//2, HEIGHT//2))
+#             screen.blit(connect_text, connect_rect)
+#             
+#             # Show instructions
+#             instruction_font = pygame.font.SysFont(None, 50)
+#             inst1 = instruction_font.render("Classroom Adventure Mode!", True, (255, 255, 255))
+#             inst2 = instruction_font.render("Everyone on the same server can play together!", True, (255, 255, 255))
+#             screen.blit(inst1, (WIDTH//2 - inst1.get_width()//2, HEIGHT//2 + 80))
+#             screen.blit(inst2, (WIDTH//2 - inst2.get_width()//2, HEIGHT//2 + 140))
+#             
+#             pygame.display.flip()
+#             pygame.time.wait(2000)  # Show message for 2 seconds
+#             
+#             # NOW START THE ACTUAL CLASSROOM GAME!
+#             play_classroom_game(server_name)
+#             
+#             # After game ends, allow them to play again
+#             classroom_adventure_menu.shown = False
+#             
+# except:
+#     pass  # If classroom menu fails, continue
 
 # Play talking intro sequence ONCE when game starts
 try:
