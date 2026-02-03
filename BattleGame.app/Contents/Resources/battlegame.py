@@ -349,6 +349,169 @@ def save_highscore(name, score, mode='survival', extra_data=None):
     return scores
 
 
+def heaven_scene(screen):
+    """
+    HEAVEN SCENE - A peaceful, beautiful area
+    Triggered by typing 'heaven' in the horror scene.
+    Provides an escape from the nightmare.
+    """
+    # Gentle fade to white
+    fade = pygame.Surface((WIDTH, HEIGHT))
+    fade.fill((255, 255, 255))
+    for alpha in range(0, 255, 5):
+        fade.set_alpha(alpha)
+        screen.blit(fade, (0, 0))
+        pygame.display.flip()
+        pygame.time.wait(10)
+    
+    # Play peaceful music if available
+    try:
+        pygame.mixer.music.load(resource_path("playmusic.mp3"))
+        pygame.mixer.music.set_volume(0.3)
+        pygame.mixer.music.play(-1)
+    except:
+        pass
+    
+    # Setup 3D variables for peaceful clouds/pillars
+    player_pos = {'x': 0, 'y': 0, 'z': 0}
+    player_angle = 0
+    
+    # Generate beautiful golden pillars/clouds
+    pillars = []
+    for _ in range(30):
+        pillars.append({
+            'x': random.uniform(-800, 800),
+            'z': random.uniform(-800, 800),
+            'w': random.uniform(30, 80),
+            'h': random.uniform(150, 300),
+            'color': (random.randint(200, 255), random.randint(200, 255), random.randint(150, 255))
+        })
+    
+    running = True
+    clock = pygame.time.Clock()
+    time_in_heaven = 0
+    
+    pygame.mouse.set_visible(False)
+    pygame.event.set_grab(True)
+    
+    while running:
+        dt = clock.tick(60) / 1000.0
+        time_in_heaven += dt
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.mouse.set_visible(True)
+                    pygame.event.set_grab(False)
+                    return 'escape'
+            if event.type == pygame.MOUSEMOTION:
+                dx, dy = event.rel
+                player_angle += dx * 0.002
+        
+        # Movement
+        keys = pygame.key.get_pressed()
+        speed = 3  # Slower, more peaceful movement
+        
+        if keys[pygame.K_w]:
+            player_pos['x'] += math.sin(player_angle) * speed
+            player_pos['z'] += math.cos(player_angle) * speed
+        if keys[pygame.K_s]:
+            player_pos['x'] -= math.sin(player_angle) * speed
+            player_pos['z'] -= math.cos(player_angle) * speed
+        if keys[pygame.K_a]:
+            player_pos['x'] -= math.cos(player_angle) * speed
+            player_pos['z'] += math.sin(player_angle) * speed
+        if keys[pygame.K_d]:
+            player_pos['x'] += math.cos(player_angle) * speed
+            player_pos['z'] -= math.sin(player_angle) * speed
+        
+        # Rendering - Beautiful sky gradient
+        # Top: light blue, bottom: golden/pink
+        for y in range(HEIGHT):
+            progress = y / HEIGHT
+            r = int(135 + (255 - 135) * progress)
+            g = int(206 + (223 - 206) * progress)
+            b = int(235 + (150 - 235) * progress)
+            pygame.draw.line(screen, (r, g, b), (0, y), (WIDTH, y))
+        
+        # Draw floating clouds/pillars relative to player
+        objects_to_draw = []
+        
+        for p in pillars:
+            # Transform relative to player
+            rx = p['x'] - player_pos['x']
+            rz = p['z'] - player_pos['z']
+            
+            # Rotate around player
+            tx = rx * math.cos(-player_angle) - rz * math.sin(-player_angle)
+            tz = rx * math.sin(-player_angle) + rz * math.cos(-player_angle)
+            
+            if tz > 10:  # Only draw in front of camera
+                proj_scale = 400 / tz
+                screen_x = WIDTH // 2 + tx * proj_scale
+                screen_y = HEIGHT // 2 - 50 + math.sin(time_in_heaven + p['x']) * 20  # Gentle bobbing
+                
+                w = p['w'] * proj_scale
+                h = p['h'] * proj_scale
+                
+                dist = math.sqrt(rx*rx + rz*rz)
+                brightness = max(0.5, min(1.0, 1.0 - dist/1200))
+                color = (
+                    int(p['color'][0] * brightness),
+                    int(p['color'][1] * brightness),
+                    int(p['color'][2] * brightness)
+                )
+                
+                objects_to_draw.append({
+                    'depth': tz,
+                    'rect': (screen_x - w/2, screen_y - h/2, w, h),
+                    'color': color
+                })
+        
+        # Sort by depth (painters algorithm)
+        objects_to_draw.sort(key=lambda o: o['depth'], reverse=True)
+        
+        for o in objects_to_draw:
+            pygame.draw.rect(screen, o['color'], o['rect'])
+            # Add a soft glow
+            glow_rect = (o['rect'][0] - 2, o['rect'][1] - 2, o['rect'][2] + 4, o['rect'][3] + 4)
+            pygame.draw.rect(screen, o['color'], glow_rect, 2)
+        
+        # Sparkles floating around
+        for _ in range(10):
+            sparkle_x = random.randint(0, WIDTH)
+            sparkle_y = random.randint(0, HEIGHT)
+            sparkle_size = random.randint(1, 3)
+            alpha = int(128 + 127 * math.sin(time_in_heaven * 5 + sparkle_x))
+            if alpha > 200:
+                pygame.draw.circle(screen, (255, 255, 200), (sparkle_x, sparkle_y), sparkle_size)
+        
+        # Peaceful messages
+        font = pygame.font.Font(None, 50)
+        title_font = pygame.font.Font(None, 80)
+        
+        title = title_font.render("Heaven", True, (255, 215, 0))
+        title_shadow = title_font.render("Heaven", True, (200, 150, 0))
+        screen.blit(title_shadow, (WIDTH//2 - title.get_width()//2 + 2, 32))
+        screen.blit(title, (WIDTH//2 - title.get_width()//2, 30))
+        
+        msg = font.render("You found peace... (WASD to move, ESC to return)", True, (100, 100, 100))
+        screen.blit(msg, (WIDTH//2 - msg.get_width()//2, HEIGHT - 60))
+        
+        # Show time in heaven
+        time_text = font.render(f"Time in Heaven: {int(time_in_heaven)}s", True, (200, 200, 200))
+        screen.blit(time_text, (20, HEIGHT - 100))
+        
+        pygame.display.flip()
+    
+    pygame.mouse.set_visible(True)
+    pygame.event.set_grab(False)
+
+
 def post_credits_scene(screen):
     """
     POST-CREDITS SCENE - A creepy 3D exploration area
@@ -10470,7 +10633,14 @@ def mode_lobby():
                             action = post_credits_scene(screen)
                             if action == 'escape':
                                 break
-                            # If action is 'jumpscare' or anything else, we restart the loop
+                            elif action == 'heaven':
+                                # Enter heaven scene, loop until they escape
+                                while True:
+                                    heaven_action = heaven_scene(screen)
+                                    if heaven_action == 'escape':
+                                        # Return to horror scene
+                                        break
+                            # If action is 'jumpscare' or anything else, we restart the horror loop
                         
                         continue
                     
