@@ -13390,11 +13390,18 @@ def run_game(mode, player1_name, player2_name, char_choices, network=None, is_ho
     player2_emoji_timer = 0
     EMOJI_DURATION = 2.0  # Show emoji for 2 seconds
     
-    # Available emojis (1-9 keys)
-    emojis = {
-        '1': '😂', '2': '😎', '3': '😡', 
-        '4': '💪', '5': '👍', '6': '❤️',
-        '7': '🔥', '8': '💀', '9': '🎉'
+    # Player 1 emojis (number keys 1-9) - Cool/Positive vibes
+    player1_emojis = {
+        '1': '�', '2': '�', '3': '⚡', 
+        '4': '💪', '5': '�', '6': '🎯',
+        '7': '�', '8': '�', '9': '✨'
+    }
+    
+    # Player 2 emojis (QWERTYU) - Different set
+    player2_emojis = {
+        'q': '😈', 'w': '�💀', 'e': '👹', 
+        'r': '🤬', 't': '💥', 'y': '⚔️',
+        'u': '🔪', 'i': '🩸', 'o': '👊'
     }
     
     if mode == 1:
@@ -13547,16 +13554,15 @@ def run_game(mode, player1_name, player2_name, char_choices, network=None, is_ho
                 # Emoji triggers for Player 1 (number keys 1-9)
                 if event.key in [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_5, pygame.K_6, pygame.K_7, pygame.K_8, pygame.K_9]:
                     key_name = pygame.key.name(event.key)
-                    if key_name in emojis:
-                        player1_emoji = emojis[key_name]
+                    if key_name in player1_emojis:
+                        player1_emoji = player1_emojis[key_name]
                         player1_emoji_timer = now + EMOJI_DURATION
                 
-                # Emoji triggers for Player 2 (numpad keys)
-                if event.key in [pygame.K_KP1, pygame.K_KP2, pygame.K_KP3, pygame.K_KP4, pygame.K_KP5, pygame.K_KP6, pygame.K_KP7, pygame.K_KP8, pygame.K_KP9]:
-                    # Map numpad to same emoji list
-                    numpad_map = {pygame.K_KP1: '1', pygame.K_KP2: '2', pygame.K_KP3: '3', pygame.K_KP4: '4', pygame.K_KP5: '5', pygame.K_KP6: '6', pygame.K_KP7: '7', pygame.K_KP8: '8', pygame.K_KP9: '9'}
-                    if event.key in numpad_map and numpad_map[event.key] in emojis:
-                        player2_emoji = emojis[numpad_map[event.key]]
+                # Emoji triggers for Player 2 (QWERTYUIO keys)
+                if event.key in [pygame.K_q, pygame.K_w, pygame.K_e, pygame.K_r, pygame.K_t, pygame.K_y, pygame.K_u, pygame.K_i, pygame.K_o]:
+                    key_name = pygame.key.name(event.key)
+                    if key_name in player2_emojis:
+                        player2_emoji = player2_emojis[key_name]
                         player2_emoji_timer = now + EMOJI_DURATION
             
             if mode == 0:
@@ -14034,16 +14040,22 @@ def run_game(mode, player1_name, player2_name, char_choices, network=None, is_ho
         
         # Update and draw emojis above players
         if player1_emoji and now < player1_emoji_timer:
-            emoji_font = pygame.font.Font(None, 80)
-            emoji_text = emoji_font.render(player1_emoji, True, (255, 255, 255))
-            screen.blit(emoji_text, (player1.centerx - emoji_text.get_width()//2, player1.centery - 120))
+            emoji_font = pygame.font.Font(None, 120)  # Bigger emojis
+            emoji_text = emoji_font.render(player1_emoji, True, (255, 255, 0))  # Yellow color
+            # Draw with shadow for visibility
+            shadow = emoji_font.render(player1_emoji, True, (0, 0, 0))
+            screen.blit(shadow, (player1.centerx - emoji_text.get_width()//2 + 2, player1.centery - 140 + 2))
+            screen.blit(emoji_text, (player1.centerx - emoji_text.get_width()//2, player1.centery - 140))
         elif now >= player1_emoji_timer:
             player1_emoji = None
             
         if player2_emoji and now < player2_emoji_timer:
-            emoji_font = pygame.font.Font(None, 80)
-            emoji_text = emoji_font.render(player2_emoji, True, (255, 255, 255))
-            screen.blit(emoji_text, (player2.centerx - emoji_text.get_width()//2, player2.centery - 120))
+            emoji_font = pygame.font.Font(None, 120)  # Bigger emojis
+            emoji_text = emoji_font.render(player2_emoji, True, (255, 100, 100))  # Reddish color
+            # Draw with shadow for visibility
+            shadow = emoji_font.render(player2_emoji, True, (0, 0, 0))
+            screen.blit(shadow, (player2.centerx - emoji_text.get_width()//2 + 2, player2.centery - 140 + 2))
+            screen.blit(emoji_text, (player2.centerx - emoji_text.get_width()//2, player2.centery - 140))
         elif now >= player2_emoji_timer:
             player2_emoji = None
 
