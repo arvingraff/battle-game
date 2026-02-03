@@ -5,7 +5,7 @@ a = Analysis(
     ['battlegame.py'],
     pathex=[],
     binaries=[],
-    datas=[('*.mp3', '.'), ('*.mp4', '.'), ('*.jpg', '.'), ('*.png', '.')],
+    datas=[('*.mp3', '.'), ('*.mp4', '.'), ('*.MP4', '.'), ('*.jpg', '.'), ('*.png', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
