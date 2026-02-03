@@ -48,13 +48,14 @@ secret_hack = {
     'skibidi_triggered': saved_secrets.get('skibidi_triggered', False),
     'wolf_ate_buttons': False,  # Don't persist wolf state
     'grass_mode_unlocked': False,  # Reset each session - must do hack sequence!
-    'combine_mode_unlocked': True,  # NOW ALWAYS AVAILABLE FROM START!
+    'combine_mode_unlocked': False, # Reset each session - must do hack sequence!
     'entered_battle_after_music': saved_secrets.get('entered_battle_after_music', False),
     'everything_restored': False,  # Don't persist restoration
     'became_human': False,  # Don't persist - resets each session!
     'became_italian': False,  # Secret transformation - press 67 when human!
     'god_mode_unlocked': saved_secrets.get('god_mode_unlocked', False),  # PERMANENT REWARD for completing Combine Mode!
-    'final_mode_unlocked': False,  # THE ULTIMATE MODE - press 6776 after becoming Tralala!
+    'final_mode_unlocked': True,  # THE ULTIMATE MODE - Unlocked for testing 'arvin' code!
+    'post_credits_scene_unlocked': False, # New 3D horror area after credits
     'explosion_triggered': False,  # Explosion animation state
 }
 
@@ -346,6 +347,385 @@ def save_highscore(name, score, mode='survival', extra_data=None):
         pass  # If can't write (in bundled app), that's okay
     
     return scores
+
+
+def post_credits_scene(screen):
+    """
+    POST-CREDITS SCENE - A creepy 3D exploration area
+    Triggered after 'arvin' credits sequence.
+    """
+    
+    # STOP ALL MUSIC - silence is terrifying
+    pygame.mixer.music.stop()
+    
+    # Setup 3D variables
+    player_pos = {'x': 0, 'y': 0, 'z': 0}
+    player_angle = 0
+    
+    # Generate some creepy pillars
+    pillars = []
+    for _ in range(50):
+        pillars.append({
+            'x': random.uniform(-1000, 1000),
+            'z': random.uniform(-1000, 1000),
+            'w': random.uniform(20, 100),
+            'h': random.uniform(100, 400),
+            'color': (random.randint(10, 50), 0, 0) # Dark red
+        })
+        
+    running = True
+    clock = pygame.time.Clock()
+    jumpscare_triggered = False
+    jumpscare_timer = 0
+    step_timer = 0
+    
+    pygame.mouse.set_visible(False)
+    pygame.event.set_grab(True)
+    
+    while running:
+        dt = clock.tick(60) / 1000.0
+        
+        # Jumpscare logic
+        if jumpscare_triggered:
+            jumpscare_timer += dt
+            if jumpscare_timer > 3.0:
+                return 'jumpscare' # Exit back to menu (or loop)
+            
+            # Draw jumpscare
+            jumpscare_timer += dt
+            if jumpscare_timer > 3.0:
+                running = False # Exit back to menu
+            
+            # Draw jumpscare
+            screen.fill((0, 0, 0))
+            
+            # Ultra terrifying face with multiple layers
+            flicker = int(jumpscare_timer * 20) % 2 == 0
+            
+            if flicker:
+                # Main giant face - blood red with veins
+                pygame.draw.circle(screen, (180, 0, 0), (WIDTH//2, HEIGHT//2), 400)
+                pygame.draw.circle(screen, (255, 0, 0), (WIDTH//2, HEIGHT//2), 380)
+                pygame.draw.circle(screen, (200, 0, 0), (WIDTH//2, HEIGHT//2), 360)
+                
+                # Horrible glowing eyes with multiple rings
+                for i in range(5):
+                    eye_size = 80 - i*15
+                    eye_color = (255 - i*50, 255 - i*50, 255 - i*50)
+                    pygame.draw.circle(screen, eye_color, (WIDTH//2 - 120, HEIGHT//2 - 60), eye_size)
+                    pygame.draw.circle(screen, eye_color, (WIDTH//2 + 120, HEIGHT//2 - 60), eye_size)
+                
+                # Pitch black pupils that stare into your soul
+                pygame.draw.circle(screen, (0, 0, 0), (WIDTH//2 - 120, HEIGHT//2 - 60), 40)
+                pygame.draw.circle(screen, (0, 0, 0), (WIDTH//2 + 120, HEIGHT//2 - 60), 40)
+                
+                # Bloodshot veins in eyes
+                for _ in range(10):
+                    vein_start_x = WIDTH//2 - 120 + random.randint(-60, 60)
+                    vein_start_y = HEIGHT//2 - 60 + random.randint(-60, 60)
+                    vein_end_x = WIDTH//2 - 120 + random.randint(-80, 80)
+                    vein_end_y = HEIGHT//2 - 60 + random.randint(-80, 80)
+                    pygame.draw.line(screen, (150, 0, 0), (vein_start_x, vein_start_y), (vein_end_x, vein_end_y), 2)
+                    
+                    vein_start_x = WIDTH//2 + 120 + random.randint(-60, 60)
+                    vein_start_y = HEIGHT//2 - 60 + random.randint(-60, 60)
+                    vein_end_x = WIDTH//2 + 120 + random.randint(-80, 80)
+                    vein_end_y = HEIGHT//2 - 60 + random.randint(-80, 80)
+                    pygame.draw.line(screen, (150, 0, 0), (vein_start_x, vein_start_y), (vein_end_x, vein_end_y), 2)
+                
+                # Horrifying jagged mouth - multiple layers
+                mouth_points = [
+                    (WIDTH//2 - 150, HEIGHT//2 + 80),
+                    (WIDTH//2 - 100, HEIGHT//2 + 120),
+                    (WIDTH//2 - 50, HEIGHT//2 + 100),
+                    (WIDTH//2, HEIGHT//2 + 130),
+                    (WIDTH//2 + 50, HEIGHT//2 + 100),
+                    (WIDTH//2 + 100, HEIGHT//2 + 120),
+                    (WIDTH//2 + 150, HEIGHT//2 + 80),
+                    (WIDTH//2 + 100, HEIGHT//2 + 60),
+                    (WIDTH//2, HEIGHT//2 + 70),
+                    (WIDTH//2 - 100, HEIGHT//2 + 60),
+                ]
+                pygame.draw.polygon(screen, (0, 0, 0), mouth_points)
+                pygame.draw.polygon(screen, (100, 0, 0), mouth_points, 5)
+                
+                # Dripping effect
+                for i in range(5):
+                    drip_x = WIDTH//2 - 150 + i * 75
+                    drip_y = HEIGHT//2 + 130 + random.randint(0, 50)
+                    pygame.draw.circle(screen, (150, 0, 0), (drip_x, drip_y), 5)
+                
+                # Sharp teeth
+                for i in range(10):
+                    tooth_x = WIDTH//2 - 140 + i * 30
+                    tooth_points = [
+                        (tooth_x, HEIGHT//2 + 80),
+                        (tooth_x + 10, HEIGHT//2 + 110),
+                        (tooth_x + 20, HEIGHT//2 + 80)
+                    ]
+                    pygame.draw.polygon(screen, (255, 255, 255), tooth_points)
+                
+                # Distorted SCREAMING text with glitch effect
+                s_font = pygame.font.Font(None, 250)
+                text = s_font.render("FOUND YOU!", True, (255, 255, 255))
+                
+                # Glitch effect - multiple overlapping texts
+                screen.blit(text, (WIDTH//2 - text.get_width()//2 + random.randint(-10, 10), HEIGHT//2 + 200 + random.randint(-5, 5)))
+                text_red = s_font.render("FOUND YOU!", True, (255, 0, 0))
+                screen.blit(text_red, (WIDTH//2 - text_red.get_width()//2 + random.randint(-8, 8), HEIGHT//2 + 200 + random.randint(-5, 5)))
+                
+                # Additional scary text
+                small_font = pygame.font.Font(None, 80)
+                msgs = ["YOU CAN'T ESCAPE", "I SEE YOU", "FOREVER", "NO WAY OUT"]
+                for idx, msg in enumerate(msgs):
+                    angle = (jumpscare_timer * 50 + idx * 90) % 360
+                    x = WIDTH//2 + int(math.cos(math.radians(angle)) * 400)
+                    y = HEIGHT//2 + int(math.sin(math.radians(angle)) * 300)
+                    msg_surf = small_font.render(msg, True, (200, 0, 0))
+                    screen.blit(msg_surf, (x - msg_surf.get_width()//2, y))
+                
+                # Play scary sound if just triggered
+                if jumpscare_timer < 0.1:
+                    try:
+                        pygame.mixer.Sound("scary-scream.mp3").play()
+                    except:
+                        pass
+                        
+            pygame.display.flip()
+            continue
+            
+        # Normal game logic
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
+            if event.type == pygame.MOUSEMOTION:
+                dx, dy = event.rel
+                player_angle += dx * 0.002
+                
+        # Movement
+        keys = pygame.key.get_pressed()
+        speed = 5
+        moved = False
+        
+        if keys[pygame.K_w]:
+            player_pos['x'] += math.sin(player_angle) * speed
+            player_pos['z'] += math.cos(player_angle) * speed
+            moved = True
+        if keys[pygame.K_s]:
+            player_pos['x'] -= math.sin(player_angle) * speed
+            player_pos['z'] -= math.cos(player_angle) * speed
+            moved = True
+        if keys[pygame.K_a]:
+            player_pos['x'] -= math.cos(player_angle) * speed
+            player_pos['z'] += math.sin(player_angle) * speed
+            moved = True
+        if keys[pygame.K_d]:
+            player_pos['x'] += math.cos(player_angle) * speed
+            player_pos['z'] -= math.sin(player_angle) * speed
+            moved = True
+            
+        # Walking sound / footsteps effect
+        if moved:
+            step_timer += dt
+            if step_timer > 0.5:
+                step_timer = 0
+                # Could play footstep sound here
+        
+        # Random jumpscare trigger (or if you walk too far)
+        if random.random() < 0.001 or (abs(player_pos['x']) > 800 or abs(player_pos['z']) > 800):
+             jumpscare_triggered = True
+             
+        # Rendering
+        screen.fill((15, 15, 20)) # Slightly lighter so you can see a bit more
+        
+        # Floor grid - 3D projection
+        for i in range(-10, 11):
+            # Simple line drawing perspective isn't trivial without a full engine, 
+            # let's stick to object rendering sorted by depth
+            pass
+            
+        # Draw pillars relative to player
+        objects_to_draw = []
+        
+        for p in pillars:
+            # Transform relative to player
+            rx = p['x'] - player_pos['x']
+            rz = p['z'] - player_pos['z']
+            
+            # Rotate around player
+            tx = rx * math.cos(-player_angle) - rz * math.sin(-player_angle)
+            tz = rx * math.sin(-player_angle) + rz * math.cos(-player_angle)
+            
+            if tz > 10: # Only draw in front of camera
+                proj_scale = 400 / tz
+                screen_x = WIDTH // 2 + tx * proj_scale
+                screen_y = HEIGHT // 2
+                
+                w = p['w'] * proj_scale
+                h = p['h'] * proj_scale
+                
+                dist = math.sqrt(rx*rx + rz*rz)
+                shade = max(0, min(255, 255 - dist/4))
+                color = (shade * (p['color'][0]/255), 0, 0)
+                
+                objects_to_draw.append({
+                    'depth': tz,
+                    'rect': (screen_x - w/2, screen_y - h/2, w, h),
+                    'color': color
+                })
+                
+        # Sort by depth (painters algorithm)
+        objects_to_draw.sort(key=lambda o: o['depth'], reverse=True)
+        
+        for o in objects_to_draw:
+            pygame.draw.rect(screen, o['color'], o['rect'])
+            
+        # Fog/Darkness overlay
+        # fade = pygame.Surface((WIDTH, HEIGHT))
+        # fade.fill((0,0,0))
+        # fade.set_alpha(50) 
+        # screen.blit(fade, (0,0))
+
+        # Crosshair
+        pygame.draw.circle(screen, (50, 50, 50), (WIDTH//2, HEIGHT//2), 2)
+        
+        # Instructions
+        if not jumpscare_triggered:
+            font = pygame.font.Font(None, 30)
+            text = font.render("Where am I? (WASD to move)", True, (100, 100, 100))
+            screen.blit(text, (20, HEIGHT - 50))
+
+        pygame.display.flip()
+        
+    pygame.mouse.set_visible(True)
+    pygame.event.set_grab(False)
+    
+def credits_sequence(screen):
+    """
+    ULTIMATE CREDITS SEQUENCE
+    Triggered by code 'arvin' after unlocking final mode (6776).
+    Movie-like credits showing the creator and story.
+    """
+    import time
+    
+    # Store previous font scaling
+    old_mode = screen.get_size()
+    
+    # Fade out
+    fade = pygame.Surface((WIDTH, HEIGHT))
+    fade.fill((0, 0, 0))
+    for alpha in range(0, 255, 5):
+        fade.set_alpha(alpha)
+        screen.blit(fade, (0, 0))
+        pygame.display.flip()
+        pygame.time.wait(10)
+        
+    # Credits content
+    lines = [
+        ("EXECUTIVE PRODUCER", 60, (255, 215, 0)),
+        ("ARVIN GREENBERG GRAFF", 90, (255, 255, 255)),
+        ("", 40, (0,0,0)), 
+        ("CREATED BY", 50, (200, 200, 200)),
+        ("ARVIN", 80, (0, 255, 255)),
+        ("", 40, (0,0,0)),
+        ("LEAD PROGRAMMER", 50, (200, 200, 200)),
+        ("ARVIN", 70, (0, 255, 0)),
+        ("", 40, (0,0,0)),
+        ("STORY & CONCEPT", 50, (200, 200, 200)),
+        ("ARVIN", 70, (255, 100, 100)),
+        ("", 80, (0,0,0)),
+        ("SPECIAL THANKS TO", 50, (200, 200, 200)),
+        ("MOM & DAD", 70, (255, 0, 255)),
+        ("", 80, (0,0,0)),
+        ("BATTLEGAME DELUXE", 100, (255, 215, 0)),
+        ("THE ULTIMATE EDITION", 60, (150, 150, 150)),
+        ("", 150, (0,0,0)),
+        ("THANKS FOR PLAYING!", 80, (50, 255, 50))
+    ]
+    
+    # Star field background
+    stars = []
+    for _ in range(200):
+        stars.append([random.randint(0, WIDTH), random.randint(0, HEIGHT), random.randint(1, 3)])
+        
+    start_time = time.time()
+    scroll_y = HEIGHT + 50
+    
+    # Music switch
+    pygame.mixer.music.stop()
+    # Try to play emotional music if available, otherwise just use silence/sound effects
+    try:
+        if os.path.exists("coolwav.mp3"):
+            pygame.mixer.music.load("coolwav.mp3")
+            pygame.mixer.music.play(-1)
+    except:
+        pass
+        
+    running = True
+    while running:
+        current_time = time.time()
+        
+        # Event handling (press ESC to skip)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE or event.key == pygame.K_SPACE:
+                    running = False
+                    
+        # Update background
+        screen.fill((0, 5, 20)) # Dark blue/black space
+        
+        # Draw stars
+        for star in stars:
+            star[1] += 0.5 # Move down slowly (simulating moving up)
+            if star[1] > HEIGHT:
+                star[1] = 0
+                star[0] = random.randint(0, WIDTH)
+            pygame.draw.circle(screen, (255, 255, 255), (int(star[0]), int(star[1])), star[2])
+            
+        # Draw text
+        current_y = scroll_y
+        for text, size, color in lines:
+            if current_y > -100 and current_y < HEIGHT + 100:
+                try:
+                    c_font = pygame.font.Font(None, size)
+                    shadow = c_font.render(text, True, (0, 0, 0))
+                    surf = c_font.render(text, True, color)
+                    
+                    # Center text
+                    rect = surf.get_rect(center=(WIDTH//2, current_y))
+                    s_rect = shadow.get_rect(center=(WIDTH//2 + 3, current_y + 3))
+                    
+                    screen.blit(shadow, s_rect)
+                    screen.blit(surf, rect)
+                except:
+                    pass
+            current_y += size + 20
+            
+        # Scroll up
+        scroll_y -= 1.5
+        
+        # End condition
+        if scroll_y < -(len(lines) * 100 + 500):
+            running = False
+            
+        pygame.display.flip()
+        pygame.time.wait(10)
+        
+    # Restore music
+    try:
+        pygame.mixer.music.load(background_music)
+        pygame.mixer.music.play(-1)
+    except:
+        pass
 
 
 def explosion_sequence(screen):
@@ -3271,6 +3651,384 @@ try:
 except:
     has_battle_background = False
     print("ball.jpg not found, using solid color background for battle mode")
+
+def classroom_adventure_menu():
+    """PEACEFUL CLASSROOM MODE - Appears BEFORE main game. Type 'jaaaa' to skip to battle mode"""
+    clock = pygame.time.Clock()
+    
+    # Peaceful colors
+    SKY_BLUE = (135, 206, 250)
+    GRASS_GREEN = (34, 139, 34)
+    YELLOW = (255, 255, 0)
+    GOLD = (255, 215, 0)
+    PINK = (255, 192, 203)
+    WHITE = (255, 255, 255)
+    BLACK = (0, 0, 0)
+    LIGHT_BLUE = (173, 216, 230)
+    
+    key_buffer = ""
+    server_code = ""  # Player types server code here
+    
+    while True:
+        screen.fill(SKY_BLUE)
+        
+        # Draw grass at bottom
+        pygame.draw.rect(screen, GRASS_GREEN, (0, HEIGHT - 150, WIDTH, 150))
+        
+        # Draw cute flowers
+        for i in range(20):
+            flower_x = i * (WIDTH // 20) + 50
+            flower_y = HEIGHT - 100
+            # Petals (4 circles around center)
+            pygame.draw.circle(screen, PINK, (flower_x - 10, flower_y), 8)
+            pygame.draw.circle(screen, YELLOW, (flower_x + 10, flower_y), 8)
+            pygame.draw.circle(screen, PINK, (flower_x, flower_y - 10), 8)
+            pygame.draw.circle(screen, YELLOW, (flower_x, flower_y + 10), 8)
+            # Center
+            pygame.draw.circle(screen, GOLD, (flower_x, flower_y), 8)
+            # Stem
+            pygame.draw.line(screen, GRASS_GREEN, (flower_x, flower_y), (flower_x, flower_y + 30), 3)
+        
+        # Title with shadow
+        title_font = pygame.font.SysFont(None, 120)
+        subtitle_font = pygame.font.SysFont(None, 60)
+        instruction_font = pygame.font.SysFont(None, 40)
+        
+        # Shadow
+        shadow_text = title_font.render("CLASSROOM ADVENTURE", True, (100, 100, 100))
+        shadow_rect = shadow_text.get_rect(center=(WIDTH//2 + 3, HEIGHT//4 + 3))
+        screen.blit(shadow_text, shadow_rect)
+        
+        # Title
+        title_text = title_font.render("CLASSROOM ADVENTURE", True, GOLD)
+        title_rect = title_text.get_rect(center=(WIDTH//2, HEIGHT//4))
+        screen.blit(title_text, title_rect)
+        
+        # Subtitle
+        subtitle_text = subtitle_font.render("A Peaceful Game for Your Entire Class!", True, WHITE)
+        subtitle_rect = subtitle_text.get_rect(center=(WIDTH//2, HEIGHT//3 + 50))
+        screen.blit(subtitle_text, subtitle_rect)
+        
+        # Instructions
+        option_y = HEIGHT//2 + 20
+        instruction_text = subtitle_font.render("Enter Server Code to Join:", True, WHITE)
+        instruction_rect = instruction_text.get_rect(center=(WIDTH//2, option_y))
+        screen.blit(instruction_text, instruction_rect)
+        
+        # Server code input box
+        input_box_rect = pygame.Rect(WIDTH//2 - 150, option_y + 60, 300, 80)
+        pygame.draw.rect(screen, LIGHT_BLUE, input_box_rect)
+        pygame.draw.rect(screen, GOLD, input_box_rect, 5)
+        
+        # Display typed server code
+        code_font = pygame.font.SysFont(None, 100)
+        if server_code:
+            code_text = code_font.render(server_code, True, BLACK)
+        else:
+            code_text = code_font.render("___", True, (150, 150, 150))
+        code_rect = code_text.get_rect(center=input_box_rect.center)
+        screen.blit(code_text, code_rect)
+        
+        # Server options below
+        info_y = option_y + 180
+        info_font = pygame.font.SysFont(None, 50)
+        info1 = info_font.render("Server 1: Type '123'", True, PINK)
+        info1_rect = info1.get_rect(center=(WIDTH//2, info_y))
+        screen.blit(info1, info1_rect)
+        
+        info2 = info_font.render("Server 2: Type '321'", True, YELLOW)
+        info2_rect = info2.get_rect(center=(WIDTH//2, info_y + 60))
+        screen.blit(info2, info2_rect)
+        
+        # Secret instruction at bottom (hidden/small)
+        secret_text = instruction_font.render("(Secret code unlocks Battle Mode)", True, (150, 150, 150))
+        secret_rect = secret_text.get_rect(center=(WIDTH//2, HEIGHT - 80))
+        screen.blit(secret_text, secret_rect)
+        
+        pygame.display.flip()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            
+            if event.type == pygame.KEYDOWN:
+                # Handle backspace
+                if event.key == pygame.K_BACKSPACE:
+                    server_code = server_code[:-1]
+                    key_buffer = key_buffer[:-1] if key_buffer else ""
+                
+                # Handle number input for server codes
+                elif event.unicode.isdigit():
+                    if len(server_code) < 3:
+                        server_code += event.unicode
+                        key_buffer += event.unicode.lower()
+                    
+                    # Check if valid server code entered
+                    if server_code == "123":
+                        return 'server1'
+                    elif server_code == "321":
+                        return 'server2'
+                
+                # Track all key presses for secret code
+                elif event.unicode:
+                    key_buffer += event.unicode.lower()
+                    if len(key_buffer) > 10:
+                        key_buffer = key_buffer[-10:]
+                    
+                    # Check for secret code "jaaaa" - ONLY way to get to battle mode!
+                    if "jaaaa" in key_buffer:
+                        return  # Skip to talking intro
+        
+        clock.tick(60)
+
+def play_classroom_game(server_name):
+    """The actual peaceful classroom game - collaborative and fun!"""
+    import socket
+    import threading
+    import json
+    
+    clock = pygame.time.Clock()
+    
+    # Colors
+    SKY_BLUE = (135, 206, 250)
+    GRASS_GREEN = (34, 139, 34)
+    YELLOW = (255, 255, 0)
+    GOLD = (255, 215, 0)
+    PINK = (255, 192, 203)
+    WHITE = (255, 255, 255)
+    BLACK = (0, 0, 0)
+    ORANGE = (255, 165, 0)
+    RED = (255, 0, 0)
+    BLUE = (0, 100, 255)
+    PURPLE = (160, 32, 240)
+    
+    # Player setup
+    player_x = WIDTH // 2
+    player_y = HEIGHT - 200
+    player_speed = 5
+    
+    # Ask for player name
+    player_name = ""
+    entering_name = True
+    
+    while entering_name:
+        screen.fill(SKY_BLUE)
+        pygame.draw.rect(screen, GRASS_GREEN, (0, HEIGHT - 150, WIDTH, 150))
+        
+        title_font = pygame.font.SysFont(None, 80)
+        title_text = title_font.render("Enter Your Name:", True, GOLD)
+        title_rect = title_text.get_rect(center=(WIDTH//2, HEIGHT//2 - 100))
+        screen.blit(title_text, title_rect)
+        
+        name_font = pygame.font.SysFont(None, 100)
+        name_display = player_name if player_name else "___"
+        name_text = name_font.render(name_display, True, WHITE)
+        name_rect = name_text.get_rect(center=(WIDTH//2, HEIGHT//2))
+        screen.blit(name_text, name_rect)
+        
+        hint_font = pygame.font.SysFont(None, 40)
+        hint = hint_font.render("Press ENTER when done", True, WHITE)
+        hint_rect = hint.get_rect(center=(WIDTH//2, HEIGHT//2 + 80))
+        screen.blit(hint, hint_rect)
+        
+        pygame.display.flip()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN and player_name.strip():
+                    entering_name = False
+                elif event.key == pygame.K_BACKSPACE:
+                    player_name = player_name[:-1]
+                elif len(player_name) < 15 and event.unicode.isprintable():
+                    player_name += event.unicode
+    
+    # Network setup
+    other_players = {}  # Dictionary of {player_id: {name, x, y, color}}
+    my_player_id = str(random.randint(1000, 9999))
+    
+    # Server ports - different for each server
+    server_port = 5556 if server_name == "Server 1" else 5557
+    
+    # UDP socket for multiplayer
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    sock.settimeout(0.001)
+    
+    try:
+        sock.bind(('', server_port))
+    except:
+        pass  # If binding fails, can still send
+    
+    # Random color for this player
+    player_colors = [PINK, ORANGE, RED, BLUE, PURPLE, YELLOW]
+    my_color = random.choice(player_colors)
+    
+    def receive_updates():
+        """Background thread to receive other players' positions"""
+        while running:
+            try:
+                data, addr = sock.recvfrom(1024)
+                msg = json.loads(data.decode())
+                
+                if msg['id'] != my_player_id:  # Don't add ourselves
+                    other_players[msg['id']] = {
+                        'name': msg['name'],
+                        'x': msg['x'],
+                        'y': msg['y'],
+                        'color': tuple(msg['color'])
+                    }
+            except:
+                pass
+    
+    # Start background thread
+    running = True
+    listener_thread = threading.Thread(target=receive_updates, daemon=True)
+    listener_thread.start()
+    
+    # Collectible flowers
+    flowers = []
+    for i in range(15):
+        flowers.append({
+            'x': random.randint(50, WIDTH - 50),
+            'y': random.randint(100, HEIGHT - 200),
+            'collected': False
+        })
+    
+    score = 0
+    last_broadcast = 0
+    
+    running = True
+    while running:
+        screen.fill(SKY_BLUE)
+        
+        # Draw grass
+        pygame.draw.rect(screen, GRASS_GREEN, (0, HEIGHT - 150, WIDTH, 150))
+        
+        # Draw flowers to collect
+        for flower in flowers:
+            if not flower['collected']:
+                # Draw flower
+                x, y = flower['x'], flower['y']
+                pygame.draw.circle(screen, PINK, (x - 10, y), 8)
+                pygame.draw.circle(screen, YELLOW, (x + 10, y), 8)
+                pygame.draw.circle(screen, PINK, (x, y - 10), 8)
+                pygame.draw.circle(screen, YELLOW, (x, y + 10), 8)
+                pygame.draw.circle(screen, GOLD, (x, y), 10)
+        
+        # Draw OTHER REAL PLAYERS from network!
+        for player_id, other in list(other_players.items()):
+            pygame.draw.circle(screen, other['color'], (int(other['x']), int(other['y'])), 20)
+            name_font = pygame.font.SysFont(None, 30)
+            name_text = name_font.render(other['name'], True, WHITE)
+            screen.blit(name_text, (other['x'] - name_text.get_width()//2, other['y'] - 40))
+        
+        # Draw MY player
+        pygame.draw.circle(screen, my_color, (player_x, player_y), 25)
+        pygame.draw.circle(screen, WHITE, (player_x - 8, player_y - 5), 5)  # Eye
+        pygame.draw.circle(screen, WHITE, (player_x + 8, player_y - 5), 5)  # Eye
+        pygame.draw.circle(screen, BLACK, (player_x - 8, player_y - 5), 3)  # Pupil
+        pygame.draw.circle(screen, BLACK, (player_x + 8, player_y - 5), 3)  # Pupil
+        
+        # Draw my name
+        my_name_font = pygame.font.SysFont(None, 35)
+        my_name_text = my_name_font.render(player_name, True, GOLD)
+        screen.blit(my_name_text, (player_x - my_name_text.get_width()//2, player_y - 50))
+        
+        # Draw UI
+        title_font = pygame.font.SysFont(None, 60)
+        title_text = title_font.render(f"Connected to {server_name}!", True, GOLD)
+        screen.blit(title_text, (20, 20))
+        
+        score_font = pygame.font.SysFont(None, 50)
+        score_text = score_font.render(f"Flowers: {score}/15 | Players: {len(other_players) + 1}", True, WHITE)
+        screen.blit(score_text, (20, 80))
+        
+        instruction_font = pygame.font.SysFont(None, 40)
+        inst = instruction_font.render("WASD to move • Collect all flowers! • ESC to leave", True, WHITE)
+        screen.blit(inst, (WIDTH//2 - inst.get_width()//2, HEIGHT - 30))
+        
+        pygame.display.flip()
+        
+        # Broadcast my position to other players
+        current_time = pygame.time.get_ticks()
+        if current_time - last_broadcast > 50:  # Every 50ms
+            try:
+                my_data = {
+                    'id': my_player_id,
+                    'name': player_name,
+                    'x': player_x,
+                    'y': player_y,
+                    'color': list(my_color)
+                }
+                sock.sendto(json.dumps(my_data).encode(), ('<broadcast>', server_port))
+                last_broadcast = current_time
+            except:
+                pass
+        
+        # Handle events
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    running = False
+                    sock.close()
+                    return  # Exit classroom game
+        
+        # Handle movement
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_w] or keys[pygame.K_UP]:
+            player_y -= player_speed
+        if keys[pygame.K_s] or keys[pygame.K_DOWN]:
+            player_y += player_speed
+        if keys[pygame.K_a] or keys[pygame.K_LEFT]:
+            player_x -= player_speed
+        if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
+            player_x += player_speed
+        
+        # Keep player on screen
+        player_x = max(25, min(WIDTH - 25, player_x))
+        player_y = max(25, min(HEIGHT - 160, player_y))
+        
+        # Check flower collection
+        for flower in flowers:
+            if not flower['collected']:
+                distance = ((player_x - flower['x'])**2 + (player_y - flower['y'])**2)**0.5
+                if distance < 35:
+                    flower['collected'] = True
+                    score += 1
+        
+        # Remove players who haven't sent data in a while (disconnected)
+        current_time = pygame.time.get_ticks()
+        # (We'd add timeout logic here if needed)
+        
+        # Win condition
+        if score >= 15:
+            running = False
+            sock.close()
+            
+            screen.fill(SKY_BLUE)
+            win_font = pygame.font.SysFont(None, 100)
+            win_text = win_font.render("ALL FLOWERS COLLECTED!", True, GOLD)
+            win_rect = win_text.get_rect(center=(WIDTH//2, HEIGHT//2 - 50))
+            screen.blit(win_text, win_rect)
+            
+            congrats_font = pygame.font.SysFont(None, 60)
+            congrats = congrats_font.render("Great teamwork everyone! 🌸", True, WHITE)
+            congrats_rect = congrats.get_rect(center=(WIDTH//2, HEIGHT//2 + 50))
+            screen.blit(congrats, congrats_rect)
+            
+            pygame.display.flip()
+            pygame.time.wait(3000)
+            return
+        
+        clock.tick(60)
 
 def talking_intro():
     """EPIC TALKING INTRO with voice narration and animated presenter before main menu"""
@@ -9679,7 +10437,7 @@ def mode_lobby():
                 key_name = pygame.key.name(event.key)
                 
                 # Track j, q, 6, 7, g, a, b, u, and number presses
-                if key_name in ['j', 'q', '1', '2', '3', '4', '5', '6', '7', 'g', 'a', 'b', 'u']:
+                if key_name in ['j', 'q', '1', '2', '3', '4', '5', '6', '7', 'g', 'a', 'b', 'u', 'r', 'v', 'i', 'n']:
                     menu_key_buffer += key_name
                     # Keep only last 8 characters (for gagabubu)
                     if len(menu_key_buffer) > 8:
@@ -9698,6 +10456,22 @@ def mode_lobby():
                         menu_key_buffer = ""
                         # EPIC EXPLOSION SEQUENCE!
                         explosion_sequence(screen)
+                        continue
+                        
+                    # Check for 'arvin' - SECRET CREDITS SEQUENCE (only if Final Mode unlocked)
+                    if menu_key_buffer[-5:] == "arvin" and secret_hack.get('final_mode_unlocked'):
+                        menu_key_buffer = ""
+                        credits_sequence(screen)
+                        # After credits, unlock AND TRIGGER the post-credits scene
+                        secret_hack['post_credits_scene_unlocked'] = True
+                        
+                        # Loop the post-credits scene so we stay there unless user explicitly quits
+                        while True:
+                            action = post_credits_scene(screen)
+                            if action == 'escape':
+                                break
+                            # If action is 'jumpscare' or anything else, we restart the loop
+                        
                         continue
                     
                     # Check for 67 - TRALALA MODE! (only works if human)
@@ -12608,6 +13382,28 @@ def run_game(mode, player1_name, player2_name, char_choices, network=None, is_ho
     player1_score = 0
     player2_score = 0
     coin_timer = 0
+    
+    # Emoji system for battle mode
+    player1_emoji = None
+    player2_emoji = None
+    player1_emoji_timer = 0
+    player2_emoji_timer = 0
+    EMOJI_DURATION = 2.0  # Show emoji for 2 seconds
+    
+    # Player 1 emojis (number keys 1-9) - Cool/Positive vibes
+    player1_emojis = {
+        '1': '�', '2': '�', '3': '⚡', 
+        '4': '💪', '5': '�', '6': '🎯',
+        '7': '�', '8': '�', '9': '✨'
+    }
+    
+    # Player 2 emojis (QWERTYU) - Different set
+    player2_emojis = {
+        'q': '😈', 'w': '�💀', 'e': '👹', 
+        'r': '🤬', 't': '💥', 'y': '⚔️',
+        'u': '🔪', 'i': '🩸', 'o': '👊'
+    }
+    
     if mode == 1:
         coin_timer = time.time() + 60
         for _ in range(10):
@@ -12754,6 +13550,21 @@ def run_game(mode, player1_name, player2_name, char_choices, network=None, is_ho
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+            if event.type == pygame.KEYDOWN:
+                # Emoji triggers for Player 1 (number keys 1-9)
+                if event.key in [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_5, pygame.K_6, pygame.K_7, pygame.K_8, pygame.K_9]:
+                    key_name = pygame.key.name(event.key)
+                    if key_name in player1_emojis:
+                        player1_emoji = player1_emojis[key_name]
+                        player1_emoji_timer = now + EMOJI_DURATION
+                
+                # Emoji triggers for Player 2 (QWERTYUIO keys)
+                if event.key in [pygame.K_q, pygame.K_w, pygame.K_e, pygame.K_r, pygame.K_t, pygame.K_y, pygame.K_u, pygame.K_i, pygame.K_o]:
+                    key_name = pygame.key.name(event.key)
+                    if key_name in player2_emojis:
+                        player2_emoji = player2_emojis[key_name]
+                        player2_emoji_timer = now + EMOJI_DURATION
+            
             if mode == 0:
                 if event.type == pygame.KEYDOWN:
                     # Player 1 weapon switching
@@ -13226,6 +14037,27 @@ def run_game(mode, player1_name, player2_name, char_choices, network=None, is_ho
         # Draw Player 2 name above head
         name_text2 = font.render(player2_name, True, (255,0,0))
         screen.blit(name_text2, (player2.centerx - name_text2.get_width()//2, player2.centery-60))
+        
+        # Update and draw emojis above players
+        if player1_emoji and now < player1_emoji_timer:
+            emoji_font = pygame.font.Font(None, 120)  # Bigger emojis
+            emoji_text = emoji_font.render(player1_emoji, True, (255, 255, 0))  # Yellow color
+            # Draw with shadow for visibility
+            shadow = emoji_font.render(player1_emoji, True, (0, 0, 0))
+            screen.blit(shadow, (player1.centerx - emoji_text.get_width()//2 + 2, player1.centery - 140 + 2))
+            screen.blit(emoji_text, (player1.centerx - emoji_text.get_width()//2, player1.centery - 140))
+        elif now >= player1_emoji_timer:
+            player1_emoji = None
+            
+        if player2_emoji and now < player2_emoji_timer:
+            emoji_font = pygame.font.Font(None, 120)  # Bigger emojis
+            emoji_text = emoji_font.render(player2_emoji, True, (255, 100, 100))  # Reddish color
+            # Draw with shadow for visibility
+            shadow = emoji_font.render(player2_emoji, True, (0, 0, 0))
+            screen.blit(shadow, (player2.centerx - emoji_text.get_width()//2 + 2, player2.centery - 140 + 2))
+            screen.blit(emoji_text, (player2.centerx - emoji_text.get_width()//2, player2.centery - 140))
+        elif now >= player2_emoji_timer:
+            player2_emoji = None
 
         # Draw guns only in battle mode
         if mode == 0:
@@ -16543,6 +17375,42 @@ def run_escape_mom_mode():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if back_button.collidepoint(event.pos):
                     return 'lobby'
+
+# Show classroom adventure menu FIRST (type 'jaaaa' to skip)
+# DISABLED - Go straight to intro
+# try:
+#     if not hasattr(classroom_adventure_menu, 'shown'):
+#         result = classroom_adventure_menu()
+#         classroom_adventure_menu.shown = True
+#         
+#         # If a server code was entered, start classroom game
+#         if result == 'server1' or result == 'server2':
+#             # Clear screen and show connecting message
+#             screen.fill((135, 206, 250))  # Sky blue
+#             connect_font = pygame.font.SysFont(None, 80)
+#             server_name = "Server 1" if result == 'server1' else "Server 2"
+#             connect_text = connect_font.render(f"Connecting to {server_name}...", True, (255, 215, 0))
+#             connect_rect = connect_text.get_rect(center=(WIDTH//2, HEIGHT//2))
+#             screen.blit(connect_text, connect_rect)
+#             
+#             # Show instructions
+#             instruction_font = pygame.font.SysFont(None, 50)
+#             inst1 = instruction_font.render("Classroom Adventure Mode!", True, (255, 255, 255))
+#             inst2 = instruction_font.render("Everyone on the same server can play together!", True, (255, 255, 255))
+#             screen.blit(inst1, (WIDTH//2 - inst1.get_width()//2, HEIGHT//2 + 80))
+#             screen.blit(inst2, (WIDTH//2 - inst2.get_width()//2, HEIGHT//2 + 140))
+#             
+#             pygame.display.flip()
+#             pygame.time.wait(2000)  # Show message for 2 seconds
+#             
+#             # NOW START THE ACTUAL CLASSROOM GAME!
+#             play_classroom_game(server_name)
+#             
+#             # After game ends, allow them to play again
+#             classroom_adventure_menu.shown = False
+#             
+# except:
+#     pass  # If classroom menu fails, continue
 
 # Play talking intro sequence ONCE when game starts
 try:
