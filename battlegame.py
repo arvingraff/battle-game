@@ -13382,6 +13382,21 @@ def run_game(mode, player1_name, player2_name, char_choices, network=None, is_ho
     player1_score = 0
     player2_score = 0
     coin_timer = 0
+    
+    # Emoji system for battle mode
+    player1_emoji = None
+    player2_emoji = None
+    player1_emoji_timer = 0
+    player2_emoji_timer = 0
+    EMOJI_DURATION = 2.0  # Show emoji for 2 seconds
+    
+    # Available emojis (1-9 keys)
+    emojis = {
+        '1': '😂', '2': '😎', '3': '😡', 
+        '4': '💪', '5': '👍', '6': '❤️',
+        '7': '🔥', '8': '💀', '9': '🎉'
+    }
+    
     if mode == 1:
         coin_timer = time.time() + 60
         for _ in range(10):
@@ -13528,6 +13543,22 @@ def run_game(mode, player1_name, player2_name, char_choices, network=None, is_ho
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+            if event.type == pygame.KEYDOWN:
+                # Emoji triggers for Player 1 (number keys 1-9)
+                if event.key in [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_5, pygame.K_6, pygame.K_7, pygame.K_8, pygame.K_9]:
+                    key_name = pygame.key.name(event.key)
+                    if key_name in emojis:
+                        player1_emoji = emojis[key_name]
+                        player1_emoji_timer = now + EMOJI_DURATION
+                
+                # Emoji triggers for Player 2 (numpad keys)
+                if event.key in [pygame.K_KP1, pygame.K_KP2, pygame.K_KP3, pygame.K_KP4, pygame.K_KP5, pygame.K_KP6, pygame.K_KP7, pygame.K_KP8, pygame.K_KP9]:
+                    # Map numpad to same emoji list
+                    numpad_map = {pygame.K_KP1: '1', pygame.K_KP2: '2', pygame.K_KP3: '3', pygame.K_KP4: '4', pygame.K_KP5: '5', pygame.K_KP6: '6', pygame.K_KP7: '7', pygame.K_KP8: '8', pygame.K_KP9: '9'}
+                    if event.key in numpad_map and numpad_map[event.key] in emojis:
+                        player2_emoji = emojis[numpad_map[event.key]]
+                        player2_emoji_timer = now + EMOJI_DURATION
+            
             if mode == 0:
                 if event.type == pygame.KEYDOWN:
                     # Player 1 weapon switching
@@ -14000,6 +14031,21 @@ def run_game(mode, player1_name, player2_name, char_choices, network=None, is_ho
         # Draw Player 2 name above head
         name_text2 = font.render(player2_name, True, (255,0,0))
         screen.blit(name_text2, (player2.centerx - name_text2.get_width()//2, player2.centery-60))
+        
+        # Update and draw emojis above players
+        if player1_emoji and now < player1_emoji_timer:
+            emoji_font = pygame.font.Font(None, 80)
+            emoji_text = emoji_font.render(player1_emoji, True, (255, 255, 255))
+            screen.blit(emoji_text, (player1.centerx - emoji_text.get_width()//2, player1.centery - 120))
+        elif now >= player1_emoji_timer:
+            player1_emoji = None
+            
+        if player2_emoji and now < player2_emoji_timer:
+            emoji_font = pygame.font.Font(None, 80)
+            emoji_text = emoji_font.render(player2_emoji, True, (255, 255, 255))
+            screen.blit(emoji_text, (player2.centerx - emoji_text.get_width()//2, player2.centery - 120))
+        elif now >= player2_emoji_timer:
+            player2_emoji = None
 
         # Draw guns only in battle mode
         if mode == 0:
