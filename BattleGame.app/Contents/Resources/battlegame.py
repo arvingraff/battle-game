@@ -351,45 +351,117 @@ def save_highscore(name, score, mode='survival', extra_data=None):
 
 def heaven_scene(screen):
     """
-    HEAVEN SCENE - A peaceful, beautiful area
+    ULTRA REALISTIC HEAVEN SCENE - A truly divine, interactive paradise
     Triggered by typing 'heaven' in the horror scene.
-    Provides an escape from the nightmare.
+    Features: realistic clouds, angels, golden gates, harps, flying doves, prayers, blessings
     """
-    # Gentle fade to white
+    # Gentle fade to white with golden glow
     fade = pygame.Surface((WIDTH, HEIGHT))
     fade.fill((255, 255, 255))
-    for alpha in range(0, 255, 5):
+    for alpha in range(0, 255, 3):
         fade.set_alpha(alpha)
         screen.blit(fade, (0, 0))
+        # Add golden glow during fade
+        glow = pygame.Surface((WIDTH, HEIGHT))
+        glow.fill((255, 215, 0))
+        glow.set_alpha(50)
+        screen.blit(glow, (0, 0))
         pygame.display.flip()
-        pygame.time.wait(10)
+        pygame.time.wait(15)
     
     # Play peaceful music if available
     try:
         pygame.mixer.music.load(resource_path("playmusic.mp3"))
-        pygame.mixer.music.set_volume(0.3)
+        pygame.mixer.music.set_volume(0.4)
         pygame.mixer.music.play(-1)
     except:
         pass
     
-    # Setup 3D variables for peaceful clouds/pillars
-    player_pos = {'x': 0, 'y': 0, 'z': 0}
+    # Setup 3D variables
+    player_pos = {'x': 0, 'y': 100, 'z': 0}
     player_angle = 0
+    player_pitch = 0  # Look up/down
     
-    # Generate beautiful golden pillars/clouds
-    pillars = []
-    for _ in range(30):
-        pillars.append({
+    # Generate REALISTIC cloud islands at different heights
+    cloud_islands = []
+    for i in range(15):
+        cloud_islands.append({
+            'x': random.uniform(-1200, 1200),
+            'y': random.uniform(-50, 300),
+            'z': random.uniform(-1200, 1200),
+            'w': random.uniform(100, 250),
+            'h': random.uniform(40, 80),
+            'd': random.uniform(100, 200),
+            'layers': random.randint(3, 6),  # Multi-layer clouds
+            'type': random.choice(['fluffy', 'wispy', 'dense'])
+        })
+    
+    # Generate GOLDEN GATES (the entrance to heaven)
+    golden_gates = []
+    for i in range(3):
+        angle = (i / 3) * 2 * math.pi
+        golden_gates.append({
+            'x': math.cos(angle) * 500,
+            'z': math.sin(angle) * 500,
+            'y': 50,
+            'w': 150,
+            'h': 400
+        })
+    
+    # Generate ANGELS flying around
+    angels = []
+    for i in range(8):
+        angels.append({
             'x': random.uniform(-800, 800),
+            'y': random.uniform(100, 400),
             'z': random.uniform(-800, 800),
-            'w': random.uniform(30, 80),
-            'h': random.uniform(150, 300),
-            'color': (random.randint(200, 255), random.randint(200, 255), random.randint(150, 255))
+            'angle': random.uniform(0, 2 * math.pi),
+            'speed': random.uniform(0.5, 1.5),
+            'radius': random.uniform(200, 400),
+            'phase': random.uniform(0, 2 * math.pi)
+        })
+    
+    # Generate DOVES flying
+    doves = []
+    for i in range(20):
+        doves.append({
+            'x': random.uniform(-600, 600),
+            'y': random.uniform(50, 300),
+            'z': random.uniform(-600, 600),
+            'vx': random.uniform(-2, 2),
+            'vy': random.uniform(-0.5, 0.5),
+            'vz': random.uniform(-2, 2),
+            'wing_phase': random.uniform(0, 2 * math.pi)
+        })
+    
+    # Generate HARPS (can play them!)
+    harps = []
+    for i in range(5):
+        harps.append({
+            'x': random.uniform(-400, 400),
+            'z': random.uniform(-400, 400),
+            'y': 0,
+            'size': 60
+        })
+    
+    # Generate LIGHT BEAMS from above
+    light_beams = []
+    for i in range(12):
+        light_beams.append({
+            'x': random.uniform(-1000, 1000),
+            'z': random.uniform(-1000, 1000),
+            'width': random.uniform(30, 100),
+            'intensity': random.uniform(0.3, 0.8),
+            'phase': random.uniform(0, 2 * math.pi)
         })
     
     running = True
     clock = pygame.time.Clock()
     time_in_heaven = 0
+    blessing_message = ""
+    blessing_timer = 0
+    collected_blessings = 0
+    played_harps = set()
     
     pygame.mouse.set_visible(False)
     pygame.event.set_grab(True)
@@ -397,6 +469,9 @@ def heaven_scene(screen):
     while running:
         dt = clock.tick(60) / 1000.0
         time_in_heaven += dt
+        
+        if blessing_timer > 0:
+            blessing_timer -= dt
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -408,13 +483,35 @@ def heaven_scene(screen):
                     pygame.mouse.set_visible(True)
                     pygame.event.set_grab(False)
                     return 'escape'
+                # Press SPACE to pray/receive blessing
+                if event.key == pygame.K_SPACE:
+                    collected_blessings += 1
+                    blessings = [
+                        "✨ You have been blessed with eternal peace!",
+                        "🕊️ May your soul find everlasting joy!",
+                        "⭐ Divine light shines upon you!",
+                        "🌟 Your prayers have been heard!",
+                        "💫 Grace and serenity fill your heart!",
+                        "✝️ You are forgiven and loved!",
+                        "🙏 Blessings upon your journey!",
+                        "👼 Angels watch over you!"
+                    ]
+                    blessing_message = random.choice(blessings)
+                    blessing_timer = 3.0
+                    try:
+                        pygame.mixer.Sound(resource_path("coin.mp3")).play()
+                    except:
+                        pass
+                        
             if event.type == pygame.MOUSEMOTION:
                 dx, dy = event.rel
                 player_angle += dx * 0.002
+                player_pitch += dy * 0.002
+                player_pitch = max(-math.pi/3, min(math.pi/3, player_pitch))
         
-        # Movement
+        # Movement - can fly in heaven!
         keys = pygame.key.get_pressed()
-        speed = 3  # Slower, more peaceful movement
+        speed = 4
         
         if keys[pygame.K_w]:
             player_pos['x'] += math.sin(player_angle) * speed
@@ -429,82 +526,395 @@ def heaven_scene(screen):
             player_pos['x'] += math.cos(player_angle) * speed
             player_pos['z'] -= math.sin(player_angle) * speed
         
-        # Rendering - Beautiful sky gradient
-        # Top: light blue, bottom: golden/pink
+        # FLY UP/DOWN with SHIFT and CTRL
+        if keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]:
+            player_pos['y'] += speed
+        if keys[pygame.K_LCTRL] or keys[pygame.K_RCTRL]:
+            player_pos['y'] -= speed
+        
+        # Keep player in reasonable bounds
+        player_pos['y'] = max(-50, min(500, player_pos['y']))
+        
+        # Update ANGELS (flying in circles)
+        for angel in angels:
+            angel['phase'] += dt * angel['speed']
+            angel['x'] = math.cos(angel['phase']) * angel['radius']
+            angel['z'] = math.sin(angel['phase']) * angel['radius']
+            angel['y'] = 200 + math.sin(angel['phase'] * 2) * 50
+            angel['angle'] = angel['phase']
+        
+        # Update DOVES (free flying)
+        for dove in doves:
+            dove['x'] += dove['vx']
+            dove['y'] += dove['vy']
+            dove['z'] += dove['vz']
+            dove['wing_phase'] += dt * 8
+            
+            # Bounce off boundaries
+            if abs(dove['x']) > 700:
+                dove['vx'] *= -1
+            if dove['y'] < 50 or dove['y'] > 350:
+                dove['vy'] *= -1
+            if abs(dove['z']) > 700:
+                dove['vz'] *= -1
+        
+        # Check if near harps to play them
+        for i, harp in enumerate(harps):
+            dist = math.sqrt((harp['x'] - player_pos['x'])**2 + (harp['z'] - player_pos['z'])**2)
+            if dist < 100 and i not in played_harps:
+                played_harps.add(i)
+                try:
+                    pygame.mixer.Sound(resource_path("lala.mp3")).play()
+                except:
+                    pass
+        
+        # ===== RENDERING =====
+        
+        # REALISTIC SKY - Heavenly gradient with multiple layers
         for y in range(HEIGHT):
             progress = y / HEIGHT
-            r = int(135 + (255 - 135) * progress)
-            g = int(206 + (223 - 206) * progress)
-            b = int(235 + (150 - 235) * progress)
+            # Bright sky blue to golden white
+            r = int(180 + (255 - 180) * progress * progress)
+            g = int(220 + (250 - 220) * progress)
+            b = int(255 - 30 * progress)
+            # Add golden tint
+            r = min(255, r + 20)
+            g = min(255, g + 10)
             pygame.draw.line(screen, (r, g, b), (0, y), (WIDTH, y))
         
-        # Draw floating clouds/pillars relative to player
-        objects_to_draw = []
+        # Draw SUN/DIVINE LIGHT source
+        sun_x = WIDTH // 2 + int(math.cos(time_in_heaven * 0.1) * 200)
+        sun_y = 100
+        for i in range(10, 0, -1):
+            alpha_val = int(20 * (11 - i) / 10)
+            sun_surf = pygame.Surface((i * 20, i * 20), pygame.SRCALPHA)
+            pygame.draw.circle(sun_surf, (255, 255, 200, alpha_val), (i * 10, i * 10), i * 10)
+            screen.blit(sun_surf, (sun_x - i * 10, sun_y - i * 10))
+        pygame.draw.circle(screen, (255, 255, 230), (sun_x, sun_y), 40)
         
-        for p in pillars:
-            # Transform relative to player
-            rx = p['x'] - player_pos['x']
-            rz = p['z'] - player_pos['z']
-            
-            # Rotate around player
+        # Draw LIGHT BEAMS from heaven
+        for beam in light_beams:
+            rx = beam['x'] - player_pos['x']
+            rz = beam['z'] - player_pos['z']
             tx = rx * math.cos(-player_angle) - rz * math.sin(-player_angle)
             tz = rx * math.sin(-player_angle) + rz * math.cos(-player_angle)
             
-            if tz > 10:  # Only draw in front of camera
+            if tz > 10:
                 proj_scale = 400 / tz
                 screen_x = WIDTH // 2 + tx * proj_scale
-                screen_y = HEIGHT // 2 - 50 + math.sin(time_in_heaven + p['x']) * 20  # Gentle bobbing
+                beam_width = beam['width'] * proj_scale
                 
-                w = p['w'] * proj_scale
-                h = p['h'] * proj_scale
+                beam_intensity = (math.sin(time_in_heaven + beam['phase']) * 0.5 + 0.5) * beam['intensity']
+                beam_surf = pygame.Surface((int(beam_width), HEIGHT), pygame.SRCALPHA)
+                for y in range(HEIGHT):
+                    alpha = int(beam_intensity * 60 * (1 - y/HEIGHT))
+                    pygame.draw.line(beam_surf, (255, 255, 200, alpha), (beam_width//2, y), (beam_width//2, y))
+                screen.blit(beam_surf, (screen_x - beam_width//2, 0))
+        
+        # Collect all objects to draw
+        objects_to_draw = []
+        
+        # Draw CLOUD ISLANDS (realistic multi-layer clouds)
+        for cloud in cloud_islands:
+            rx = cloud['x'] - player_pos['x']
+            ry = cloud['y'] - player_pos['y']
+            rz = cloud['z'] - player_pos['z']
+            
+            tx = rx * math.cos(-player_angle) - rz * math.sin(-player_angle)
+            tz = rx * math.sin(-player_angle) + rz * math.cos(-player_angle)
+            
+            if tz > 10:
+                proj_scale = 400 / tz
+                screen_x = WIDTH // 2 + tx * proj_scale
+                screen_y = HEIGHT // 2 - ry * proj_scale / 2 + math.sin(time_in_heaven * 0.5 + cloud['x'] * 0.01) * 15
+                
+                w = cloud['w'] * proj_scale
+                h = cloud['h'] * proj_scale
+                d = cloud['d'] * proj_scale
                 
                 dist = math.sqrt(rx*rx + rz*rz)
-                brightness = max(0.5, min(1.0, 1.0 - dist/1200))
-                color = (
-                    int(p['color'][0] * brightness),
-                    int(p['color'][1] * brightness),
-                    int(p['color'][2] * brightness)
-                )
+                brightness = max(0.6, min(1.0, 1.0 - dist/1500))
+                
+                # Draw multiple layers for realistic fluffy clouds
+                for layer in range(cloud['layers']):
+                    layer_offset_x = (layer - cloud['layers']/2) * 15
+                    layer_offset_y = (layer - cloud['layers']/2) * 8
+                    
+                    if cloud['type'] == 'fluffy':
+                        color = (int(255 * brightness), int(255 * brightness), int(255 * brightness))
+                    elif cloud['type'] == 'wispy':
+                        color = (int(240 * brightness), int(245 * brightness), int(255 * brightness))
+                    else:  # dense
+                        color = (int(230 * brightness), int(235 * brightness), int(245 * brightness))
+                    
+                    cloud_rect = (screen_x + layer_offset_x - w/2, screen_y + layer_offset_y - h/2, w, h)
+                    objects_to_draw.append({
+                        'depth': tz + layer * 0.1,
+                        'type': 'cloud',
+                        'rect': cloud_rect,
+                        'color': color,
+                        'alpha': 180 - layer * 20
+                    })
+        
+        # Draw GOLDEN GATES
+        for gate in golden_gates:
+            rx = gate['x'] - player_pos['x']
+            ry = gate['y'] - player_pos['y']
+            rz = gate['z'] - player_pos['z']
+            
+            tx = rx * math.cos(-player_angle) - rz * math.sin(-player_angle)
+            tz = rx * math.sin(-player_angle) + rz * math.cos(-player_angle)
+            
+            if tz > 10:
+                proj_scale = 400 / tz
+                screen_x = WIDTH // 2 + tx * proj_scale
+                screen_y = HEIGHT // 2 - ry * proj_scale / 2
+                
+                w = gate['w'] * proj_scale
+                h = gate['h'] * proj_scale
+                
+                # Main gate structure (golden)
+                gate_color = (255, 215, 0)
+                shine = int(50 * (math.sin(time_in_heaven * 2 + gate['x']) * 0.5 + 0.5))
+                bright_gold = (min(255, 255 + shine), min(255, 215 + shine), 0)
                 
                 objects_to_draw.append({
                     'depth': tz,
+                    'type': 'gate',
                     'rect': (screen_x - w/2, screen_y - h/2, w, h),
-                    'color': color
+                    'color': bright_gold
                 })
         
-        # Sort by depth (painters algorithm)
+        # Draw ANGELS
+        for angel in angels:
+            rx = angel['x'] - player_pos['x']
+            ry = angel['y'] - player_pos['y']
+            rz = angel['z'] - player_pos['z']
+            
+            tx = rx * math.cos(-player_angle) - rz * math.sin(-player_angle)
+            tz = rx * math.sin(-player_angle) + rz * math.cos(-player_angle)
+            
+            if tz > 10:
+                proj_scale = 400 / tz
+                screen_x = WIDTH // 2 + tx * proj_scale
+                screen_y = HEIGHT // 2 - ry * proj_scale / 2
+                
+                size = 40 * proj_scale
+                
+                objects_to_draw.append({
+                    'depth': tz,
+                    'type': 'angel',
+                    'x': screen_x,
+                    'y': screen_y,
+                    'size': size,
+                    'phase': angel['phase']
+                })
+        
+        # Draw DOVES
+        for dove in doves:
+            rx = dove['x'] - player_pos['x']
+            ry = dove['y'] - player_pos['y']
+            rz = dove['z'] - player_pos['z']
+            
+            tx = rx * math.cos(-player_angle) - rz * math.sin(-player_angle)
+            tz = rx * math.sin(-player_angle) + rz * math.cos(-player_angle)
+            
+            if tz > 10:
+                proj_scale = 400 / tz
+                screen_x = WIDTH // 2 + tx * proj_scale
+                screen_y = HEIGHT // 2 - ry * proj_scale / 2
+                
+                size = 15 * proj_scale
+                
+                objects_to_draw.append({
+                    'depth': tz,
+                    'type': 'dove',
+                    'x': screen_x,
+                    'y': screen_y,
+                    'size': size,
+                    'wing_phase': dove['wing_phase']
+                })
+        
+        # Draw HARPS
+        for i, harp in enumerate(harps):
+            rx = harp['x'] - player_pos['x']
+            ry = harp['y'] - player_pos['y']
+            rz = harp['z'] - player_pos['z']
+            
+            tx = rx * math.cos(-player_angle) - rz * math.sin(-player_angle)
+            tz = rx * math.sin(-player_angle) + rz * math.cos(-player_angle)
+            
+            if tz > 10:
+                proj_scale = 400 / tz
+                screen_x = WIDTH // 2 + tx * proj_scale
+                screen_y = HEIGHT // 2 - ry * proj_scale / 2
+                
+                size = harp['size'] * proj_scale
+                dist = math.sqrt(rx*rx + rz*rz)
+                
+                objects_to_draw.append({
+                    'depth': tz,
+                    'type': 'harp',
+                    'x': screen_x,
+                    'y': screen_y,
+                    'size': size,
+                    'dist': dist,
+                    'played': i in played_harps
+                })
+        
+        # Sort by depth and render
         objects_to_draw.sort(key=lambda o: o['depth'], reverse=True)
         
-        for o in objects_to_draw:
-            pygame.draw.rect(screen, o['color'], o['rect'])
-            # Add a soft glow
-            glow_rect = (o['rect'][0] - 2, o['rect'][1] - 2, o['rect'][2] + 4, o['rect'][3] + 4)
-            pygame.draw.rect(screen, o['color'], glow_rect, 2)
+        for obj in objects_to_draw:
+            if obj['type'] == 'cloud':
+                cloud_surf = pygame.Surface((int(obj['rect'][2]), int(obj['rect'][3])), pygame.SRCALPHA)
+                # Draw rounded cloud shape
+                pygame.draw.ellipse(cloud_surf, obj['color'] + (obj['alpha'],), (0, 0, obj['rect'][2], obj['rect'][3]))
+                screen.blit(cloud_surf, (obj['rect'][0], obj['rect'][1]))
+                
+            elif obj['type'] == 'gate':
+                # Draw ornate golden gate
+                gate_rect = obj['rect']
+                # Main pillars
+                pygame.draw.rect(screen, obj['color'], (gate_rect[0], gate_rect[1], gate_rect[2]//4, gate_rect[3]))
+                pygame.draw.rect(screen, obj['color'], (gate_rect[0] + gate_rect[2]*3//4, gate_rect[1], gate_rect[2]//4, gate_rect[3]))
+                # Arch
+                pygame.draw.arc(screen, obj['color'], gate_rect, 0, math.pi, int(gate_rect[2]//8))
+                # Cross at top
+                cross_x = gate_rect[0] + gate_rect[2]//2
+                cross_y = gate_rect[1] - gate_rect[3]//10
+                cross_size = gate_rect[2]//8
+                pygame.draw.line(screen, obj['color'], (cross_x, cross_y - cross_size), (cross_x, cross_y + cross_size), 5)
+                pygame.draw.line(screen, obj['color'], (cross_x - cross_size//2, cross_y), (cross_x + cross_size//2, cross_y), 5)
+                
+            elif obj['type'] == 'angel':
+                # Draw beautiful angel with wings
+                angel_x, angel_y = int(obj['x']), int(obj['y'])
+                size = int(obj['size'])
+                
+                # Halo
+                pygame.draw.circle(screen, (255, 255, 100), (angel_x, angel_y - size), int(size//3), 2)
+                
+                # Wings (animated)
+                wing_angle = math.sin(obj['phase'] * 4) * 0.3
+                wing_size = size * 1.5
+                # Left wing
+                left_wing_pts = [
+                    (angel_x, angel_y),
+                    (angel_x - wing_size * math.cos(wing_angle), angel_y - wing_size * 0.5 * math.sin(wing_angle)),
+                    (angel_x - wing_size * 0.5, angel_y + wing_size * 0.3)
+                ]
+                pygame.draw.polygon(screen, (255, 255, 255), left_wing_pts)
+                # Right wing
+                right_wing_pts = [
+                    (angel_x, angel_y),
+                    (angel_x + wing_size * math.cos(wing_angle), angel_y - wing_size * 0.5 * math.sin(wing_angle)),
+                    (angel_x + wing_size * 0.5, angel_y + wing_size * 0.3)
+                ]
+                pygame.draw.polygon(screen, (255, 255, 255), right_wing_pts)
+                
+                # Body (white robe)
+                pygame.draw.circle(screen, (245, 245, 255), (angel_x, angel_y), int(size//2))
+                # Head (skin tone)
+                pygame.draw.circle(screen, (255, 220, 180), (angel_x, angel_y - size//2), int(size//3))
+                
+            elif obj['type'] == 'dove':
+                # Draw dove with flapping wings
+                dove_x, dove_y = int(obj['x']), int(obj['y'])
+                size = int(obj['size'])
+                
+                # Body
+                pygame.draw.circle(screen, (255, 255, 255), (dove_x, dove_y), size)
+                # Head
+                pygame.draw.circle(screen, (255, 255, 255), (dove_x + size//2, dove_y - size//2), size//2)
+                # Wings (flapping)
+                wing_y_offset = int(size * math.sin(obj['wing_phase']))
+                pygame.draw.line(screen, (240, 240, 240), (dove_x, dove_y), (dove_x - size*2, dove_y + wing_y_offset), 2)
+                pygame.draw.line(screen, (240, 240, 240), (dove_x, dove_y), (dove_x + size*2, dove_y + wing_y_offset), 2)
+                
+            elif obj['type'] == 'harp':
+                # Draw golden harp
+                harp_x, harp_y = int(obj['x']), int(obj['y'])
+                size = int(obj['size'])
+                
+                color = (255, 215, 0) if not obj['played'] else (255, 255, 100)
+                
+                # Harp frame
+                pygame.draw.arc(screen, color, (harp_x - size//2, harp_y - size, size, size * 2), -math.pi/4, math.pi*3/4, 3)
+                # Strings
+                for i in range(5):
+                    string_x = harp_x - size//3 + i * size//6
+                    pygame.draw.line(screen, color, (string_x, harp_y - size//2), (string_x, harp_y + size//2), 1)
+                
+                # Show prompt if close
+                if obj['dist'] < 100:
+                    prompt_font = pygame.font.Font(None, 30)
+                    prompt = prompt_font.render("Press to play!" if not obj['played'] else "♪ ♫", True, (255, 215, 0))
+                    screen.blit(prompt, (harp_x - prompt.get_width()//2, harp_y - size - 30))
         
-        # Sparkles floating around
-        for _ in range(10):
+        # Draw FLOATING SPARKLES everywhere
+        for _ in range(30):
             sparkle_x = random.randint(0, WIDTH)
             sparkle_y = random.randint(0, HEIGHT)
-            sparkle_size = random.randint(1, 3)
-            alpha = int(128 + 127 * math.sin(time_in_heaven * 5 + sparkle_x))
-            if alpha > 200:
-                pygame.draw.circle(screen, (255, 255, 200), (sparkle_x, sparkle_y), sparkle_size)
+            sparkle_size = random.randint(1, 4)
+            alpha = int(128 + 127 * math.sin(time_in_heaven * 5 + sparkle_x + sparkle_y))
+            if alpha > 180:
+                pygame.draw.circle(screen, (255, 255, 220), (sparkle_x, sparkle_y), sparkle_size)
+                # Cross sparkle effect
+                pygame.draw.line(screen, (255, 255, 220), (sparkle_x - sparkle_size*2, sparkle_y), (sparkle_x + sparkle_size*2, sparkle_y), 1)
+                pygame.draw.line(screen, (255, 255, 220), (sparkle_x, sparkle_y - sparkle_size*2), (sparkle_x, sparkle_y + sparkle_size*2), 1)
         
-        # Peaceful messages
-        font = pygame.font.Font(None, 50)
-        title_font = pygame.font.Font(None, 80)
+        # UI OVERLAY
+        font = pygame.font.Font(None, 40)
+        title_font = pygame.font.Font(None, 90)
+        small_font = pygame.font.Font(None, 30)
         
-        title = title_font.render("Heaven", True, (255, 215, 0))
-        title_shadow = title_font.render("Heaven", True, (200, 150, 0))
-        screen.blit(title_shadow, (WIDTH//2 - title.get_width()//2 + 2, 32))
-        screen.blit(title, (WIDTH//2 - title.get_width()//2, 30))
+        # Title with divine glow
+        title = title_font.render("✨ HEAVEN ✨", True, (255, 255, 255))
+        title_shadow = title_font.render("✨ HEAVEN ✨", True, (255, 215, 0))
+        for offset in [(2, 2), (-2, 2), (2, -2), (-2, -2)]:
+            screen.blit(title_shadow, (WIDTH//2 - title.get_width()//2 + offset[0], 25 + offset[1]))
+        screen.blit(title, (WIDTH//2 - title.get_width()//2, 25))
         
-        msg = font.render("You found peace... (WASD to move, ESC to return)", True, (100, 100, 100))
-        screen.blit(msg, (WIDTH//2 - msg.get_width()//2, HEIGHT - 60))
+        # Instructions
+        instructions = [
+            "WASD: Move  |  Mouse: Look  |  SHIFT: Fly Up  |  CTRL: Fly Down",
+            "SPACE: Pray for Blessings  |  Walk near Harps to play them",
+            "ESC: Return to Horror"
+        ]
+        for i, inst in enumerate(instructions):
+            inst_surf = small_font.render(inst, True, (255, 255, 255))
+            inst_shadow = small_font.render(inst, True, (100, 100, 100))
+            screen.blit(inst_shadow, (WIDTH//2 - inst_surf.get_width()//2 + 1, HEIGHT - 90 + i*25 + 1))
+            screen.blit(inst_surf, (WIDTH//2 - inst_surf.get_width()//2, HEIGHT - 90 + i*25))
         
-        # Show time in heaven
-        time_text = font.render(f"Time in Heaven: {int(time_in_heaven)}s", True, (200, 200, 200))
-        screen.blit(time_text, (20, HEIGHT - 100))
+        # Stats
+        stats = [
+            f"⏰ Time in Heaven: {int(time_in_heaven)}s",
+            f"🙏 Blessings Received: {collected_blessings}",
+            f"🎵 Harps Played: {len(played_harps)}/5",
+            f"📍 Altitude: {int(player_pos['y'])}m"
+        ]
+        for i, stat in enumerate(stats):
+            stat_surf = font.render(stat, True, (255, 255, 255))
+            stat_shadow = font.render(stat, True, (150, 150, 150))
+            screen.blit(stat_shadow, (21, 101 + i*35))
+            screen.blit(stat_surf, (20, 100 + i*35))
+        
+        # Show blessing message
+        if blessing_timer > 0:
+            blessing_font = pygame.font.Font(None, 60)
+            blessing_surf = blessing_font.render(blessing_message, True, (255, 215, 0))
+            blessing_alpha = int(255 * (blessing_timer / 3.0))
+            blessing_surf.set_alpha(blessing_alpha)
+            
+            # Glow effect
+            for offset in [(2, 2), (-2, 2), (2, -2), (-2, -2), (0, 3), (3, 0), (-3, 0), (0, -3)]:
+                glow_surf = blessing_font.render(blessing_message, True, (255, 255, 200))
+                glow_surf.set_alpha(blessing_alpha // 3)
+                screen.blit(glow_surf, (WIDTH//2 - blessing_surf.get_width()//2 + offset[0], HEIGHT//2 - 100 + offset[1]))
+            
+            screen.blit(blessing_surf, (WIDTH//2 - blessing_surf.get_width()//2, HEIGHT//2 - 100))
         
         pygame.display.flip()
     
@@ -541,6 +951,7 @@ def post_credits_scene(screen):
     jumpscare_triggered = False
     jumpscare_timer = 0
     step_timer = 0
+    key_buffer = ""  # Track typed keys for "heaven" code
     
     pygame.mouse.set_visible(False)
     pygame.event.set_grab(True)
@@ -665,7 +1076,20 @@ def post_credits_scene(screen):
                 sys.exit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
-                    running = False
+                    return 'escape'
+                    
+                # Track keys for "heaven" code
+                key_name = pygame.key.name(event.key)
+                if len(key_name) == 1 and key_name.isalpha():
+                    key_buffer += key_name.lower()
+                    # Keep only last 6 characters
+                    if len(key_buffer) > 6:
+                        key_buffer = key_buffer[-6:]
+                    
+                    # Check for "heaven" code
+                    if key_buffer == "heaven":
+                        return 'heaven'
+                        
             if event.type == pygame.MOUSEMOTION:
                 dx, dy = event.rel
                 player_angle += dx * 0.002
@@ -823,10 +1247,12 @@ def credits_sequence(screen):
     pygame.mixer.music.stop()
     # Try to play emotional music if available, otherwise just use silence/sound effects
     try:
-        if os.path.exists("coolwav.mp3"):
-            pygame.mixer.music.load("coolwav.mp3")
+        music_file = resource_path("coolwav.mp3")
+        if os.path.exists(music_file):
+            pygame.mixer.music.load(music_file)
             pygame.mixer.music.play(-1)
-    except:
+    except Exception as e:
+        print(f"Credits music error: {e}")
         pass
         
     running = True
@@ -883,12 +1309,9 @@ def credits_sequence(screen):
         pygame.display.flip()
         pygame.time.wait(10)
         
-    # Restore music
-    try:
-        pygame.mixer.music.load(background_music)
-        pygame.mixer.music.play(-1)
-    except:
-        pass
+    # Restore music (don't restore - horror scene wants silence)
+    # Music will be stopped before entering horror scene anyway
+    pygame.mixer.music.stop()
 
 
 def explosion_sequence(screen):
