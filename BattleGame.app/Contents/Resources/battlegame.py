@@ -636,11 +636,15 @@ def heaven_scene(screen):
                     pygame.event.set_grab(False)
                     return 'escape'
                 
-                # SPACE - Jump
+                # SPACE - Jump (instant and responsive!)
                 if event.key == pygame.K_SPACE and on_ground and can_jump:
-                    player_velocity['y'] = jump_power
+                    player_velocity['y'] = 12  # Higher, more fun jump
                     on_ground = False
                     can_jump = False
+                    try:
+                        pygame.mixer.Sound(resource_path("coin.mp3")).play()
+                    except:
+                        pass
                 
                 # T - Talk to nearby angel
                 if event.key == pygame.K_t:
@@ -738,9 +742,10 @@ def heaven_scene(screen):
             
             if event.type == pygame.MOUSEMOTION and not showing_dialog:
                 dx, dy = event.rel
-                player_angle += dx * 0.002
-                player_pitch += dy * 0.002
-                player_pitch = max(-math.pi/3, min(math.pi/3, player_pitch))
+                # Smooth, responsive mouse control
+                player_angle += dx * 0.003  # Smoother horizontal
+                player_pitch += dy * 0.003  # Smoother vertical
+                player_pitch = max(-math.pi/2.5, min(math.pi/2.5, player_pitch))
             
             if event.type == pygame.MOUSEBUTTONDOWN and build_mode:
                 if event.button == 1 and inventory['cloud_blocks'] > 0:  # Left click
@@ -759,47 +764,56 @@ def heaven_scene(screen):
                     inventory['cloud_blocks'] -= 1
                     notification_queue.append("Block placed! 🧱")
         
-        # ===== MOVEMENT & PHYSICS =====
+        # ===== MOVEMENT & PHYSICS (SMOOTH AND RESPONSIVE!) =====
         keys = pygame.key.get_pressed()
-        speed = 6 if on_ground else 4
+        move_speed = 8.0  # Much faster and more responsive
         
         if not showing_dialog:
+            # Direct position updates for instant response
             if keys[pygame.K_w]:
-                player_velocity['x'] += math.sin(player_angle) * speed * dt * 10
-                player_velocity['z'] += math.cos(player_angle) * speed * dt * 10
+                player_pos['x'] += math.sin(player_angle) * move_speed
+                player_pos['z'] += math.cos(player_angle) * move_speed
             if keys[pygame.K_s]:
-                player_velocity['x'] -= math.sin(player_angle) * speed * dt * 10
-                player_velocity['z'] -= math.cos(player_angle) * speed * dt * 10
+                player_pos['x'] -= math.sin(player_angle) * move_speed
+                player_pos['z'] -= math.cos(player_angle) * move_speed
             if keys[pygame.K_a]:
-                player_velocity['x'] -= math.cos(player_angle) * speed * dt * 10
-                player_velocity['z'] += math.sin(player_angle) * speed * dt * 10
+                player_pos['x'] -= math.cos(player_angle) * move_speed
+                player_pos['z'] += math.sin(player_angle) * move_speed
             if keys[pygame.K_d]:
-                player_velocity['x'] += math.cos(player_angle) * speed * dt * 10
-                player_velocity['z'] -= math.sin(player_angle) * speed * dt * 10
+                player_pos['x'] += math.cos(player_angle) * move_speed
+                player_pos['z'] -= math.sin(player_angle) * move_speed
+            
+            # Vertical movement (fly up/down like creative mode)
+            if keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]:
+                player_pos['y'] += move_speed * 0.8
+                player_velocity['y'] = 0
+                on_ground = False
+            if keys[pygame.K_LCTRL] or keys[pygame.K_RCTRL]:
+                player_pos['y'] -= move_speed * 0.8
+                player_velocity['y'] = 0
         
-        # Apply gravity
-        if not on_ground:
-            player_velocity['y'] -= gravity
+        # Apply gravity (lighter for floaty heaven feel)
+        if not on_ground and not (keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]):
+            player_velocity['y'] -= gravity * 0.5
         
-        # Apply friction
-        player_velocity['x'] *= 0.85
-        player_velocity['z'] *= 0.85
-        
-        # Update position
-        player_pos['x'] += player_velocity['x']
+        # Update Y position with velocity
         player_pos['y'] += player_velocity['y']
-        player_pos['z'] += player_velocity['z']
         
-        # Platform collision detection (REALISTIC!)
+        # Platform collision detection (MUCH MORE FORGIVING!)
         on_ground = False
         for platform in platforms + built_structures:
-            # Check if player is above platform
-            if (platform['x'] - platform['w']/2 < player_pos['x'] < platform['x'] + platform['w']/2 and
-                platform['z'] - platform.get('d', platform['w'])/2 < player_pos['z'] < platform['z'] + platform.get('d', platform['w'])/2):
+            # Much larger collision box - easier to land on platforms
+            plat_w = platform['w'] * 1.2  # 20% bigger
+            plat_d = platform.get('d', platform['w']) * 1.2
+            
+            # Check if player is above platform (with generous margins)
+            if (platform['x'] - plat_w/2 < player_pos['x'] < platform['x'] + plat_w/2 and
+                platform['z'] - plat_d/2 < player_pos['z'] < platform['z'] + plat_d/2):
                 
                 platform_top = platform['y'] + platform['h']
                 
-                if player_pos['y'] <= platform_top and player_pos['y'] > platform_top - 50:
+                # More generous landing zone
+                if player_pos['y'] - 30 < platform_top < player_pos['y'] + 20:
                     player_pos['y'] = platform_top
                     player_velocity['y'] = 0
                     on_ground = True
@@ -1136,35 +1150,48 @@ def heaven_scene(screen):
                 pygame.draw.rect(screen, (255, 215, 0), (rect[0] + rect[2]*3//4, rect[1], rect[2]//4, rect[3]))
                 pygame.draw.arc(screen, (255, 215, 0), rect, 0, math.pi, int(rect[2]//8))
         
-        # Sparkles
-        for _ in range(50):
+        # Sparkles (more visible and pretty)
+        for _ in range(30):
             sx, sy = random.randint(0, WIDTH), random.randint(0, HEIGHT)
-            if random.random() > 0.5:
-                pygame.draw.circle(screen, (255, 255, 200), (sx, sy), 2)
+            if random.random() > 0.6:
+                size = random.randint(2, 4)
+                pygame.draw.circle(screen, (255, 255, 220), (sx, sy), size)
+                # Cross sparkle
+                pygame.draw.line(screen, (255, 255, 220), (sx-size*2, sy), (sx+size*2, sy), 1)
+                pygame.draw.line(screen, (255, 255, 220), (sx, sy-size*2), (sx, sy+size*2), 1)
         
-        # ===== UI RENDERING =====
+        # CROSSHAIR (for aiming/interaction)
+        crosshair_size = 8
+        crosshair_color = (255, 255, 255)
+        if on_ground:
+            crosshair_color = (100, 255, 100)  # Green when on ground
+        pygame.draw.circle(screen, crosshair_color, (WIDTH//2, HEIGHT//2), 3, 1)
+        pygame.draw.line(screen, crosshair_color, (WIDTH//2 - crosshair_size, HEIGHT//2), (WIDTH//2 + crosshair_size, HEIGHT//2), 2)
+        pygame.draw.line(screen, crosshair_color, (WIDTH//2, HEIGHT//2 - crosshair_size), (WIDTH//2, HEIGHT//2 + crosshair_size), 2)
         
-        # Top HUD
-        hud_font = pygame.font.Font(None, 30)
+        # ===== UI RENDERING (CLEANER!) =====
+        
+        # Top HUD (bigger, clearer)
+        hud_font = pygame.font.Font(None, 36)
         stats = [
-            f"Level {player_level} | XP: {player_xp}/{xp_to_level}",
-            f"⏰ {int(time_in_heaven)}s | 💰 {halo_currency} Halos",
-            f"⭐{inventory['stars']} 👼{inventory['halos']} 🪶{inventory['feathers']} 💎{inventory['crystals']}"
+            f"🌟 Level {player_level}   XP: {player_xp}/{xp_to_level}",
+            f"⏰ {int(time_in_heaven)}s   💰 {halo_currency} Halos",
+            f"⭐{inventory['stars']}  👼{inventory['halos']}  🪶{inventory['feathers']}  💎{inventory['crystals']}"
         ]
         for i, stat in enumerate(stats):
             text = hud_font.render(stat, True, (255, 255, 255))
             shadow = hud_font.render(stat, True, (0, 0, 0))
-            screen.blit(shadow, (11, 11 + i*30))
-            screen.blit(text, (10, 10 + i*30))
+            screen.blit(shadow, (13, 13 + i*40))
+            screen.blit(text, (12, 12 + i*40))
         
-        # Bottom controls
+        # Bottom controls (clearer and bigger)
         if not showing_dialog:
-            controls_font = pygame.font.Font(None, 24)
-            controls = "WASD:Move  SPACE:Jump  T:Talk  E:Adopt  F:Fish  P:Plant  B:Build  K:Shop  H:Help  ESC:Exit"
+            controls_font = pygame.font.Font(None, 28)
+            controls = "WASD:Move  SHIFT/CTRL:Fly  SPACE:Jump  T:Talk  E:Adopt  F:Fish  P:Plant  B:Build  K:Shop  H:Help  ESC:Exit"
             ctrl_text = controls_font.render(controls, True, (255, 255, 255))
             ctrl_shadow = controls_font.render(controls, True, (0, 0, 0))
-            screen.blit(ctrl_shadow, (WIDTH//2 - ctrl_text.get_width()//2 + 1, HEIGHT - 26))
-            screen.blit(ctrl_text, (WIDTH//2 - ctrl_text.get_width()//2, HEIGHT - 25))
+            screen.blit(ctrl_shadow, (WIDTH//2 - ctrl_text.get_width()//2 + 2, HEIGHT - 28))
+            screen.blit(ctrl_text, (WIDTH//2 - ctrl_text.get_width()//2, HEIGHT - 27))
         
         # Build mode indicator
         if build_mode:
